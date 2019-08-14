@@ -129,7 +129,7 @@ SRS_PROBLEM * SRScreateprob() {
 	problem_srs->maximize = false;
 
 	//params
-	problem_srs->verboseSpx = 0;
+	problem_srs->verboseSpx = 1;
 	problem_srs->verbosePne = 0;
 	problem_srs->relativeGap = 1e-4;
 	problem_srs->presolve = 1;
@@ -370,8 +370,24 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, PNE_PARAMS ** 
 			(*spxParams) = problem_spx->spx_params;
 		} else {
 			(*spxParams) = newDefaultSpxParams();
+			problem_simplexe->Contexte = SIMPLEXE_SEUL;
+			problem_simplexe->BaseDeDepartFournie = NON_SPX;
+
+			problem_simplexe->ChoixDeLAlgorithme = SPX_DUAL;
+
+			problem_simplexe->TypeDePricing = PRICING_STEEPEST_EDGE;
+			problem_simplexe->FaireDuScaling = OUI_SPX;
+			problem_simplexe->StrategieAntiDegenerescence = AGRESSIF;
+
+			problem_simplexe->LibererMemoireALaFin = NON_SPX;
+
+			problem_simplexe->UtiliserCoutMax = NON_SPX;
+			problem_simplexe->CoutMax = 0.0;
+			problem_simplexe->NombreMaxDIterations = -1;
+			problem_simplexe->DureeMaxDuCalcul = -1.;
+			problem_simplexe->NombreDeContraintesCoupes = 0;
 		}
-		(*spxParams)->VERBOSE_SPX = problem_srs->verboseSpx;
+		(*spxParams)->VERBOSE_SPX = 1;// problem_srs->verboseSpx;
 		problem_simplexe->AffichageDesTraces = problem_srs->verboseSpx;
 		problem_simplexe->FaireDuScaling = problem_srs->scaling;
 
@@ -484,6 +500,27 @@ int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simp
 
 	problem_simplexe->Contexte = SIMPLEXE_SEUL;
 	problem_simplexe->BaseDeDepartFournie = NON_SPX;
+
+	return 0;
+}
+
+SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * problem_simplexe)
+{
+	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
+	problem_mps->CoefsObjectif = problem_simplexe->CoutLineaire;
+	problem_mps->U = problem_simplexe->X;
+	problem_mps->Umin = problem_simplexe->Xmin;
+	problem_mps->Umax = problem_simplexe->Xmax;
+	problem_mps->NbVar = problem_simplexe->NombreDeVariables;
+	problem_mps->TypeDeBorneDeLaVariable = problem_simplexe->TypeDeVariable;
+	problem_mps->NbCnt = problem_simplexe->NombreDeContraintes;
+	problem_mps->Mdeb = problem_simplexe->IndicesDebutDeLigne;
+	problem_mps->NbTerm = problem_simplexe->NombreDeTermesDesLignes;
+	problem_mps->Nuvar = problem_simplexe->IndicesColonnes;
+	problem_mps->A = problem_simplexe->CoefficientsDeLaMatriceDesContraintes;
+	problem_mps->SensDeLaContrainte = problem_simplexe->Sens;
+	problem_mps->Rhs = problem_simplexe->SecondMembre;
+	problem_mps->VariablesDualesDesContraintes = problem_simplexe->CoutsMarginauxDesContraintes;
 
 	return 0;
 }

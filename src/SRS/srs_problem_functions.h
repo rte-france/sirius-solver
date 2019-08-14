@@ -69,6 +69,7 @@ int SRSreadmpsprob(SRS_PROBLEM * problem_srs, const char * fileName);
 int SRSwritempsprob(PROBLEME_MPS * problem_mps, const char * fileName);
 int SRSfreempsprob(PROBLEME_MPS * problem_mps);
 int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simplexe);
+int SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * problem_simplexe);
 
 # ifdef __cplusplus
 }
