@@ -1,0 +1,134 @@
+// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
+// See AUTHORS.txt
+// This Source Code Form is subject to the terms of the Apache License, version 2.0.
+// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
+// SPDX-License-Identifier: Apache-2.0
+// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
+
+/***********************************************************************
+
+   FONCTION: Calcul de BBarre = B^{-1} * b pour les contraintes/variables
+             hors base reduite.
+
+                
+   AUTEUR: R. GONZALEZ
+
+************************************************************************/
+
+# include "spx_sys.h"  
+
+# include "spx_fonctions.h"
+# include "spx_define.h"
+
+# include "lu_define.h"
+
+# define DEBUG NON_SPX  
+
+/*----------------------------------------------------------------------------*/
+
+void SPX_CalculerBBarreAHorsReduite( PROBLEME_SPX * Spx )
+{
+int il; int ilMax; double * BBarre; double * B; char * PositionDeLaVariable; 
+double * Xmax; int NombreDeBornesAuxiliairesUtilisees; char * StatutBorneSupCourante; 
+int Cnt; int Var1; int r; double * A; int * Mdeb; int * NbTerm; double ValBBarre;
+int * ContrainteDeLaVariableEnBase; int * Indcol; int RangDeLaMatriceFactorisee; 
+int * LigneDeLaBaseFactorisee; char Position; double * Bs; int * ColonneDeLaBaseFactorisee;
+int Var; double Coeff;
+
+if ( Spx->UtiliserLaBaseReduite == NON_SPX ) return; 
+
+BBarre = Spx->BBarre;
+B = Spx->B;
+Bs = Spx->Bs;
+
+RangDeLaMatriceFactorisee = Spx->RangDeLaMatriceFactorisee;
+LigneDeLaBaseFactorisee = Spx->LigneDeLaBaseFactorisee;
+ColonneDeLaBaseFactorisee	= Spx->ColonneDeLaBaseFactorisee;
+
+Xmax = Spx->Xmax;
+
+Mdeb = Spx->Mdeb;
+NbTerm = Spx->NbTerm;
+Indcol = Spx->Indcol;
+A = Spx->A;
+PositionDeLaVariable = Spx->PositionDeLaVariable;
+ContrainteDeLaVariableEnBase = Spx->ContrainteDeLaVariableEnBase;
+
+NombreDeBornesAuxiliairesUtilisees = Spx->NombreDeBornesAuxiliairesUtilisees;
+StatutBorneSupCourante = Spx->StatutBorneSupCourante;  
+
+/* A ce stade les valeurs de BBarre dans la base reduite sont classes de 0 a RangDeLaMatriceFactorisee.
+   On les reclasse par mesure de precaution */
+for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) { 
+	Bs[ColonneDeLaBaseFactorisee[r]] = BBarre[r]; /* Il faut les sauvegarder dans Bs */
+}
+/* Puis on les remet dans BBarre */
+for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) { 
+  Cnt = ColonneDeLaBaseFactorisee[r];
+  BBarre[Cnt] =	Bs[Cnt];
+	Bs[Cnt] = 0;
+}
+
+if ( NombreDeBornesAuxiliairesUtilisees == 0 ) {	
+  for ( r = RangDeLaMatriceFactorisee ; r < Spx->NombreDeContraintes ; r++ ) { 
+    Cnt = LigneDeLaBaseFactorisee[r];
+		Var = Spx->VariableEnBaseDeLaContrainte[ColonneDeLaBaseFactorisee[r]];
+    ValBBarre = B[Cnt];
+    il    = Mdeb[Cnt];
+    ilMax = il + NbTerm[Cnt];
+		Coeff = 1;				
+    while ( il < ilMax ) {  
+	    Var1 = Indcol[il];
+			if ( Var1 == Var ) {
+			  Coeff = A[il];				
+				goto NextIl_0;
+			}
+	    Position = PositionDeLaVariable[Var1];
+	    if ( Position == EN_BASE_LIBRE ) {
+	      ValBBarre -= A[il] * BBarre[ContrainteDeLaVariableEnBase[Var1]]; 
+	    }
+	    else if ( Position == HORS_BASE_SUR_BORNE_SUP ) {
+        ValBBarre -= A[il] * Xmax[Var1];
+	    }
+			NextIl_0:
+      il++;
+	  }		
+		BBarre[ContrainteDeLaVariableEnBase[Var]] = ValBBarre/Coeff; /* C'est la variable non native */
+  }
+}
+else {	
+  for ( r = RangDeLaMatriceFactorisee ; r < Spx->NombreDeContraintes ; r++ ) { 
+    Cnt = LigneDeLaBaseFactorisee[r];
+		Var = Spx->VariableEnBaseDeLaContrainte[ColonneDeLaBaseFactorisee[r]];
+    ValBBarre = B[Cnt];
+    il    = Mdeb[Cnt];
+    ilMax = il + NbTerm[Cnt];
+		Coeff = 1;
+    while ( il < ilMax ) {  
+	    Var1 = Indcol[il];
+			if ( Var1 == Var ) {
+			  Coeff = A[il];
+				goto NextIl_1;
+			}			
+	    Position = PositionDeLaVariable[Var1];
+	    if ( Position == EN_BASE_LIBRE ) {
+	      ValBBarre -= A[il] * BBarre[ContrainteDeLaVariableEnBase[Var1]];
+	    }
+	    else if ( Position == HORS_BASE_SUR_BORNE_SUP ) {
+        ValBBarre -= A[il] * Xmax[Var1];
+			}
+	    else if ( Position == HORS_BASE_SUR_BORNE_INF ) {			
+		    if ( StatutBorneSupCourante[Var1] == BORNE_AUXILIAIRE_DE_VARIABLE_NON_BORNEE && Spx->spx_params->VERBOSE_SPX) {
+				  printf("CalculerBBarreAHorsReduite variable non bornee sur borne inf fictive %d\n",Var1);
+          ValBBarre += A[il] * Xmax[Var1];
+		    }
+	    }
+			NextIl_1:
+      il++;
+	  }	 		
+		BBarre[ContrainteDeLaVariableEnBase[Var]] = ValBBarre/Coeff; /* C'est la variable non native */
+  }
+}
+
+return;
+}

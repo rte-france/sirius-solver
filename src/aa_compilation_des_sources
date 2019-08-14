@@ -1,0 +1,26 @@
+#CC = /logiciels/intel/icc/compiler80/bin/icc
+CC = gcc
+#
+# initialisation des macros
+#
+DIR_INCLUDE_1 = ./BRANCH_AND_BOUND 
+DIR_INCLUDE_2 = ./POINT_INTERIEUR 
+DIR_INCLUDE_3 = ./SIMPLEXE 
+DIR_INCLUDE_4 = ./SIMPLEXE/LU 
+DIR_INCLUDE_5 = ./ALLOCATEUR 
+DIR_INCLUDE_6 = ./PRESOLVE 
+DIR_INCLUDE_7 = ./SIMPLEXE/LU/BTF/UFconfig
+DIR_INCLUDE_8 = ./SIMPLEXE/LU/BTF/BTF/Include
+DIR_INCLUDE_9 = ./SIMPLEXE/LU/CSparse/Include
+#
+bib_solveur = bib_solveur.a  
+#    
+# declaration des objets a maintenir
+#
+all : $(bib_solveur) 
+#
+# compilation des sources modifies
+#
+$(bib_solveur): *.c  
+	echo  "    "   
+	$(CC) -msse2 -pg -O2 -W -Wall -c -Wmissing-prototypes $? -I$(DIR_INCLUDE_1) -I$(DIR_INCLUDE_2) -I$(DIR_INCLUDE_7) -I$(DIR_INCLUDE_8) -I$(DIR_INCLUDE_9) -I$(DIR_INCLUDE_3) -I$(DIR_INCLUDE_4) -I$(DIR_INCLUDE_5) -I$(DIR_INCLUDE_6)    

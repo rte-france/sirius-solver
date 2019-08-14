@@ -1,0 +1,76 @@
+\rm PNE_STANDALONE.exe
+#
+# cd   OUTILS_MALLOC
+# pwd
+# make -f aa_compilation_includes
+# make -f aa_compilation_des_sources
+# cd ..
+#
+cd   ALLOCATEUR
+pwd
+make -f aa_compilation_includes
+make -f aa_compilation_des_sources
+cd ..
+#
+cd   PRESOLVE
+pwd
+make -f aa_compilation_includes
+make -f aa_compilation_des_sources
+cd ..
+#
+cd   BRANCH_AND_BOUND
+pwd
+make -f aa_compilation_includes
+make -f aa_compilation_des_sources
+cd ..
+#
+cd   POINT_INTERIEUR
+pwd
+make -f aa_compilation_includes
+make -f aa_compilation_des_sources
+cd ..
+#
+cd   SIMPLEXE
+pwd
+make -f aa_compilation_includes
+make -f aa_compilation_des_sources
+#
+cd ../SIMPLEXE/LU
+pwd
+make -f aa_compilation_includes
+make -f aa_compilation_des_sources
+cd ..
+#
+cd ..
+#
+pwd
+make -f aa_compilation_includes
+make -f aa_compilation_des_sources
+#
+# Archivage ..
+#
+ar rcv bib_solveur.a ./OUTILS_MALLOC/*.o  
+\rm -f ./OUTILS_MALLOC/*.o  
+#
+ar rcv bib_solveur.a ./ALLOCATEUR/*.o  
+\rm -f ./ALLOCATEUR/*.o  
+#
+ar rcv bib_solveur.a ./PRESOLVE/*.o  
+\rm -f ./PRESOLVE/*.o  
+#
+ar rcv bib_solveur.a ./BRANCH_AND_BOUND/*.o  
+\rm -f ./BRANCH_AND_BOUND/*.o  
+#
+ar rcv bib_solveur.a ./POINT_INTERIEUR/*.o  
+\rm -f ./POINT_INTERIEUR/*.o 
+# 
+ar rcv bib_solveur.a ./SIMPLEXE/*.o  
+\rm -f ./SIMPLEXE/*.o  
+# 
+ar rcv bib_solveur.a ./SIMPLEXE/LU/*.o  
+\rm -f ./SIMPLEXE/LU/*.o  
+# 
+ar rcv bib_solveur.a *.o  
+\rm -f *.o  
+#
+make -f aa_edition_de_liens

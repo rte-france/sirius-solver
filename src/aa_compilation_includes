@@ -1,0 +1,19 @@
+CC = /logiciels/public/gcc-3.3.1/bin/gcc
+#
+# initialisation des macros
+#
+DIR_INCLUDE_1 = ./BRANCH_AND_BOUND 
+DIR_INCLUDE_2 = ./POINT_INTERIEUR 
+DIR_INCLUDE_3 = ./SIMPLEXE 
+#
+bib_solveur = bib_solveur.a  
+#    
+# declaration des objets a maintenir
+#
+all : $(bib_solveur)    
+#
+# compilation des sources modifies
+#
+$(bib_solveur): *.h 
+	echo "compilation de TOUS les sources"   
+	touch *.c   

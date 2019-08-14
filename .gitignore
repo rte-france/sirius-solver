@@ -1,0 +1,5 @@
+build*
+*.nl
+*.sol
+*.mps
+src/ff
