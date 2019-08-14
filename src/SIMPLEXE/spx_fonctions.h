@@ -24,7 +24,10 @@ spx_dual_sortir_les_variables_binaires.c
 
 /*----------------------------- Fonctions du simplexe ------------------------------*/
 PROBLEME_SPX * SPX_Simplexe( PROBLEME_SIMPLEXE * , PROBLEME_SPX *, SPX_PARAMS * spx_params );
-			  
+
+void SPX_print_parameters_PROBLEME_SIMPLEXE(PROBLEME_SIMPLEXE *);
+void SPX_print_parameters_PROBLEME_SPX(PROBLEME_SPX *);
+
 void SPX_SimplexeCalculs( PROBLEME_SIMPLEXE * , PROBLEME_SPX * );
  
 void SPX_AllouerProbleme( PROBLEME_SPX * , int , int , int * , int * );

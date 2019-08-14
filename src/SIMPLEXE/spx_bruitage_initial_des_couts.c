@@ -55,7 +55,6 @@ if ( NbCoutsNonNuls != 0 ) {
   Spx->EcartDeBornesMoyen = EcartMoyen;
 	Spx->PerturbationMax = 0.0001 * Spx->CoutMoyen * Spx->EcartDeBornesMoyen;
 }
-
 if (Spx->spx_params->FAIRE_UN_BRUITAGE_INITIAL_DES_COUTS != OUI_SPX) {
 	return;
 }
@@ -70,7 +69,7 @@ for ( Var = 0 ; Var < Spx->NombreDeVariablesNatives ; Var++ ) {
 	if ( C[Var] == 0 ) continue;
   if ( TypeDeVariable[Var] == NON_BORNEE ) continue;
   Spx->A1 = PNE_Rand( Spx->A1 ); /* Nombre aleatoire entre 0 et 1 */
-	
+  
   RandomMax = SeuilDAmissibiliteDuale[Var];	
 	if ( RandomMax > RdSup ) RandomMax = RdSup;
 	

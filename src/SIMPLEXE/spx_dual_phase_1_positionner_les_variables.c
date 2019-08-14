@@ -37,6 +37,7 @@ if (Spx->spx_params->VERBOSE_SPX) {
 NbInfaisabilitesDuales = 0;
 SommeDesInfaisabilites = 0.0;		
 
+
 if ( Spx->LaBaseDeDepartEstFournie == NON_SPX ) SeuilDAmissibiliteDuale = Spx->SeuilDAmissibiliteDuale1;
 else SeuilDAmissibiliteDuale = Spx->SeuilDAmissibiliteDuale2;
 
@@ -48,10 +49,11 @@ CBarre                      = Spx->CBarre;
 
 /* Boucle sur les variables hors base */ 
 for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
+  //printf("NbInfaisabilitesDuales : %10d%10d\n", i,  NbInfaisabilitesDuales);
   Var = NumerosDesVariablesHorsBase[i];
-  
+
   FaisabiliteDeLaVariable[Var] = DUALE_FAISABLE;
-	
+
   /* Examen des couts reduits pour chaque type de variable */
   if ( TypeDeVariable[Var] == BORNEE ) {
     if ( CBarre[Var] > SeuilDAmissibiliteDuale[Var] ) {		     
@@ -84,7 +86,7 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
       SommeDesInfaisabilites+= CBarre[Var];
       PositionDeLaVariable   [Var] = HORS_BASE_SUR_BORNE_SUP; /* Donc infaisable */
       FaisabiliteDeLaVariable[Var] = DUALE_INFAISABLE_PAR_COUT_REDUIT_NEGATIF;
-      NbInfaisabilitesDuales++;      
+      NbInfaisabilitesDuales++;
       continue;
     }
     if ( CBarre[Var] > SeuilDAmissibiliteDuale[Var] ) {
@@ -95,7 +97,6 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
       continue;
     }
   }
- 
 }
 
 Spx->SommeDesInfaisabilitesDuales = -SommeDesInfaisabilites;

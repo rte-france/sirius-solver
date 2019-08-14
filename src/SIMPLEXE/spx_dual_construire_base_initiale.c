@@ -33,7 +33,8 @@ if ( Spx->LaBaseDeDepartEstFournie == NON_SPX ) {
   printf(" Bug dans SPX_DualConstruireLaBaseInitiale, la base initiale doit etre fournie\n");
   exit(0);
 }
-  
+
+
 /* Cas ou la base est fournie */
 for ( Cnt = 0 ; Cnt < Spx->NombreDeContraintes ; Cnt++ )  Spx->VariableEnBaseDeLaContrainte[Cnt] = -1;
 

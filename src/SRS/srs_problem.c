@@ -374,12 +374,17 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, PNE_PARAMS ** 
 		(*spxParams)->VERBOSE_SPX = problem_srs->verboseSpx;
 		problem_simplexe->AffichageDesTraces = problem_srs->verboseSpx;
 		problem_simplexe->FaireDuScaling = problem_srs->scaling;
+
+		problem_simplexe->CoutMax = 0;
+		problem_simplexe->NbVarDeBaseComplementaires = 0;
 	}
 
 	return 0;
 }
 
+
 int SRSoptimize(SRS_PROBLEM * problem_srs) {
+	
 	int nbCols = problem_srs->problem_mps->NbVar;
 	if (problem_srs->maximize) {
 		for (int idxCol = 0; idxCol < nbCols; ++idxCol) {
@@ -390,7 +395,7 @@ int SRSoptimize(SRS_PROBLEM * problem_srs) {
 	PNE_PARAMS * pneParams = NULL;
 	SPX_PARAMS * spxParams = NULL;
 	allocateProblemsAndPropagateParams(problem_srs, &pneParams, &spxParams);
-
+	
 	struct timespec debut;
 	timespec_get(&debut, TIME_UTC);
 	if (problem_srs->is_mip) {
@@ -399,6 +404,7 @@ int SRSoptimize(SRS_PROBLEM * problem_srs) {
 		free(pneParams->spx_params);
 		free(pneParams);
 	} else {
+		problem_srs->problem_simplexe->ExistenceDUneSolution = 168;
 		// Appel du simplexe
 		problem_srs->problem_spx = SPX_Simplexe(problem_srs->problem_simplexe, problem_srs->problem_spx, spxParams);
 		//free(spxParams);

@@ -444,7 +444,8 @@ if ( RestaurerAdmissibiliteDuale == OUI_SPX ) {
   /* Restauration des couts: normalement ca a deja ete fait sauf s'il n'y a pas eu de degenerescence duale */
 	memcpy( (char *) Spx->C, (char *) Spx->Csv, Spx->NombreDeVariables * sizeof( double ) );
   for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = Spx->spx_params->NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;    
-    
+
+  printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
   SPX_DualPhase1Simplexe( Spx );
 	
 	Spx->PhaseEnCours = PHASE_2;

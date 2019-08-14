@@ -36,10 +36,32 @@ return;
 
 /*---------------------------------------------------------------------------------------------------------*/
 
+
+void SPX_print_parameters_PROBLEME_SIMPLEXE(PROBLEME_SIMPLEXE  * Probleme) {
+	printf("%35s : %10d\n", "Contexte", Probleme->Contexte);
+	printf("%35s : %10d\n", "NombreMaxDIterations", Probleme->NombreMaxDIterations);
+	printf("%35s : %10.6f\n", "DureeMaxDuCalcul", Probleme->DureeMaxDuCalcul);
+	printf("%35s : %10d\n", "NombreDeVariables", Probleme->NombreDeVariables);
+	printf("%35s : %10d\n", "NombreDeContraintes", Probleme->NombreDeContraintes);
+	printf("%35s : %10d\n", "ChoixDeLAlgorithme", Probleme->ChoixDeLAlgorithme);
+	printf("%35s : %10d\n", "TypeDePricing", Probleme->TypeDePricing);
+	printf("%35s : %10d\n", "FaireDuScaling", Probleme->FaireDuScaling);
+	printf("%35s : %10d\n", "StrategieAntiDegenerescence", Probleme->StrategieAntiDegenerescence);
+	printf("%35s : %10d\n", "BaseDeDepartFournie", Probleme->BaseDeDepartFournie);
+	printf("%35s : %10d\n", "NbVarDeBaseComplementaires", Probleme->NbVarDeBaseComplementaires);
+	printf("%35s : %10d\n", "ExistenceDUneSolution", Probleme->ExistenceDUneSolution);
+	printf("%35s : %10d\n", "LibererMemoireALaFin", Probleme->LibererMemoireALaFin);
+	printf("%35s : %10.6f\n", "CoutMax", Probleme->CoutMax);
+	printf("%35s : %10d\n", "UtiliserCoutMax", Probleme->UtiliserCoutMax);
+	printf("%35s : %10d\n", "NombreDeContraintesCoupes", Probleme->NombreDeContraintesCoupes);
+	printf("%35s : %10d\n", "AffichageDesTraces", Probleme->AffichageDesTraces);
+}
+
 PROBLEME_SPX * SPX_Simplexe( PROBLEME_SIMPLEXE * Probleme , PROBLEME_SPX * Spx , SPX_PARAMS * spx_params ) 
 {
 void * Tas;
-
+SPX_print_parameters_PROBLEME_SIMPLEXE(Probleme);
+Probleme->AffichageDesTraces = OUI_SPX;
 if ( Spx == NULL ) {
   # ifdef SPX_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
     Tas = MEM_Init(); 

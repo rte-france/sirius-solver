@@ -112,7 +112,9 @@ Spx->PresenceDeVariablesDeBornesIdentiques = NON_SPX;
 Xmin = Spx->Xmin;
 Xmax = Spx->Xmax;
 InDualFramework = Spx->InDualFramework;
-LeSteepestEdgeEstInitilise = Spx->LeSteepestEdgeEstInitilise;	
+LeSteepestEdgeEstInitilise = Spx->LeSteepestEdgeEstInitilise;
+printf("LeSteepestEdgeEstInitilise  : %d\n", Spx->LeSteepestEdgeEstInitilise);
+printf("UtiliserLaBaseReduite       : %d\n", Spx->UtiliserLaBaseReduite);
 if ( LeSteepestEdgeEstInitilise == OUI_SPX ) {
   for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
 

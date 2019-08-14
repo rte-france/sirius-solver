@@ -40,6 +40,7 @@ PositionDeLaVariable = Spx->PositionDeLaVariable;
 InDualFramework      = Spx->InDualFramework;
 
 for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
+	
   if ( PositionDeLaVariable[Var] == EN_BASE_LIBRE ) InDualFramework[Var] = OUI_SPX;
   else                                              InDualFramework[Var] = NON_SPX;
 }

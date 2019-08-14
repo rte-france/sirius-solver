@@ -123,7 +123,8 @@ if ( ChangementDeBornes == OUI_SPX ) {
 	Spx->IterationPourBornesAuxiliaires *= 2;
 	Spx->CoeffMultiplicateurDesBornesAuxiliaires *= COEFF_MULTIPLICATEUR;
   printf("On refait une admissibilite duale. IterationPourBornesAuxiliaires: %d\n",Spx->IterationPourBornesAuxiliaires);
-		
+
+  printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
   SPX_DualPhase1Simplexe( Spx );
   printf("NombreDeBornesAuxiliairesUtilisees apres la nouvelle phase 1: %d\n",Spx->NombreDeBornesAuxiliairesUtilisees);
 	Spx->PhaseEnCours = PHASE_2;

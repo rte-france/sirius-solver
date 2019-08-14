@@ -58,6 +58,7 @@ if ( Spx->LesCoutsOntEteModifies == OUI_SPX ) {
 	C = Spx->C;
 	Csv = Spx->Csv;
 	for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
+
     if ( CorrectionDuale[Var] == 0 ) NombreDeCoutsBruitess++;
 		C[Var] = Csv[Var];
 	}
@@ -68,7 +69,8 @@ if ( Spx->LesCoutsOntEteModifies == OUI_SPX ) {
 
   Spx->LesCoutsOntEteModifies = NON_SPX;
   CoutsReduitsAJour = NON_SPX;
-
+  printf("NombreDeCoutsBruitess : %10d\n", NombreDeCoutsBruitess);
+  printf("NombreDeVariables     : %10d\n", Spx->NombreDeVariables);
   if ( NombreDeCoutsBruitess > 0.1 * Spx->NombreDeVariables ) {
 	  if ( Spx->AffichageDesTraces == OUI_SPX )
 		  printf("On relance la base reduite\n");

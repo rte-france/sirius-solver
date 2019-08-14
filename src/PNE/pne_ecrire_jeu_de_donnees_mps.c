@@ -105,7 +105,7 @@ printf("*** Vous avez demande la creation d'un fichier contenant la description 
 printf("*** du probleme en cours de resolution. Le fichier de donnees se trouve ***\n");
 printf("*** dans le repertoire d'execution. Il s'appelle:                       ***\n");
 printf("***                                                                     ***\n");
-printf("***                 Donnees_Probleme_Solveur.mps                        ***\n");
+printf("***                 %s                        ***\n", nomFichier);
 printf("***                                                                     ***\n");
 printf("*** Si un fichier de ce nom existait deja, il sera ecrase par avec les  ***\n");
 printf("*** nouvelles donnees.                                                  ***\n");

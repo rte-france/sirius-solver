@@ -52,6 +52,7 @@ memset( (char *) Spx->Bs , 0 , Spx->NombreDeContraintes * sizeof( double ) );
 SeuilPourRedemarrageBaseRacine = Spx->NombreMaxDIterations << 1;
 PresenceSeuilPourRedemarrageBaseRacine = NON_SPX;
 Pne = (PROBLEME_PNE *) Spx->ProblemePneDeSpx;
+
 if ( Pne != NULL ) {
   Bb = (BB *) Pne->ProblemeBbDuSolveur;
   if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {
@@ -102,10 +103,13 @@ Spx->NbCyclesSansControleDeDegenerescence = Spx->CycleDeControleDeDegenerescence
 
 /* Initialisation des poids de la methode projected steepest edge */
 if ( Spx->LeSteepestEdgeEstInitilise == NON_SPX ) SPX_InitDualPoids( Spx );  
-
+//for (Var = 0; Var < Spx->NombreDeVariables; ++Var) {
+//	printf("%6d %6d\n", Var, (int)Spx->PositionDeLaVariable[Var]);
+//}
 /* Que la base soit fournie ou non, on appelle toujours ce sous-programme. S'il s'avere 
    que la base fournie etait duale realisable, il se contente de repositionner 
    les variables et se termine tout de suite */ 
+printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
 SPX_DualPhase1Simplexe( Spx );
 if ( Spx->LaBaseEstDualeAdmissible == NON_SPX ) { 
 	if (Spx->spx_params->VERBOSE_SPX) {
@@ -415,7 +419,8 @@ while ( 1 ) {
         break;				
       }
 			Spx->YaUneSolution = NON_SPX; /* Car le positionnement a OUI_SPX n'etait que pour la factorisation */
-      SPX_InitDualPoids( Spx );  			
+      SPX_InitDualPoids( Spx );  		
+	  printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
       SPX_DualPhase1Simplexe( Spx );
       if ( Spx->LaBaseEstDualeAdmissible == NON_SPX ) { 
 		  if (Spx->spx_params->VERBOSE_SPX) {
@@ -507,7 +512,8 @@ while ( 1 ) {
         break;				
       }
 			Spx->YaUneSolution = NON_SPX;
-      SPX_InitDualPoids( Spx );  			
+      SPX_InitDualPoids( Spx );
+	  printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
       SPX_DualPhase1Simplexe( Spx );
       if ( Spx->LaBaseEstDualeAdmissible == NON_SPX ) { 
 		  if (Spx->spx_params->VERBOSE_SPX) {

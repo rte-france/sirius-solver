@@ -311,6 +311,7 @@ if ( RestaurerAdmissibiliteDuale == OUI_SPX ) {
 	}
     
   SPX_FactoriserLaBase( Spx );
+  printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
   SPX_DualPhase1Simplexe( Spx );
 
 	Spx->PhaseEnCours = PHASE_2;
