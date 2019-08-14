@@ -76,9 +76,9 @@ int mallocAndCopyStringArray(size_t arraySize, char const *const * sourceArray, 
 int computeColBoundType(double lb, double ub) {
 	if (lb != -SRS_infinite) {
 		if (ub != SRS_infinite) {
-			if (lb == ub) {
-				return VARIABLE_FIXE;
-			}
+			//if (lb == ub) {
+			//	return VARIABLE_FIXE;
+			//}
 			return VARIABLE_BORNEE_DES_DEUX_COTES;
 		}
 		return VARIABLE_BORNEE_INFERIEUREMENT;
@@ -404,7 +404,6 @@ int SRSoptimize(SRS_PROBLEM * problem_srs) {
 		free(pneParams->spx_params);
 		free(pneParams);
 	} else {
-		problem_srs->problem_simplexe->ExistenceDUneSolution = 168;
 		// Appel du simplexe
 		problem_srs->problem_spx = SPX_Simplexe(problem_srs->problem_simplexe, problem_srs->problem_spx, spxParams);
 		//free(spxParams);

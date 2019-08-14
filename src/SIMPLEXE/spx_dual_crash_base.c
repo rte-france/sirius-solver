@@ -433,10 +433,10 @@ void SPX_DualConstruireUneCrashBase(PROBLEME_SPX * Spx)
 	int * Spx_VariableEnBaseDeLaContrainte;
 
 	SPX_CrashBaseChainageDeLaTransposee(Spx);
-	printf("SPX_DualConstruireUneCrashBase\n");
+	//printf("SPX_DualConstruireUneCrashBase\n");
 	Cb = (CB *)malloc(sizeof(CB));
 	if (Cb == NULL) {
-		printf("Memoire insuffisante dans le sous-programme SPX_DualConstruireUneCrashBase \n");
+		//printf("Memoire insuffisante dans le sous-programme SPX_DualConstruireUneCrashBase \n");
 		Spx->AnomalieDetectee = NON_SPX;
 		longjmp(Spx->EnvSpx, Spx->AnomalieDetectee);
 	}
@@ -558,7 +558,7 @@ void SPX_DualConstruireUneCrashBase(PROBLEME_SPX * Spx)
 						goto DEBUT_WHILE;
 					}
 # endif
-					printf("Cb->VariableChoisie : %d\n", Cb->VariableChoisie);
+					//printf("Cb->VariableChoisie : %d\n", Cb->VariableChoisie);
 					Spx_PositionDeLaVariable[Cb->VariableChoisie] = EN_BASE_LIBRE;
 					Spx_ContrainteDeLaVariableEnBase[Cb->VariableChoisie] = Cb->ContrainteChoisie;
 					Spx_VariableEnBaseDeLaContrainte[Cb->ContrainteChoisie] = Cb->VariableChoisie;
