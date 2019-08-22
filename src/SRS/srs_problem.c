@@ -364,6 +364,13 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, PNE_PARAMS ** 
 		{
 			SPX_ModifierLeVecteurCouts(problem_spx, problem_mps->CoefsObjectif, problem_mps->NbVar);
 			SPX_ModifierLeVecteurSecondMembre(problem_spx, problem_mps->Rhs, problem_mps->SensDeLaContrainte, problem_mps->NbCnt);
+			
+			size_t arraySizeInBytes = problem_mps->NbVar * sizeof(double);
+			memcpy(problem_spx->Xmin, problem_mps->Umin, arraySizeInBytes);
+			memcpy(problem_spx->Xmax, problem_mps->Umax, arraySizeInBytes);
+
+			memcpy(problem_simplexe->Xmin, problem_mps->Umin, arraySizeInBytes);
+			memcpy(problem_simplexe->Xmax, problem_mps->Umax, arraySizeInBytes);
 
 			problem_simplexe->Contexte = BRANCH_AND_BOUND_OU_CUT_NOEUD;
 			problem_simplexe->BaseDeDepartFournie = UTILISER_LA_BASE_DU_PROBLEME_SPX;
