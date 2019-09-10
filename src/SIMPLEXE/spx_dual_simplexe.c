@@ -109,7 +109,6 @@ if ( Spx->LeSteepestEdgeEstInitilise == NON_SPX ) SPX_InitDualPoids( Spx );
 /* Que la base soit fournie ou non, on appelle toujours ce sous-programme. S'il s'avere 
    que la base fournie etait duale realisable, il se contente de repositionner 
    les variables et se termine tout de suite */ 
-printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
 SPX_DualPhase1Simplexe( Spx );
 if ( Spx->LaBaseEstDualeAdmissible == NON_SPX ) { 
 	if (Spx->spx_params->VERBOSE_SPX) {

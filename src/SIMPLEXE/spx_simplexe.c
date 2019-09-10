@@ -60,8 +60,7 @@ void SPX_print_parameters_PROBLEME_SIMPLEXE(PROBLEME_SIMPLEXE  * Probleme) {
 PROBLEME_SPX * SPX_Simplexe( PROBLEME_SIMPLEXE * Probleme , PROBLEME_SPX * Spx , SPX_PARAMS * spx_params ) 
 {
 void * Tas;
-SPX_print_parameters_PROBLEME_SIMPLEXE(Probleme);
-Probleme->AffichageDesTraces = OUI_SPX;
+//SPX_print_parameters_PROBLEME_SIMPLEXE(Probleme);
 if ( Spx == NULL ) {
   # ifdef SPX_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
     Tas = MEM_Init(); 

@@ -317,7 +317,6 @@ void SPX_ConstruireLeProbleme(
 
 	}
 	Spx->NombreDeContraintes = NombreDeContraintes;
-	printf("Spx->spx_params->SPX_ACTIVATION_SUPPRESSION_PETITS_TERMES : %d\n", Spx->spx_params->SPX_ACTIVATION_SUPPRESSION_PETITS_TERMES);
 	if (Spx->spx_params->SPX_ACTIVATION_SUPPRESSION_PETITS_TERMES == OUI_SPX) {
 		/* Imperatif: a faire avant la mise sous forme standard des contraintes */
 		  /* C'est deja fait dans la partie pne mais comme le simplexe peut etre appele separement,
@@ -358,7 +357,6 @@ void SPX_ConstruireLeProbleme(
 	/* Fin de la transformation interne BORNEE_SUPERIEUREMENT -> BORNEE_INFERIEUREMENT */
 
 FinVariablesBorneesSuperieurement:
-	printf("FinVariablesBorneesSuperieurement\n");
 	/* Scaling du probleme avant sa mise sous forme standard (on le fait ici pour eviter
 	   de faire un scaling sur les variables additionnelles de toutes sortes) */
 

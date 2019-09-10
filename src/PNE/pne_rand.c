@@ -28,7 +28,6 @@ double PNE_SRand( double Graine )
 double A1;
 
 A1 = Graine;
-printf("Graine : %f\n", Graine);
 return( PNE_Rand( A1 ) );
 
 }

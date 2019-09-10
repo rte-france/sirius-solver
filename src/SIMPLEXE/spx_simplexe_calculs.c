@@ -139,7 +139,6 @@ int j = 0;
 
 /*----------------------------------------------------------------------------------------------------*/  
 
-printf("Debut SPX_SimplexeCalculs\n");
 //SPX_print_parameters_PROBLEME_SPX(Spx);
 Contexte             = Probleme->Contexte;
 NombreMaxDIterations = Probleme->NombreMaxDIterations; 
@@ -280,17 +279,6 @@ else {
   Spx->AnomalieDetectee = OUI_SPX;
   longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
 }
-printf("%35s %10d\n", "Contexte", Spx->Contexte);
-
-printf("%35s %10d\n", "CycleDeControleDeDegenerescence", Spx->CycleDeControleDeDegenerescence);
-printf("%35s %10d\n", "YaUneSolution", Spx->YaUneSolution);
-printf("%35s %10d\n", "PremierSimplexe", Spx->PremierSimplexe);
-printf("%35s %10d\n", "ExplorationRapideEnCours", Spx->ExplorationRapideEnCours);
-printf("%35s %10d\n", "FaireDuScalingSPX", Spx->FaireDuScalingSPX);
-printf("%35s %10d\n", "BaseDeDepartFournie_E", BaseDeDepartFournie_E);
-printf("%35s %10d\n", "LaBaseDeDepartEstFournie", Spx->LaBaseDeDepartEstFournie);
-Spx->spx_params->VERBOSE_SPX = OUI_SPX;
-
 Spx->FlagStabiliteDeLaFactorisation       = 0;  
 Spx->ProblemeDeStabiliteDeLaFactorisation = NON_SPX;
 
@@ -300,7 +288,6 @@ Spx->ProblemeDeStabiliteDeLaFactorisation = NON_SPX;
 if ( Spx->Contexte == SIMPLEXE_SEUL || Spx->Contexte == BRANCH_AND_BOUND_OU_CUT ) NombreDeContraintesCoupes = 0;
 
 if ( Spx->Contexte == SIMPLEXE_SEUL || Spx->Contexte == BRANCH_AND_BOUND_OU_CUT ) {
-	printf("SPX_AllouerProbleme\n");
   SPX_AllouerProbleme( Spx , NbVar_E , NbContr_E , Mdeb_E , NbTerm_E );
 
   //for (Var = 0; Var < Spx->NombreDeVariables; ++Var) {
@@ -315,7 +302,6 @@ if ( Spx->Contexte == SIMPLEXE_SEUL || Spx->Contexte == BRANCH_AND_BOUND_OU_CUT 
 
 }
 else {
-	printf("SPX_ModifierLeProbleme\n");
 	SPX_ModifierLeProbleme(Spx, C_E, X_E, Xmin_E, Xmax_E, NbVar_E, TypeVar_E,
 		CoutMax, UtiliserCoutMax);
 	if (Spx->LaBaseDeDepartEstFournie != UTILISER_LA_BASE_DU_PROBLEME_SPX) {

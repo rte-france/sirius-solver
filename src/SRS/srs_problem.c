@@ -129,7 +129,7 @@ SRS_PROBLEM * SRScreateprob() {
 	problem_srs->maximize = false;
 
 	//params
-	problem_srs->verboseSpx = 1;
+	problem_srs->verboseSpx = 0;
 	problem_srs->verbosePne = 0;
 	problem_srs->relativeGap = 1e-4;
 	problem_srs->presolve = 1;
@@ -394,7 +394,7 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, PNE_PARAMS ** 
 			problem_simplexe->DureeMaxDuCalcul = -1.;
 			problem_simplexe->NombreDeContraintesCoupes = 0;
 		}
-		(*spxParams)->VERBOSE_SPX = 1;// problem_srs->verboseSpx;
+		(*spxParams)->VERBOSE_SPX = problem_srs->verboseSpx;
 		problem_simplexe->AffichageDesTraces = problem_srs->verboseSpx;
 		problem_simplexe->FaireDuScaling = problem_srs->scaling;
 
@@ -501,7 +501,7 @@ int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simp
 	problem_simplexe->ChoixDeLAlgorithme = SPX_DUAL;
 
 	problem_simplexe->LibererMemoireALaFin = NON_SPX;
-	problem_simplexe->AffichageDesTraces = OUI_SPX;
+	problem_simplexe->AffichageDesTraces = NON_SPX;
 	problem_simplexe->CoutMax = -1;
 	problem_simplexe->UtiliserCoutMax = NON_SPX;
 

@@ -69,8 +69,6 @@ if ( Spx->LesCoutsOntEteModifies == OUI_SPX ) {
 
   Spx->LesCoutsOntEteModifies = NON_SPX;
   CoutsReduitsAJour = NON_SPX;
-  printf("NombreDeCoutsBruitess : %10d\n", NombreDeCoutsBruitess);
-  printf("NombreDeVariables     : %10d\n", Spx->NombreDeVariables);
   if ( NombreDeCoutsBruitess > 0.1 * Spx->NombreDeVariables ) {
 	  if ( Spx->AffichageDesTraces == OUI_SPX )
 		  printf("On relance la base reduite\n");
