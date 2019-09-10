@@ -11,7 +11,8 @@
 #include "srs_problem_functions.h"
 #include <float.h>
 
-#define SRS_infinite		HUGE_VAL
+//#define SRS_infinite		HUGE_VAL
+#define SRS_infinite		1.e+80
 #define SRS_CONTINUOUS_VAR	REEL
 #define SRS_INTEGER_VAR		ENTIER
 #define SRS_GREATER_THAN	'>'
