@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
    FONCTION: Gestion des listes de variables hors base et des bornes
 	           sur les variables en base.
@@ -112,7 +121,7 @@ Spx->PresenceDeVariablesDeBornesIdentiques = NON_SPX;
 Xmin = Spx->Xmin;
 Xmax = Spx->Xmax;
 InDualFramework = Spx->InDualFramework;
-LeSteepestEdgeEstInitilise = Spx->LeSteepestEdgeEstInitilise;
+LeSteepestEdgeEstInitilise = Spx->LeSteepestEdgeEstInitilise;	
 if ( LeSteepestEdgeEstInitilise == OUI_SPX ) {
   for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
 
@@ -268,22 +277,22 @@ for ( Index = 0 ; Index < IndexMax ; Index++ ) {
 	  ValBBarre = BBarre[Index];
 	  if ( TypeDeVariable[Var] == BORNEE_INFERIEUREMENT ) {
 		
-		  if (Spx->spx_params->PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX) {
-			  if (SeuilDeViolationDeBorne[Var] > MargeAbsolue) BorInf = -MargeAbsolue;
-			  else BorInf = -SeuilDeViolationDeBorne[Var];
-		  } else {
-			  BorInf = -SeuilDeViolationDeBorne[Var];
-		  }
+		  # if PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX
+				if ( SeuilDeViolationDeBorne[Var] > MargeAbsolue ) BorInf = -MargeAbsolue;
+				else BorInf = -SeuilDeViolationDeBorne[Var];
+			# else 
+        BorInf = -SeuilDeViolationDeBorne[Var];
+			# endif
 						
       if ( ValBBarre < BorInf ) {
 		    /* On ajoute la contrainte dans la liste */		
 		    NumerosDesContraintesASurveiller[NbSurv] = Index;
 
-			if (Spx->spx_params->POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX) {
-				ValeurDeViolationDeBorne[NbSurv] = (ValBBarre * ValBBarre) / DualPoids[Index];
-			} else {
-				ValeurDeViolationDeBorne[NbSurv] = ValBBarre * ValBBarre;
-			}
+			  # if POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX							
+		      ValeurDeViolationDeBorne[NbSurv] = ( ValBBarre * ValBBarre ) / DualPoids[Index];
+				# else
+		      ValeurDeViolationDeBorne[NbSurv] = ValBBarre * ValBBarre;
+				# endif
 				
 		    IndexDansContrainteASurveiller[Index] = NbSurv;
 		    NbSurv++;		 
@@ -293,29 +302,29 @@ for ( Index = 0 ; Index < IndexMax ; Index++ ) {
     else {
 		  /* La variable est bornee */
 			
-		if (Spx->spx_params->PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX) {
-			if (SeuilDeViolationDeBorne[Var] > MargeAbsolue) {
-				BorInf = -MargeAbsolue;
-				BorSup = Xmax[Var] + MargeAbsolue;
-			}
-			else {
-				BorInf = -SeuilDeViolationDeBorne[Var];
-				BorSup = Xmax[Var] + SeuilDeViolationDeBorne[Var];
-			}
-		} else {
-			BorInf = -SeuilDeViolationDeBorne[Var];
-			BorSup = Xmax[Var] + SeuilDeViolationDeBorne[Var];
-		}
+		  # if PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX
+				if ( SeuilDeViolationDeBorne[Var] > MargeAbsolue ) {								
+          BorInf = -MargeAbsolue;					
+	        BorSup = Xmax[Var] + MargeAbsolue;					
+				}
+				else {
+          BorInf = -SeuilDeViolationDeBorne[Var];										
+	        BorSup = Xmax[Var] + SeuilDeViolationDeBorne[Var];					
+				}
+			# else 
+        BorInf = -SeuilDeViolationDeBorne[Var];								
+	      BorSup = Xmax[Var] + SeuilDeViolationDeBorne[Var];				
+			# endif
 			
       if ( ValBBarre < BorInf ) {
 		    /* On ajoute la contrainte dans la liste */		
 		    NumerosDesContraintesASurveiller[NbSurv] = Index;
 								
-			if (Spx->spx_params->POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX) {
-				ValeurDeViolationDeBorne[NbSurv] = (ValBBarre * ValBBarre) / DualPoids[Index];
-			} else {
-				ValeurDeViolationDeBorne[NbSurv] = ValBBarre * ValBBarre;
-			}
+			  # if POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX							
+		      ValeurDeViolationDeBorne[NbSurv] = ( ValBBarre * ValBBarre ) / DualPoids[Index];		
+				# else
+		      ValeurDeViolationDeBorne[NbSurv] = ValBBarre * ValBBarre;		
+				# endif
 				
 		    IndexDansContrainteASurveiller[Index] = NbSurv;
 		    NbSurv++;		 
@@ -325,11 +334,11 @@ for ( Index = 0 ; Index < IndexMax ; Index++ ) {
 		    NumerosDesContraintesASurveiller[NbSurv] = Index;				
 	      X = ValBBarre - Xmax[Var];
 				
-		  if (Spx->spx_params->POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX) {
-			  ValeurDeViolationDeBorne[NbSurv] = (X * X) / DualPoids[Index];
-		  } else {
-			  ValeurDeViolationDeBorne[NbSurv] = X * X;
-		  }
+			  # if POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX							
+	        ValeurDeViolationDeBorne[NbSurv] = ( X * X ) / DualPoids[Index];
+				# else
+	        ValeurDeViolationDeBorne[NbSurv] = X * X;
+				# endif
 				
 		    IndexDansContrainteASurveiller[Index] = NbSurv;
 		    NbSurv++;		
@@ -409,60 +418,60 @@ for ( k = 0 ; k < NbBBarreModifies ; k++ ) {
 
   if ( TypeDeVariable[Var] == BORNEE_INFERIEUREMENT ) {
 	
-	  if (Spx->spx_params->PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX) {
-		  if (SeuilDeViolationDeBorne[Var] > MargeAbsolue) BorInf = -MargeAbsolue;
-		  else BorInf = -SeuilDeViolationDeBorne[Var];
-	  } else {
-		  BorInf = -SeuilDeViolationDeBorne[Var];
-	  }
+		# if PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX
+			if ( SeuilDeViolationDeBorne[Var] > MargeAbsolue ) BorInf = -MargeAbsolue;							
+			else BorInf = -SeuilDeViolationDeBorne[Var];							
+    # else			
+      BorInf = -SeuilDeViolationDeBorne[Var];			
+		# endif			
 
 	  if ( ValeurDeBBarre < BorInf ) {		
 	    Viole = OUI_SPX;
 
-		if (Spx->spx_params->POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX) {
-			X = (ValeurDeBBarre * ValeurDeBBarre) / DualPoids[Index];
-		} else {
-			X = ValeurDeBBarre * ValeurDeBBarre;
-		}
+			# if POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX			
+	      X = ( ValeurDeBBarre * ValeurDeBBarre ) / DualPoids[Index];
+			# else
+	      X = ValeurDeBBarre * ValeurDeBBarre;
+			# endif
 			
 		}		
 				
   }
   else if ( TypeDeVariable[Var] == BORNEE ) {
 	
-	  if (Spx->spx_params->PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX) {
-		  if (SeuilDeViolationDeBorne[Var] > MargeAbsolue) {
-			  BorInf = -MargeAbsolue;
-			  BorSup = Xmax[Var] + MargeAbsolue;
-		  }
-		  else {
-			  BorInf = -SeuilDeViolationDeBorne[Var];
-			  BorSup = Xmax[Var] + SeuilDeViolationDeBorne[Var];
-		  }
-	  } else {
-		  BorInf = -SeuilDeViolationDeBorne[Var];
-		  BorSup = Xmax[Var] + SeuilDeViolationDeBorne[Var];
-	  }
+		# if PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX
+			if ( SeuilDeViolationDeBorne[Var] > MargeAbsolue ) {									
+        BorInf = -MargeAbsolue;								
+	      BorSup = Xmax[Var] + MargeAbsolue;				
+			}
+			else {				
+        BorInf = -SeuilDeViolationDeBorne[Var];								
+	      BorSup = Xmax[Var] + SeuilDeViolationDeBorne[Var];								
+			}
+	  # else			
+      BorInf = -SeuilDeViolationDeBorne[Var];			
+	    BorSup = Xmax[Var] + SeuilDeViolationDeBorne[Var];
+		# endif
 
 	  if ( ValeurDeBBarre < BorInf ) {		
 	    Viole = OUI_SPX;
 
-		if (Spx->spx_params->POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX) {
-			X = (ValeurDeBBarre * ValeurDeBBarre) / DualPoids[Index];
-		} else {
-			X = ValeurDeBBarre * ValeurDeBBarre;
-		}
+			# if POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX			
+	      X = ( ValeurDeBBarre * ValeurDeBBarre ) / DualPoids[Index];
+			# else
+	      X = ValeurDeBBarre * ValeurDeBBarre;
+			# endif
 			
 		}
 		 
 	  else if ( ValeurDeBBarre > BorSup ) {	
 		  Viole = OUI_SPX;
 	    X = ValeurDeBBarre - Xmax[Var];						
-		if (Spx->spx_params->POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX) {
-			X = (X * X) / DualPoids[Index];
-		} else {
-			X = X * X;
-		}
+			# if POIDS_DANS_VALEUR_DE_VIOLATION == OUI_SPX			
+	      X = ( X * X ) / DualPoids[Index];
+			# else
+	      X = X * X;
+			# endif
 			
 		}
 	}

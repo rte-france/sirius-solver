@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Phase 1 de l'algorithme dual du simplexe: recherche d'une 
@@ -29,11 +38,11 @@ double BufferSommeDesInfaisabilites; int CycleDeCalculDeLaMoyenne; int NbCycles;
 char PositionDeLaVariable; char FactoriserLaBase; int Var;
 char ControlerAdmissibiliteDuale;
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf("Entree dans la phase 1 de l algorithme dual du simplexe\n");
-}
+#if VERBOSE_SPX
+  printf("Entree dans la phase 1 de l algorithme dual du simplexe\n");  
+#endif
 
-Spx->SeuilDePivotDual = Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;
+Spx->SeuilDePivotDual = VALEUR_DE_PIVOT_ACCEPTABLE;
 
 Spx->PhaseEnCours = PHASE_1;
 
@@ -92,9 +101,9 @@ while ( 1 ) {
   SPX_DualPhase1PositionnerLesVariablesHorsBase( Spx );	
   if ( Spx->NbInfaisabilitesDuales == 0 ) {
     /* La solution est duale admissible */
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("Simplexe dual phase 1: admissibilite duale atteint en %d iterations\n", Spx->Iteration - 1);
-	  }
+    #if VERBOSE_SPX
+      printf( "Simplexe dual phase 1: admissibilite duale atteint en %d iterations\n",Spx->Iteration-1);
+    #endif		
     Spx->LaBaseEstDualeAdmissible = OUI_SPX;
     break;
   }
@@ -105,9 +114,9 @@ while ( 1 ) {
       SPX_DualPhase1UtiliserLesBornesAuxiliaires( Spx );
       if ( Spx->NbInfaisabilitesDuales == 0 ) {
         /* La solution est duale admissible */
-		  if (Spx->spx_params->VERBOSE_SPX) {
-			  printf("Simplexe dual phase 1: admissibilite duale atteint en %d iterations\n", Spx->Iteration - 1);
-		  }
+        #if VERBOSE_SPX
+          printf( "Simplexe dual phase 1: admissibilite duale atteint en %d iterations\n",Spx->Iteration-1);
+        #endif
         Spx->LaBaseEstDualeAdmissible = OUI_SPX;
         break;
       }			
@@ -120,10 +129,10 @@ while ( 1 ) {
     BufferSommeDesInfaisabilites/= (double) NbCycles;
     if ( fabs ( MoyenneSommeDesInfaisabilites - BufferSommeDesInfaisabilites ) < 1.e-6 && 0 ) {
       /* Cyclage */
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Simplexe dual phase 1: suspiscion de cyclage => on initialise une phase de tirages au hasard\n");
-			printf("MoyenneSommeDesInfaisabilites %e BufferSommeDesInfaisabilites %e\n", MoyenneSommeDesInfaisabilites, BufferSommeDesInfaisabilites);
-		}
+      #if VERBOSE_SPX
+        printf( "Simplexe dual phase 1: suspiscion de cyclage => on initialise une phase de tirages au hasard\n");
+        printf( "MoyenneSommeDesInfaisabilites %e BufferSommeDesInfaisabilites %e\n",MoyenneSommeDesInfaisabilites,BufferSommeDesInfaisabilites);	
+      #endif
 
       printf( "Simplexe dual phase 1: suspiscion de cyclage => on initialise une phase de tirages au hasard\n");
       printf( "MoyenneSommeDesInfaisabilites %e BufferSommeDesInfaisabilites %e\n",MoyenneSommeDesInfaisabilites,BufferSommeDesInfaisabilites);
@@ -149,9 +158,9 @@ while ( 1 ) {
   }
   if ( Spx->VariableSortante < 0 ) {
     /* Le probleme n'a pas de solution duale admissible */
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("Somme des infaisabilites duales %e\n", Spx->SommeDesInfaisabilitesDuales);
-	  }
+    #if VERBOSE_SPX
+      printf("Somme des infaisabilites duales %e\n",Spx->SommeDesInfaisabilitesDuales);
+    #endif
 
     # ifdef UTILISER_BORNES_AUXILIAIRES
 		    printf("NbInfaisabilitesDuales %d NbInfaisabilitesDualesALaPremiereIteration %d\n",
@@ -161,9 +170,9 @@ while ( 1 ) {
           SPX_DualPhase1UtiliserLesBornesAuxiliaires( Spx );
           if ( Spx->NbInfaisabilitesDuales == 0 ) {
             /* La solution est duale admissible */
-			  if (Spx->spx_params->VERBOSE_SPX) {
-				  printf("Simplexe dual phase 1: admissibilite duale atteint en %d iterations\n", Spx->Iteration - 1);
-			  }
+            #if VERBOSE_SPX
+              printf( "Simplexe dual phase 1: admissibilite duale atteint en %d iterations\n",Spx->Iteration-1);
+            #endif		
             Spx->LaBaseEstDualeAdmissible = OUI_SPX;
 		      }
 		 	  }
@@ -195,7 +204,7 @@ while ( 1 ) {
  
   /* Choix de la variable entrante */
   SPX_DualPhase1ChoixDeLaVariableEntrante( Spx );
-  if ( Spx->VariableEntrante < 0 && Spx->SommeDesInfaisabilitesDuales < Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2 ) {
+  if ( Spx->VariableEntrante < 0 && Spx->SommeDesInfaisabilitesDuales < SEUIL_ADMISSIBILITE_DUALE_2 ) {
     /* Mais il faut tout de meme positionner correctement les variables */     
     for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
       PositionDeLaVariable = Spx->PositionDeLaVariable[Var];
@@ -211,9 +220,9 @@ while ( 1 ) {
     break;    
   }
   else if ( Spx->VariableEntrante < 0 ) {
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("Probleme de precision dans la phase 1 iteration %d de l'algorithme dual: il doit toujours y avoir une variable entrante\n", Spx->Iteration);
-	  }
+    #if VERBOSE_SPX
+      printf("Probleme de precision dans la phase 1 iteration %d de l'algorithme dual: il doit toujours y avoir une variable entrante\n",Spx->Iteration);
+    #endif
 
     # ifdef UTILISER_BORNES_AUXILIAIRES
 		  /* Si on utilise les bornes auxilaires, on modifie le numero d'iteration et on repart au
@@ -264,9 +273,9 @@ while ( 1 ) {
   SPX_FaireLeChangementDeBase( Spx ); 
 
 	/* Apres chaque chagement de base reussi on essaie de revenir au seuil de pivotage initial */
-	if ( Spx->SeuilDePivotDual > Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE ) {
-    Spx->SeuilDePivotDual /= Spx->spx_params->DIVISEUR_VALEUR_DE_PIVOT_ACCEPTABLE;		
-	  if ( Spx->SeuilDePivotDual < Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE ) Spx->SeuilDePivotDual = Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;	
+	if ( Spx->SeuilDePivotDual > VALEUR_DE_PIVOT_ACCEPTABLE ) {
+    Spx->SeuilDePivotDual /= DIVISEUR_VALEUR_DE_PIVOT_ACCEPTABLE;		
+	  if ( Spx->SeuilDePivotDual < VALEUR_DE_PIVOT_ACCEPTABLE ) Spx->SeuilDePivotDual = VALEUR_DE_PIVOT_ACCEPTABLE;	
 	}
 	
 }

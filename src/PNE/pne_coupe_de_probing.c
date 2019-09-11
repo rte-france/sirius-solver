@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Creation des coupes de probing. Une coupe est cree lorsque
@@ -23,8 +32,6 @@
 # include "spx_define.h"
   
 # include "bb_define.h"
-
-#undef SEUIL_DADMISSIBILITE
 
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "pne_memoire.h"
@@ -365,9 +372,9 @@ char BrnInfConnueSv; int ilMax; double SmaxSv; double Sec; char TypeContrainteSo
 int NumContrainteSource; double Smax; char BrnInfConnue; char * BorneInfConnue; double * ValeurDeBorneInf;
 double * ValeurDeBorneSup; int i; int * NumCntCoupesDeProbing; char * FlagCntCoupesDeProbing;
 
-if( Pne->pne_params->UTILISER_LES_COUPES_DE_PROBING == NON_PNE ) {
-	return;
-}
+# if UTILISER_LES_COUPES_DE_PROBING == NON_PNE
+  return;
+# endif
 
 if ( ProbingOuNodePresolve->VariableInstanciee < 0 ) return;
 
@@ -452,7 +459,7 @@ for ( i = 0 ; i < NbCntCoupesDeProbing ; i++ ) {
 	if ( Smax >= Sec ) continue;
 	
   CoeffCandidat = Sec - Smax;
-	if ( CoeffCandidat < Pne->pne_params->SEUIL_DADMISSIBILITE /*1.e-6*/ ) continue;
+	if ( CoeffCandidat < SEUIL_DADMISSIBILITE /*1.e-2*/ ) continue;
 	
   PNE_CreerUneCoupeDeProbing( Pne, ProbingOuNodePresolve->VariableInstanciee, CoeffCandidat, NumContrainteSource,
 	                            TypeContrainteSource, Cnt, Pne->ProbingOuNodePresolve->ValeurDeLaVariableInstanciee );	

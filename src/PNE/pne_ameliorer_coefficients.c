@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Amelioration des coefficients des variables entieres 
@@ -76,7 +85,7 @@ else if ( Mode == MODE_PRESOLVE ) {
 }
 else return;
 
-Marge = Pne->pne_params->MARGE_REDUCTION;
+Marge = MARGE_REDUCTION;
 
 NombreDeVariables = Pne->NombreDeVariablesTrav;
 TypeDeVariable = Pne->TypeDeVariableTrav;
@@ -143,14 +152,14 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
 		if ( Smax <= B[Cnt] ) goto ContrainteSuivante; /* Contrainte redondante */    
 		
     if ( Coeff < 0.0 ) {					
-      if ( Smax + Coeff < B[Cnt] - Pne->pne_params->EPS_COEFF_REDUCTION ) {  
+      if ( Smax + Coeff < B[Cnt] - EPS_COEFF_REDUCTION ) {  
         /* On peut diminuer le coeff de la variable entiere */
 				a = B[Cnt] - Smax - Marge;
         if ( fabs( a ) < PlusPetitTerme ) {
 					a = -PlusPetitTerme;
 				}
 				if ( a < Coeff ) goto ContrainteSuivante;
-				if ( fabs( a ) < fabs( Coeff) - Pne->pne_params->DELTA_MIN_REDUCTION ) {				
+				if ( fabs( a ) < fabs( Coeff) - DELTA_MIN_REDUCTION ) {				
 					# if TRACES == 1
 	          printf("  Variable entiere %d contrainte %d, remplacement de son coefficient %e par %e \n",Var,Cnt,Coeff,a);
 			    # endif					
@@ -165,14 +174,14 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
 			}
 		}
 		else if ( Coeff > 0.0 ) {		
-      if ( Smax - Coeff < B[Cnt] - Pne->pne_params->EPS_COEFF_REDUCTION ) {
+      if ( Smax - Coeff < B[Cnt] - EPS_COEFF_REDUCTION ) {
         /* On peut diminuer le coeff de la variable entiere */
 				a = Smax - B[Cnt] + Marge;
         if ( fabs( a ) < PlusPetitTerme ) {
 				  a = PlusPetitTerme;
 				}				
 				if ( a > Coeff ) goto ContrainteSuivante;
-				if ( fabs( a ) < fabs( Coeff) - Pne->pne_params->DELTA_MIN_REDUCTION ) {
+				if ( fabs( a ) < fabs( Coeff) - DELTA_MIN_REDUCTION ) {				  									
 					# if TRACES == 1					
 				    printf("  Variable entiere %d contrainte %d, remplacement de son coefficient %e par %e et B %e par %e\n",Var,Cnt,Coeff,a,
 				              B[Cnt],Smax-Coeff+Marge);					
@@ -197,10 +206,10 @@ if ( CoeffModifie == OUI_PNE ) {
     printf("AmeliorerLesCoefficientsDesVariablesBinaires : NbIter %d\n",NbIter);
 	# endif
   NbIter++;
-  if ( NbIter < Pne->pne_params->NB_ITER_MX_REDUCTION ) goto Debut;
+  if ( NbIter < NB_ITER_MX_REDUCTION ) goto Debut;
 }
 
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
   if ( NbC != 0 ) printf("%d binary coefficient(s) reduced\n",NbC);
 }
 

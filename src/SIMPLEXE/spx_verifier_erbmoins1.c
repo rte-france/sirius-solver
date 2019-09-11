@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Verification du calcul de l'inverse de la ligne de la base 
@@ -32,7 +41,7 @@
 # define NBITER_RAFFINEMENT    0
 # define NBITER_RAFFINEMENT_a  0
 
-//# define Spx->spx_params->VERBOSE_SPX 0
+# define VERBOSE_SPX 0
 
 /*----------------------------------------------------------------------------*/
 /*           Verification du calcule de la ligne de B^{-1} qui 
@@ -120,42 +129,42 @@ for ( j = 0 ; j < NombreDeValeursNonNulles ; j++ ) {
 		  /* Si ca se produit dans les premieres iterations apres une factorisation */
 		  Spx->FlagStabiliteDeLaFactorisation = 1;   			
 		}		
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Controle Hyper Creux SPX_DualVerifierErBMoinsUn Iteration %d Phase %d erreur de resolution sur ErBMoinsUn: %e",
-			Spx->Iteration, (int)Spx->PhaseEnCours, fabs(X - S));
-		printf(" ecart trop grand on refactorise la base    Spx->StrongBranchingEnCours %d\n", (int)Spx->StrongBranchingEnCours);
-	}
+    # if VERBOSE_SPX
+		  printf("Controle Hyper Creux SPX_DualVerifierErBMoinsUn Iteration %d Phase %d erreur de resolution sur ErBMoinsUn: %e",
+			        Spx->Iteration,(int) Spx->PhaseEnCours,fabs( X-S )); 
+      printf(" ecart trop grand on refactorise la base    Spx->StrongBranchingEnCours %d\n",(int) Spx->StrongBranchingEnCours);  
+		# endif
 		Spx->FactoriserLaBase = OUI_SPX;
 		CntBaseControle = OUI_SPX;
 	  /* On augmente le seuil dual de pivotage */			  
-		Spx->SeuilDePivotDual = Spx->spx_params->COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;    		
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("SeuilDePivotDual -> %e\n", Spx->SeuilDePivotDual);
-		}
+		Spx->SeuilDePivotDual = COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * VALEUR_DE_PIVOT_ACCEPTABLE;    		
+		# if VERBOSE_SPX
+		  printf("SeuilDePivotDual -> %e\n",Spx->SeuilDePivotDual);
+		# endif
     Spx->FaireDuRaffinementIteratif = NBITER_RAFFINEMENT;
     if ( fabs( X - S ) > SEUIL_DE_VERIFICATION_DE_ErBMoinsUn_1a ) {			
       Spx->FaireDuRaffinementIteratif = NBITER_RAFFINEMENT_a;
 		  Spx->FaireChangementDeBase = NON_SPX;
-		  if (Spx->spx_params->VERBOSE_SPX) {
+      # if VERBOSE_SPX
 			  printf("Le changement de base est refuse\n");
-		  }
+		  # endif
 		}		
 		break;
   } 
 }
 if ( CntBaseControle == NON_SPX ) {
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Controle Hyper Creux SPX_DualVerifierErBMoinsUn Iteration %d erreur de resolution sur ErBMoinsUn pour la contrainte basique\n",
-			Spx->Iteration);
-		printf("NombreDeValeursNonNulles de Bs %d\n", NombreDeValeursNonNulles);
-	}
+  # if VERBOSE_SPX
+    printf("Controle Hyper Creux SPX_DualVerifierErBMoinsUn Iteration %d erreur de resolution sur ErBMoinsUn pour la contrainte basique\n",
+			      Spx->Iteration);
+	  printf("NombreDeValeursNonNulles de Bs %d\n",NombreDeValeursNonNulles); 
+	# endif
 	Spx->FactoriserLaBase = OUI_SPX;
 	Spx->FaireDuRaffinementIteratif = NBITER_RAFFINEMENT;
 	/* On augmente le seuil dual de pivotage */
- 	Spx->SeuilDePivotDual = Spx->spx_params->COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("SeuilDePivotDual -> %e\n", Spx->SeuilDePivotDual);
-	}
+ 	Spx->SeuilDePivotDual = COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * VALEUR_DE_PIVOT_ACCEPTABLE;
+  # if VERBOSE_SPX
+	  printf("SeuilDePivotDual -> %e\n",Spx->SeuilDePivotDual);
+	# endif
 	Spx->FaireChangementDeBase = NON_SPX;		
 }
 
@@ -186,13 +195,12 @@ NbFois = 0;
 while ( NbFois < NOMBRE_DE_VERIFICATIONS ) { 
   /* On tire un nombre au hasard compris entre 0 et NombreDeContraintes - 1 */
 
-	if (Spx->spx_params->UTILISER_PNE_RAND == OUI_SPX) {
-		Spx->A1 = PNE_Rand(Spx->A1);
-		X = Spx->A1 * (NombreDeContraintes - 1);
-	}
-	else {
-		X = rand() * Spx->UnSurRAND_MAX * (NombreDeContraintes - 1);
-	}
+  # if UTILISER_PNE_RAND == OUI_SPX
+    Spx->A1 = PNE_Rand( Spx->A1 );
+    X = Spx->A1 * (NombreDeContraintes - 1);
+	# else
+    X = rand() * Spx->UnSurRAND_MAX * (NombreDeContraintes - 1);
+  # endif
 	
   Nombre = (int) X;
   if ( Nombre >= NombreDeContraintes ) Nombre = NombreDeContraintes - 1; 
@@ -235,24 +243,24 @@ if ( Imprecision == OUI_SPX ) {
 	}  
   S/= NombreDeContraintes;
   if ( S > SEUIL_DE_VERIFICATION_DE_ErBMoinsUn_2 && Spx->NombreDeChangementsDeBase > 0 ) {
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("SPX_DualVerifierErBMoinsUn Iteration %d Phase %d erreur de resolution sur ErBMoinsUn: %e",
-			  Spx->Iteration, (int)Spx->PhaseEnCours, fabs(S));
-		  printf(" ecart trop grand on refactorise la base \n");
-	  }
+    #if VERBOSE_SPX
+      printf("SPX_DualVerifierErBMoinsUn Iteration %d Phase %d erreur de resolution sur ErBMoinsUn: %e",
+			        Spx->Iteration,(int) Spx->PhaseEnCours,fabs( S )); 
+      printf(" ecart trop grand on refactorise la base \n"); 
+    #endif					
 		Spx->FactoriserLaBase = OUI_SPX;
 		/* On augmente le seuil dual de pivotage */ 	  
-		Spx->SeuilDePivotDual = Spx->spx_params->COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;    
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("SeuilDePivotDual -> %e\n", Spx->SeuilDePivotDual);
-		}
+		Spx->SeuilDePivotDual = COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * VALEUR_DE_PIVOT_ACCEPTABLE;    
+		#if VERBOSE_SPX
+		  printf("SeuilDePivotDual -> %e\n",Spx->SeuilDePivotDual);
+    #endif					
     Spx->FaireDuRaffinementIteratif = NBITER_RAFFINEMENT;
     if ( S > SEUIL_DE_VERIFICATION_DE_ErBMoinsUn_2a ) {
       Spx->FaireDuRaffinementIteratif = NBITER_RAFFINEMENT_a;
 	    Spx->FaireChangementDeBase = NON_SPX;
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Le changement de base est refuse\n");
-		}
+      #if VERBOSE_SPX
+			  printf("Le changement de base est refuse\n");
+      #endif					
 		}
   }
 	else Spx->FaireDuRaffinementIteratif = NBITER_RAFFINEMENT;

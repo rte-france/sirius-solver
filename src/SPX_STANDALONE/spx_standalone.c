@@ -1,10 +1,3 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
 /***********************************************************************
 
    FONCTION: Main de la SPX pour le standalone
@@ -51,7 +44,7 @@ PROBLEME_MPS * readAndOpt(char * mpsName, PROBLEME_MPS * Mps, FILE * FlotDeSorti
 			et positionne a NON_MPS si on veut juste faire un simplexe */
 
 	/* Resolution */
-	PNE_LireJeuDeDonneesMPS_AvecNom(Mps, mpsName);
+	//PNE_LireJeuDeDonneesMPS_AvecNom(Mps, mpsName);
 	for (j = 0; j < Mps->NbVar; j++) Mps->TypeDeVariable[j] = REEL;
 	probleme.TypeDePricing = PRICING_STEEPEST_EDGE;//PRICING_STEEPEST_EDGE PRICING_DANTZIG()
 	probleme.FaireDuScaling = OUI_SPX; // Vaut OUI_SPX ou NON_SPX

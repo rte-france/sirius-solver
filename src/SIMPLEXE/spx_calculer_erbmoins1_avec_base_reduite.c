@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Resolution du systeme transpose pour obtenir une ligne
@@ -133,10 +142,10 @@ if ( CalculEnHyperCreux == OUI_SPX ) {
 		/*
 		printf("SPX_CalculerErBMoins1 echec hyper creux ErBMoins1 iteration %d\n",Spx->Iteration);
 		*/
-		if ( Spx->NbEchecsErBMoins >= Spx->spx_params->SEUIL_ECHEC_CREUX ) {
-			if (Spx->spx_params->VERBOSE_SPX) {
-				printf("Arret de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n", Spx->Iteration);
-			}
+		if ( Spx->NbEchecsErBMoins >= SEUIL_ECHEC_CREUX ) {
+      # if VERBOSE_SPX
+		    printf("Arret de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n",Spx->Iteration);
+      # endif			
 		  Spx->CalculErBMoinsUnEnHyperCreux = NON_SPX;
       Spx->CountEchecsErBMoins = 0;
 		}		
@@ -144,62 +153,59 @@ if ( CalculEnHyperCreux == OUI_SPX ) {
 	else Spx->NbEchecsErBMoins = 0;
 }
 
-// fait appel a la fonction SPX_VerifierLesVecteursDeTravail qui n'existe plus, descative par define avant l'api params
-/*
-if (Spx->spx_params->VERIFICATION_ERBMOINS1 == OUI_SPX) {
-	printf("------------- CalculerErBMoins1 Spx->NombreDeChangementsDeBase %d  Iteration %d ---\n", Spx->NombreDeChangementsDeBase, Spx->Iteration);
-	if (TypeDEntree == VECTEUR_LU) printf("TypeDEntree = VECTEUR_LU\n");
-	if (TypeDEntree == COMPACT_LU) printf("TypeDEntree = COMPACT_LU\n");
-	if (TypeDeSortie == VECTEUR_LU) printf("TypeDeSortie = VECTEUR_LU\n");
-	if (TypeDeSortie == COMPACT_LU) printf("TypeDeSortie = COMPACT_LU\n");
-	{
-		double * Buff; int i; int Var; int ic; int icMx; double S; double * Sortie; char Arret;
-		Buff = (double *)malloc(Spx->NombreDeContraintes * sizeof(double));
-		Sortie = (double *)malloc(Spx->NombreDeContraintes * sizeof(double));
-		if (TypeDeSortie == COMPACT_LU) {
-			for (i = 0; i < Spx->NombreDeContraintes; i++) Sortie[i] = 0;
-			for (i = 0; i < NbTermesNonNulsDeErBMoinsUn; i++) Sortie[IndexTermesNonNulsDeErBMoinsUn[i]] = ErBMoinsUn[i];
-		}
-		else {
-			for (i = 0; i < Spx->NombreDeContraintes; i++) Sortie[i] = Spx->ErBMoinsUn[i];
-		}
-		for (i = 0; i < Spx->NombreDeContraintes; i++) Buff[i] = 0;
-		Buff[Spx->ContrainteDeLaVariableEnBase[Spx->VariableSortante]] = 1.;
-		Arret = NON_SPX;
-		for (i = 0; i < Spx->NombreDeContraintes; i++) {
-			Var = Spx->VariableEnBaseDeLaContrainte[i];
-			ic = Spx->Cdeb[Var];
-			icMx = ic + Spx->CNbTerm[Var];
-			S = 0;
-			while (ic < icMx) {
-				S += Spx->ACol[ic] * Sortie[Spx->NumeroDeContrainte[ic]];
-				ic++;
-			}
-			if (fabs(S - Buff[i]) > 1.e-7) {
-				printf("i = %d  S %e Buff %e  ecart %e\n", i, S, Buff[i], fabs(S - Buff[i]));
-				printf("Var = %d\n", Var);
-				ic = Spx->Cdeb[Var];
-				icMx = ic + Spx->CNbTerm[Var];
-				while (ic < icMx) {
-					printf("NumeroDeContrainte[%d] = %d  Sortie = %e  ACol = %e\n", ic, Spx->NumeroDeContrainte[ic], Sortie[Spx->NumeroDeContrainte[ic]], Spx->ACol[ic]);
-					ic++;
-				}
-				Arret = OUI_SPX;
-			}
-		}
-		if (Arret == OUI_SPX) {
-			printf("RangDeLaMatriceFactorisee %d   NombreDeContraintes %d\n", Spx->RangDeLaMatriceFactorisee, Spx->NombreDeContraintes);
-			exit(0);
-		}
-		printf("Fin verif erbmoins1  OK\n");
-		free(Buff);
-		free(Sortie);
-
-		SPX_VerifierLesVecteursDeTravail(Spx);
-
+# if VERIFICATION_ERBMOINS1 == OUI_SPX
+printf("------------- CalculerErBMoins1 Spx->NombreDeChangementsDeBase %d  Iteration %d ---\n",Spx->NombreDeChangementsDeBase,Spx->Iteration);
+if ( TypeDEntree == VECTEUR_LU ) printf("TypeDEntree = VECTEUR_LU\n");
+if ( TypeDEntree == COMPACT_LU ) printf("TypeDEntree = COMPACT_LU\n");
+if ( TypeDeSortie == VECTEUR_LU ) printf("TypeDeSortie = VECTEUR_LU\n");
+if ( TypeDeSortie == COMPACT_LU ) printf("TypeDeSortie = COMPACT_LU\n");
+{
+double * Buff; int i; int Var; int ic; int icMx; double S; double * Sortie; char Arret;
+Buff = (double *) malloc( Spx->NombreDeContraintes * sizeof( double ) );
+Sortie = (double *) malloc( Spx->NombreDeContraintes * sizeof( double ) );
+if ( TypeDeSortie == COMPACT_LU ) {
+  for ( i = 0 ; i < Spx->NombreDeContraintes ; i++ ) Sortie[i] = 0;
+  for ( i = 0 ; i < NbTermesNonNulsDeErBMoinsUn ; i++ ) Sortie[IndexTermesNonNulsDeErBMoinsUn[i]] = ErBMoinsUn[i];   
+}
+else {
+  for ( i = 0 ; i < Spx->NombreDeContraintes ; i++ ) Sortie[i] = Spx->ErBMoinsUn[i];
+}
+for ( i = 0 ; i < Spx->NombreDeContraintes ; i++ ) Buff[i] = 0;
+Buff[Spx->ContrainteDeLaVariableEnBase[Spx->VariableSortante]] = 1.;
+Arret = NON_SPX;
+for ( i = 0 ; i < Spx->NombreDeContraintes ; i++ ) {
+  Var = Spx->VariableEnBaseDeLaContrainte[i];
+	ic = Spx->Cdeb[Var];
+	icMx = ic + Spx->CNbTerm[Var];
+	S = 0;  
+	while ( ic < icMx ) {		
+	  S += Spx->ACol[ic] * Sortie[Spx->NumeroDeContrainte[ic]];
+	  ic++;
+	}
+	if ( fabs( S - Buff[i] ) > 1.e-7 ) {
+	  printf("i = %d  S %e Buff %e  ecart %e\n",i,S,Buff[i],fabs( S - Buff[i] ));
+		printf("Var = %d\n",Var);
+	  ic = Spx->Cdeb[Var];
+	  icMx = ic + Spx->CNbTerm[Var];
+	  while ( ic < icMx ) {
+	    printf("NumeroDeContrainte[%d] = %d  Sortie = %e  ACol = %e\n",ic,Spx->NumeroDeContrainte[ic],Sortie[Spx->NumeroDeContrainte[ic]],Spx->ACol[ic]);
+	    ic++;
+	  }		
+    Arret = OUI_SPX;
 	}
 }
-*/
+if ( Arret == OUI_SPX ) {
+  printf("RangDeLaMatriceFactorisee %d   NombreDeContraintes %d\n",Spx->RangDeLaMatriceFactorisee,Spx->NombreDeContraintes);
+  exit(0);
+}
+printf("Fin verif erbmoins1  OK\n");
+free( Buff );
+free( Sortie );
+
+SPX_VerifierLesVecteursDeTravail( Spx );
+
+}
+# endif
 										 
 return;
 }

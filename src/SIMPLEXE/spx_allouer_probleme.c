@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Allouer / desallouer la structure du probleme
@@ -100,7 +109,7 @@ Spx->NumeroDeContrainte          = (int *)   malloc( NbTrm     * sizeof( int   )
 Spx->CdebBase                    = (int *)   malloc( NbContr_E * sizeof( int   ) );
 Spx->NbTermesDesColonnesDeLaBase = (int *)   malloc( NbContr_E * sizeof( int   ) );
 /*------------------------------------------------------------------------*/
-NbTrm = Spx->spx_params->CYCLE_DE_REFACTORISATION + 1 /* Marge */;
+NbTrm = CYCLE_DE_REFACTORISATION + 1 /* Marge */;
 
 Spx->EtaDeb     = (int *) malloc( NbTrm * sizeof( int ) );
 Spx->EtaNbTerm  = (int *) malloc( NbTrm * sizeof( int ) );
@@ -358,7 +367,7 @@ int NbVarMx; int i;
 
 /*printf(" SIMPLEXE Augmentation du nombre de variables\n"); fflush(stdout);*/
 
-NbVarMx = Spx->NombreDeVariablesAllouees + Spx->spx_params->INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_VARIABLES_SPX;
+NbVarMx = Spx->NombreDeVariablesAllouees + INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_VARIABLES_SPX;
 
 Spx->NombreDeVariablesAllouees = NbVarMx;
 
@@ -519,7 +528,7 @@ int NbContr_E; int NbTrm; int i;
 
 /*printf(" SIMPLEXE Augmentation du nombre de contraintes\n"); fflush(stdout);*/
 
-NbContr_E = Spx->NombreDeContraintesAllouees + Spx->spx_params->INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_SPX;  
+NbContr_E = Spx->NombreDeContraintesAllouees + INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_SPX;  
 Spx->NombreDeContraintesAllouees = NbContr_E;
 
 /*------------------------------------------------------------------------*/
@@ -535,7 +544,7 @@ Spx->CorrespondanceCntEntreeCntSimplexe = (int *) realloc( Spx->CorrespondanceCn
 Spx->CdebBase                    = (int *) realloc( Spx->CdebBase                   , NbContr_E * sizeof( int ) );
 Spx->NbTermesDesColonnesDeLaBase = (int *) realloc( Spx->NbTermesDesColonnesDeLaBase, NbContr_E * sizeof( int ) );
 /*------------------------------------------------------------------------*/
-NbTrm = Spx->spx_params->CYCLE_DE_REFACTORISATION + 1 /* Marge */;
+NbTrm = CYCLE_DE_REFACTORISATION + 1 /* Marge */;
 NbTrm*= NbContr_E;
 Spx->EtaIndiceLigne  = (int *)   realloc( Spx->EtaIndiceLigne , NbTrm * sizeof( int   ) );
 Spx->EtaMoins1Valeur = (double *) realloc( Spx->EtaMoins1Valeur, NbTrm * sizeof( double ) );
@@ -675,7 +684,7 @@ int NbTrm;
 /*
 printf(" SIMPLEXE Augmentation de la taille de la matrice des contraintes NbTermesAlloues %d\n",Spx.NbTermesAlloues); fflush(stdout);
 */
-NbTrm = Spx->NbTermesAlloues + Spx->spx_params->INCREMENT_DALLOCATION_POUR_LA_MATRICE_DES_CONTRAINTES_SPX; 
+NbTrm = Spx->NbTermesAlloues + INCREMENT_DALLOCATION_POUR_LA_MATRICE_DES_CONTRAINTES_SPX; 
 Spx->NbTermesAlloues = NbTrm;
 
 /*------------------------------------------------------------------------*/
@@ -706,11 +715,6 @@ return;
 }
 
 /*----------------------------------------------------------------------------*/
-
-void SPX_LibererProblemeStandalone(PROBLEME_SPX* Spx) {
-	free(Spx->spx_params);
-	SPX_LibererProbleme(Spx);
-}
 
 void SPX_LibererProbleme( PROBLEME_SPX * Spx )
 {

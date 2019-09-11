@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Strong branching pour le choix de la variable a instancier.   
@@ -26,8 +35,6 @@
 # include "spx_fonctions.h"
 
 # include "bb_define.h"
-
-#undef SEUIL_DADMISSIBILITE
 
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "pne_memoire.h"
@@ -121,8 +128,8 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
         if ( X - floor( X ) < ceil( X ) - X ) X = X - floor( X );
         else X = ceil( X ) - X;
         Frac = X;
-				if ( Frac < Pne->pne_params->TOLERANCE_SUR_LES_ENTIERS ) {
-					X = Frac * (Pne->pne_params->SEUIL_DADMISSIBILITE / Pne->SeuilDeFractionnalite[i] );
+				if ( Frac < TOLERANCE_SUR_LES_ENTIERS ) {
+					X = Frac * ( SEUIL_DADMISSIBILITE / Pne->SeuilDeFractionnalite[i] );
           if ( X > r ) {
             r = X;
 						VarChoix = i;
@@ -134,7 +141,7 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
     if ( VarChoix >= 0 && r > SEUIL_BIG_M ) {
       Pne->VariableLaPlusFractionnaire = VarChoix;
 			/*
-			printf("Instanciation variable big M %d de valeur %e Ai %e\n",VarChoix,UTrav[VarChoix],Spx->spx_params->SEUIL_DADMISSIBILITE / Pne->SeuilDeFractionnalite[VarChoix]);
+			printf("Instanciation variable big M %d de valeur %e Ai %e\n",VarChoix,UTrav[VarChoix],SEUIL_DADMISSIBILITE / Pne->SeuilDeFractionnalite[VarChoix]);
       */
 			goto PasStrongBranching;
 		}
@@ -158,9 +165,9 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
     longjmp( Pne->Env , Pne->AnomalieDetectee ); 
   }
 
-  if (Pne->pne_params->VERBOSE_PNE) {
-	  printf(" Phase de Strong Branching \n");
-  }
+  #if VERBOSE_PNE
+    printf(" Phase de Strong Branching \n");
+  #endif
 	
   NombreDeVariablesTrav = Pne->NombreDeVariablesTrav;
   NombreDeContraintesTrav = Pne->NombreDeContraintesTrav;
@@ -249,10 +256,10 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
 		}
 	}	
 
-	if (Pne->pne_params->VERBOSE_PNE) {
-		if (ChoixDuTypeDeVariation == VALEUR_ABSOLUE_DE_LA_VARIATION) printf("ChoixDuTypeDeVariation = VALEUR_ABSOLUE_DE_LA_VARIATION\n");
-		if (ChoixDuTypeDeVariation == PENTE_DE_LA_VARIATION) printf("ChoixDuTypeDeVariation = PENTE_DE_LA_VARIATION\n");
-	}
+  #if VERBOSE_PNE
+    if ( ChoixDuTypeDeVariation == VALEUR_ABSOLUE_DE_LA_VARIATION ) printf("ChoixDuTypeDeVariation = VALEUR_ABSOLUE_DE_LA_VARIATION\n");
+    if ( ChoixDuTypeDeVariation == PENTE_DE_LA_VARIATION ) printf("ChoixDuTypeDeVariation = PENTE_DE_LA_VARIATION\n");
+  #endif
 
 	/* Test */
   if ( Bb->NombreDeSolutionsEntieresTrouvees > 0 ) {
@@ -295,11 +302,11 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
 		else if ( Frac < 0.01 * PremiereFractionnalite && 0 ) break;
 		else if ( Frac < 1.e-8 && 0 ) break;		
 		
-		if (Pne->pne_params->VERBOSE_PNE) {
-			printf(" Variable fractionnaire etudiee -> %d cout %e valeur %e UminTrav %lf UmaxTrav %lf SeuilDeFractionnalite %e\n",
-				i, Pne->LTrav[i], Pne->UTrav[i], Pne->UminTrav[i], Pne->UmaxTrav[i], Pne->SeuilDeFractionnalite[i]);
-			printf("       ----> Fixation a Umin:\n");
-		}
+    #if VERBOSE_PNE
+      printf(" Variable fractionnaire etudiee -> %d cout %e valeur %e UminTrav %lf UmaxTrav %lf SeuilDeFractionnalite %e\n",
+               i,Pne->LTrav[i],Pne->UTrav[i],Pne->UminTrav[i],Pne->UmaxTrav[i],Pne->SeuilDeFractionnalite[i]); 
+      printf("       ----> Fixation a Umin:\n");
+    #endif
 		       
     memcpy( (char *) UStrongBranching, (char *) UTrav , NombreDeVariablesTrav * sizeof( double ) );
     NbVarComplAGauche = 0;
@@ -341,18 +348,18 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
     else {								  
       ExistenceSolutionAGauche = NON_PNE;    
       CritereAGauche = CritereInfini; 
-	  if (Pne->pne_params->VERBOSE_PNE) {
-		  printf("Pas de solution a gauche\n");
-	  }
+      #if VERBOSE_PNE
+        printf("Pas de solution a gauche\n"); 
+      #endif      	
     }		
     
-	if (Pne->pne_params->VERBOSE_PNE) {
-		printf("             CritereAGauche : %e \n", CritereAGauche);
-	}
+    #if VERBOSE_PNE
+      printf("             CritereAGauche : %e \n",CritereAGauche); 
+    #endif
 		
-	if (Pne->pne_params->VERBOSE_PNE) {
-		printf("       ----> Fixation a Umax:\n");
-	}
+    #if VERBOSE_PNE
+      printf("       ----> Fixation a Umax:\n");
+    #endif
 					
     memcpy( (char *) UStrongBranching, (char *) UTrav , NombreDeVariablesTrav * sizeof( double ) );	      
     NbVarComplADroite = 0;
@@ -396,14 +403,14 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
          puisse etre choisie */
       ExistenceSolutionADroite = NON_PNE;
       CritereADroite = 2 * CritereInfini; 
-	  if (Pne->pne_params->VERBOSE_PNE) {
-		  printf("Pas de solution a entier sup\n");
-	  }
+      #if VERBOSE_PNE
+        printf("Pas de solution a entier sup\n"); 
+      #endif
     }
 	     
-	if (Pne->pne_params->VERBOSE_PNE) {
-		printf("              CritereADroite : %e\n", CritereADroite);
-	}
+    #if VERBOSE_PNE
+      printf("              CritereADroite : %e\n",CritereADroite); 
+    #endif		
 		
     PNE_StrongBranchingClasserLeResultat( Pne                        , ChoixDuTypeDeVariation           ,
                                           ExistenceSolutionAGauche   , ExistenceSolutionADroite         ,
@@ -443,13 +450,13 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
      le branchement sur les gub */
 
   TesterLeBranchementSurLesGub = NON_PNE; /* NON_PNE*/
-  if ( Pne->pne_params->UTILISER_LES_GUB == OUI_PNE ) {
-	  TesterLeBranchementSurLesGub = OUI_PNE;
-  }
+  # if UTILISER_LES_GUB == OUI_PNE	
+	  TesterLeBranchementSurLesGub = OUI_PNE; 
+	# endif
   if ( VariableSelectionnee == OUI_PNE && TesterLeBranchementSurLesGub == OUI_PNE ) {
-	if ( Noeud->ProfondeurDuNoeud <= Pne->pne_params->PROFONDEUR_LIMITE_POUR_UTILISATION_DES_GUB || Pne->YaUneSolutionEntiere == NON_PNE ) {
-		PNE_StrongBranchingTesterLesGUB( Pne );
-	}
+	  if ( Noeud->ProfondeurDuNoeud <= PROFONDEUR_LIMITE_POUR_UTILISATION_DES_GUB || Pne->YaUneSolutionEntiere == NON_PNE ) {
+      PNE_StrongBranchingTesterLesGUB( Pne );
+		}
   }
   
   free( PosVarAGauche ); 
@@ -464,10 +471,10 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
 PasStrongBranching:
 
 if ( Pne->VariableLaPlusFractionnaire >= 0 ) {
-	if (Pne->pne_params->VERBOSE_PNE) {
-		printf(" Variable la plus fractionnaire: %d Valeur: %e \n",
-			Pne->VariableLaPlusFractionnaire, Pne->UTrav[Pne->VariableLaPlusFractionnaire]);
-	}
+  #if VERBOSE_PNE
+    printf(" Variable la plus fractionnaire: %d Valeur: %e \n",
+             Pne->VariableLaPlusFractionnaire,Pne->UTrav[Pne->VariableLaPlusFractionnaire]);
+  #endif
   if ( *BasesFilsDisponibles == OUI_PNE ) {
     if ( PositionDeLaVariableAGauche[Pne->VariableLaPlusFractionnaire] < 0 ||
          PositionDeLaVariableADroite[Pne->VariableLaPlusFractionnaire] < 0 ) { printf("Bug dans le strong branching\n"); exit(0); }
@@ -524,11 +531,11 @@ for ( i = 0 ; i < NombreDeGub ; i++ ) {
     il++;
   }
   if ( LaVariableInstancieeEstDansUneGub == OUI_PNE ) {
-	if ( NbVarNonFix > NbTGub && NbVarNonFix >= Pne->pne_params->MIN_TERMES_GUB && NbVarNonFix >= Pne->pne_params->MAX_TERMES_GUB ) {
+    if ( NbVarNonFix > NbTGub && NbVarNonFix >= MIN_TERMES_GUB && NbVarNonFix >= MAX_TERMES_GUB ) {
 		  GubChoisie = i;
-		  NbTGub = NbVarNonFix;
-	}
-  }			
+			NbTGub = NbVarNonFix;
+		}
+	}			
 }
   
 if ( GubChoisie < 0 ) return;

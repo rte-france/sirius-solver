@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: On etudie les domaines de variation des variables entieres
@@ -22,8 +31,6 @@
 # include "spx_define.h"
   
 # include "bb_define.h"
-
-#undef SEUIL_DADMISSIBILITE
 
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "pne_memoire.h"
@@ -134,15 +141,15 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintesTrav ; Cnt++ ) {
   if ( Nb == 0 ) {
     if ( SensContrainte[Cnt] == '<' ) {
       /* On verifie que la contrainte est satisfaite */
-		  if ( Smin > B[Cnt] + Pne->pne_params->SEUIL_DADMISSIBILITE && MinValide == OUI_PNE ) {
+		  if ( Smin > B[Cnt] + SEUIL_DADMISSIBILITE && MinValide == OUI_PNE ) {			
 			  *Faisabilite = NON_PNE;
 			  return;
 		  }
 	  }
 	  else {
 	    /* Contrainte d'egalite */
-      if ( ( fabs( Smax - Smin ) > Pne->pne_params->SEUIL_DADMISSIBILITE && MaxValide == OUI_PNE && MinValide == OUI_PNE ) ||
-			     ( fabs( Smax - B[Cnt] ) > Pne->pne_params->SEUIL_DADMISSIBILITE && MaxValide == OUI_PNE ) ) {
+      if ( ( fabs( Smax - Smin ) > SEUIL_DADMISSIBILITE && MaxValide == OUI_PNE && MinValide == OUI_PNE ) ||
+			     ( fabs( Smax - B[Cnt] ) > SEUIL_DADMISSIBILITE && MaxValide == OUI_PNE ) ) {					 
 			  *Faisabilite = NON_PNE;								
 			  return;			
 		  }
@@ -150,18 +157,18 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintesTrav ; Cnt++ ) {
   }
   else {
     if ( SensContrainte[Cnt] == '<' ) {
-		  if ( MinValide == OUI_PNE && Smin > B[Cnt] + Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+		  if ( MinValide == OUI_PNE && Smin > B[Cnt] + SEUIL_DADMISSIBILITE ) {
 			  *Faisabilite = NON_PNE;
 			  return;			
 		  }
 	  }
 		else {
 		  /* Contrainte d'egalite */
-	    if ( MaxValide == OUI_PNE && Smax < B[Cnt] - Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+	    if ( MaxValide == OUI_PNE && Smax < B[Cnt] - SEUIL_DADMISSIBILITE ) {			
 			  *Faisabilite = NON_PNE;
 			  return;							
 		  }
-	    if ( MinValide == OUI_PNE && Smin > B[Cnt] + Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+	    if ( MinValide == OUI_PNE && Smin > B[Cnt] + SEUIL_DADMISSIBILITE ) {			
 			  *Faisabilite = NON_PNE;
 			  return;							
 		  }			
@@ -554,8 +561,8 @@ ValeurDeBorneSup = Pne->ProbingOuNodePresolve->ValeurDeBorneSup[Var];
 
 TypeDeVariable = Pne->TypeDeVariableTrav[Var];
 
-Marge = Pne->pne_params->MARGE_INITIALE;
-if ( TypeDeVariable == ENTIER ) Marge = Pne->pne_params->VALEUR_DE_FRACTIONNALITE_NULLE * 10.;
+Marge = MARGE_INITIALE;
+if ( TypeDeVariable == ENTIER ) Marge = VALEUR_DE_FRACTIONNALITE_NULLE * 10.;
 MargeBorneVariableContinue = 0.1;
 
 /* Si c'est une variable entiere elle ne peut pas etre entre les 2 bornes */
@@ -581,7 +588,7 @@ if ( XiValide == OUI_PNE ) {
 }
 /* Tentative de fixation a une valeur */
 if ( XsValide == OUI_PNE && XiValide == OUI_PNE ) {	
-	if ( fabs( Xs - Xi ) < Pne->pne_params->ZERO_NP_PROB ) {
+	if ( fabs( Xs - Xi ) < ZERO_NP_PROB ) {
 		Xi = 0.5 * ( Xs + Xi );
 		if ( Xi < ValeurDeBorneInf - Marge || Xi > ValeurDeBorneSup + Marge ) {
 			/* Par precaution mais normalement ca ne passe pas les 2 tests qui precedent */
@@ -656,7 +663,7 @@ if ( XsValide == OUI_PNE ) {
 	else {
 	  /* Variable continue */
     /* Tentative de fixation */
-	  if ( fabs( Xs - ValeurDeBorneInf ) < Pne->pne_params->ZERO_NP_PROB ) {
+	  if ( fabs( Xs - ValeurDeBorneInf ) < ZERO_NP_PROB ) {
 		  Xi = 0.5 * ( Xs + ValeurDeBorneInf );
 			if ( Xi < ValeurDeBorneInf ) Xi = ValeurDeBorneInf;
 			if ( Xi > ValeurDeBorneSup ) Xi = ValeurDeBorneSup;
@@ -698,7 +705,7 @@ if ( XiValide == OUI_PNE ) {
 	else {
 	  /* Variable continue */
     /* Tentative de fixation */
-	  if ( fabs( ValeurDeBorneSup - Xi ) < Pne->pne_params->ZERO_NP_PROB ) {
+	  if ( fabs( ValeurDeBorneSup - Xi ) < ZERO_NP_PROB ) {
 		  Xi = 0.5 * ( ValeurDeBorneSup + Xi );
 			if ( Xi < ValeurDeBorneInf ) Xi = ValeurDeBorneInf;
 			if ( Xi > ValeurDeBorneSup ) Xi = ValeurDeBorneSup;

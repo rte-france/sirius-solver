@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Verification de A_BARRE_S = B-1 * AS
@@ -29,7 +38,7 @@
 
 # define NBITER_RAFFINEMENT 1
 
-//# define Spx->spx_params->VERBOSE_SPX 0
+# define VERBOSE_SPX 0
 
 /*----------------------------------------------------------------------------*/
 /*            Verification du calcul de ABarreS pour savoir s'il faut
@@ -86,13 +95,12 @@ NmX = (int) ceil( 0.5 * LimiteContraintes );
 if ( NombreDeVerifications > NmX ) NombreDeVerifications = NmX;
 
 /* On tire un nombre au hasard le nombre de verifications qu'on va faire */
-if (Spx->spx_params->UTILISER_PNE_RAND == OUI_SPX) {
-	Spx->A1 = PNE_Rand(Spx->A1);
-	X = Spx->A1 * (float)NombreDeVerifications;
-}
-else {
-	X = rand() * Spx->UnSurRAND_MAX * (float)NombreDeVerifications;
-}
+  # if UTILISER_PNE_RAND == OUI_SPX
+    Spx->A1 = PNE_Rand( Spx->A1 );
+    X = Spx->A1 * (float) NombreDeVerifications;
+	# else	
+    X = rand() * Spx->UnSurRAND_MAX * (float) NombreDeVerifications;
+  # endif
 
 NombreDeVerifications = (int) X;
 if ( NombreDeVerifications <= 0 ) NombreDeVerifications = 1;
@@ -108,13 +116,12 @@ while ( ic < icMax ) {
 NbFois = 0;
 while ( NbFois < NombreDeVerifications ) { 
   /* On tire un nombre au hasard compris entre 0 et LimiteContraintes - 1 */
-	if (Spx->spx_params->UTILISER_PNE_RAND == OUI_SPX) {
-		Spx->A1 = PNE_Rand(Spx->A1);
-		X = Spx->A1 * (LimiteContraintes - 1);
-	}
-	else {
-		X = rand() * Spx->UnSurRAND_MAX * (LimiteContraintes - 1);
-	}
+  # if UTILISER_PNE_RAND == OUI_SPX
+    Spx->A1 = PNE_Rand( Spx->A1 );
+    X = Spx->A1 * (LimiteContraintes - 1);		
+	# else		
+    X = rand() * Spx->UnSurRAND_MAX * (LimiteContraintes - 1);		
+  # endif
 	
   Nombre = (int) X;	
   if ( Nombre >= LimiteContraintes - 1 ) Nombre = LimiteContraintes - 1; 
@@ -168,14 +175,14 @@ if ( Imprecision == OUI_SPX ) {
   Ecart/= RangDeLaMatriceFactorisee;
 	
   if ( Ecart > SEUIL_DE_VERIFICATION_DE_ABarreS_2 && Spx->NombreDeChangementsDeBase > 0 ) {  
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("SPX_VerifierABarreS Iteration %d erreur de resolution sur ABarreS: %e ", Spx->Iteration, Ecart);
-		  printf(" ecart trop grand on refactorise la base\n");
-	  }
+    #if VERBOSE_SPX
+      printf("SPX_VerifierABarreS Iteration %d erreur de resolution sur ABarreS: %e ",Spx->Iteration,Ecart); 
+      printf(" ecart trop grand on refactorise la base\n"); 
+    #endif				
     Spx->FactoriserLaBase = OUI_SPX;
 		/*Spx->FaireDuRaffinementIteratif = NBITER_RAFFINEMENT;*/
 		/* On augmente le seuil dual de pivotage */
- 	  Spx->SeuilDePivotDual = Spx->spx_params->COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;	
+ 	  Spx->SeuilDePivotDual = COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * VALEUR_DE_PIVOT_ACCEPTABLE;	
 
     Spx->FaireChangementDeBase = NON_SPX;
 		
@@ -183,7 +190,7 @@ if ( Imprecision == OUI_SPX ) {
 	else {
 	  Spx->FaireDuRaffinementIteratif = NBITER_RAFFINEMENT;				
     Spx->FaireChangementDeBase = NON_SPX;
- 	  Spx->SeuilDePivotDual = Spx->spx_params->COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;		
+ 	  Spx->SeuilDePivotDual = COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * VALEUR_DE_PIVOT_ACCEPTABLE;		
 	}
 }
 

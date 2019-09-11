@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Phase 1 dans le cas ou la base de depart n'est pas fournie. 
@@ -30,13 +39,12 @@ void SPX_DualPhase1PositionnerLesVariablesHorsBase( PROBLEME_SPX * Spx )
 int Var; double SommeDesInfaisabilites; char * PositionDeLaVariable; int i;
 int * NumerosDesVariablesHorsBase; char * FaisabiliteDeLaVariable; char * TypeDeVariable;
 double * CBarre; int NbInfaisabilitesDuales; double * SeuilDAmissibiliteDuale;
-if (Spx->spx_params->VERBOSE_SPX) {
-	int NN;
-}
+# if VERBOSE_SPX
+ int NN;
+# endif
 
 NbInfaisabilitesDuales = 0;
 SommeDesInfaisabilites = 0.0;		
-
 
 if ( Spx->LaBaseDeDepartEstFournie == NON_SPX ) SeuilDAmissibiliteDuale = Spx->SeuilDAmissibiliteDuale1;
 else SeuilDAmissibiliteDuale = Spx->SeuilDAmissibiliteDuale2;
@@ -49,11 +57,10 @@ CBarre                      = Spx->CBarre;
 
 /* Boucle sur les variables hors base */ 
 for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
-  //printf("NbInfaisabilitesDuales : %10d%10d\n", i,  NbInfaisabilitesDuales);
   Var = NumerosDesVariablesHorsBase[i];
-
+  
   FaisabiliteDeLaVariable[Var] = DUALE_FAISABLE;
-
+	
   /* Examen des couts reduits pour chaque type de variable */
   if ( TypeDeVariable[Var] == BORNEE ) {
     if ( CBarre[Var] > SeuilDAmissibiliteDuale[Var] ) {		     
@@ -86,7 +93,7 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
       SommeDesInfaisabilites+= CBarre[Var];
       PositionDeLaVariable   [Var] = HORS_BASE_SUR_BORNE_SUP; /* Donc infaisable */
       FaisabiliteDeLaVariable[Var] = DUALE_INFAISABLE_PAR_COUT_REDUIT_NEGATIF;
-      NbInfaisabilitesDuales++;
+      NbInfaisabilitesDuales++;      
       continue;
     }
     if ( CBarre[Var] > SeuilDAmissibiliteDuale[Var] ) {
@@ -97,6 +104,7 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
       continue;
     }
   }
+ 
 }
 
 Spx->SommeDesInfaisabilitesDuales = -SommeDesInfaisabilites;
@@ -106,50 +114,50 @@ if ( Spx->Iteration == 1 ) Spx->NbInfaisabilitesDualesALaPremiereIteration = NbI
 
 /* Traces */
 if ( Spx->NbCycles == 0 || Spx->NbCycles >= CYCLE_DAFFICHAGE ) { 
-	if (Spx->spx_params->VERBOSE_SPX) {
-		if (Spx->LaBaseDeDepartEstFournie == OUI_SPX) {
-			printf("Base de depart fournie, nombre d'infaisabilites %6d , somme des infaisabilites duales %15.8lf\n", Spx->NbInfaisabilitesDuales, -SommeDesInfaisabilites);
-		}
-		else {
-			printf("Iteration %6d nombre d'infaisabilites %6d , somme des infaisabilites duales %15.8lf\n", Spx->Iteration, Spx->NbInfaisabilitesDuales,
-				-SommeDesInfaisabilites);
-		}
-	} else {
-		/* Cas non verbose */
-		if (Spx->LaBaseDeDepartEstFournie == NON_SPX && Spx->AffichageDesTraces == OUI_SPX) { /* Premier simplexe */
-			if (Spx->EcrireLegendePhase1 == OUI_SPX) {
-				Spx->EcrireLegendePhase1 = NON_SPX;
-				Spx->EcrireLegendePhase2 = OUI_SPX;
-				printf(" ");
-				printf(" | Phase |");
-				printf(" Iteration |");
-				printf("    Dual infeas. count    |");
-				printf("          Dual infeas.         |");
-				printf("\n");
-			}
-			printf(" ");
-			printf(" |    I  |");
-			printf("   %6d  |", Spx->Iteration);
-			printf("         %7d          |", Spx->NbInfaisabilitesDuales);
-			printf("        %15.8e        |", -SommeDesInfaisabilites);
-			printf("\n");
-		}
-	}
+  #if VERBOSE_SPX
+    if ( Spx->LaBaseDeDepartEstFournie == OUI_SPX ) {
+      printf("Base de depart fournie, nombre d'infaisabilites %6d , somme des infaisabilites duales %15.8lf\n",Spx->NbInfaisabilitesDuales,-SommeDesInfaisabilites);     
+    }
+    else {
+      printf("Iteration %6d nombre d'infaisabilites %6d , somme des infaisabilites duales %15.8lf\n",Spx->Iteration,Spx->NbInfaisabilitesDuales,
+            -SommeDesInfaisabilites);     
+    }
+  #else 
+  /* Cas non verbose */		 
+  if ( Spx->LaBaseDeDepartEstFournie == NON_SPX && Spx->AffichageDesTraces == OUI_SPX ) { /* Premier simplexe */
+    if ( Spx->EcrireLegendePhase1 == OUI_SPX ) {
+      Spx->EcrireLegendePhase1 = NON_SPX;
+      Spx->EcrireLegendePhase2 = OUI_SPX;      
+      printf(" ");
+      printf(" | Phase |");
+      printf(" Iteration |");
+      printf("    Dual infeas. count    |");
+      printf("          Dual infeas.         |");
+      printf("\n");               
+    }   
+    printf(" ");
+    printf(" |    I  |");
+    printf("   %6d  |",Spx->Iteration);
+    printf("         %7d          |",Spx->NbInfaisabilitesDuales);
+    printf("        %15.8e        |",-SommeDesInfaisabilites);
+    printf("\n");    
+  }						   
+  #endif
   Spx->NbCycles = 0;
 
-  if (Spx->spx_params->VERBOSE_SPX) {
-	  if (Spx->NbInfaisabilitesDuales == 1) {
-		  int NN = 0;
-		  for (Var = 0; Var < Spx->NombreDeVariables; Var++) {
-			  if (Spx->PositionDeLaVariable[Var] == EN_BASE_LIBRE) continue;
-			  if (FaisabiliteDeLaVariable[Var] != DUALE_FAISABLE) {
-				  NN++;
-				  printf("positionner variables Iteration %d Var %d CNbTerm %d CBarre %e Xmin %e Xmax %e\n",
-					  Spx->Iteration, Var, Spx->CNbTerm[Var], CBarre[Var], Spx->Xmin[Var], Spx->Xmax[Var]);
-			  }
-		  }
-	  }
-  }
+  # if VERBOSE_SPX
+    if ( Spx->NbInfaisabilitesDuales == 1 ) {
+		  NN = 0;
+      for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
+		    if (Spx->PositionDeLaVariable[Var] == EN_BASE_LIBRE ) continue;
+        if ( FaisabiliteDeLaVariable[Var] != DUALE_FAISABLE ) {
+			    NN++;
+			    printf("positionner variables Iteration %d Var %d CNbTerm %d CBarre %e Xmin %e Xmax %e\n",
+				          Spx->Iteration, Var,Spx->CNbTerm[Var],CBarre[Var],Spx->Xmin[Var],Spx->Xmax[Var]);
+	  	  }
+      }
+    }
+  # endif
 	
 }
 Spx->NbCycles++;
@@ -243,9 +251,9 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
 Spx->SommeDesInfaisabilitesDuales = 0.0;
 Spx->NbInfaisabilitesDuales       = 0;
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf("Nombre de bornes auxiliaires utilisees %d\n", Spx->NombreDeBornesAuxiliairesUtilisees);
-}
+#if VERBOSE_SPX
+  printf("Nombre de bornes auxiliaires utilisees %d\n",Spx->NombreDeBornesAuxiliairesUtilisees); 
+#endif
 
 return;
 }

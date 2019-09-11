@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Detection des contraintes de borne variable pendant le
@@ -46,6 +55,8 @@
 # define SIZE_ALLOC_CONTRAINTES 1000 /* Nombre de contraintes allouees */
 # define SIZE_ALLOC_TERMES_CONTRAINTES (SIZE_ALLOC_CONTRAINTES*2)
 
+# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+
 void PNE_ProbingAllocContraintesDeBorneVariable( PROBLEME_PNE * );
 void PNE_AugmenterNombreDeContraintesDeBorneVariable( PROBLEME_PNE * );
 void PNE_AugmenterLaTailleDesContraintesDeBorneVariable( PROBLEME_PNE * );
@@ -62,9 +73,10 @@ int * Nuvar; int * TypeDeVariable; double * A;  int * CntDeBorneSupVariable;
 int * CntDeBorneInfVariable; char * SensContrainte; int * TypeDeBorne; double * Umin;
 double * Umax; double * B;
 
-if ( Pne->pne_params->PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE ) {
-	return;
-}
+# if PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE		  
+  return;
+# endif
+
 NombreDeVariables = Pne->NombreDeVariablesTrav;
 NombreDeContraintes = Pne->NombreDeContraintesTrav;
 
@@ -139,14 +151,14 @@ return;
 /*----------------------------------------------------------------------------*/
 void PNE_ProbingCloseDetectionDesBornesVariables( PROBLEME_PNE * Pne )
 {
-	if (Pne->pne_params->PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE) {
-		return;
-	}
-	free(Pne->CntDeBorneSupVariable);
-	free( Pne->CntDeBorneInfVariable );
-	Pne->CntDeBorneSupVariable = NULL;
-	Pne->CntDeBorneInfVariable = NULL;
-	return;
+# if PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE		  
+  return;
+# endif
+free( Pne->CntDeBorneSupVariable );
+free( Pne->CntDeBorneInfVariable );
+Pne->CntDeBorneSupVariable = NULL;
+Pne->CntDeBorneInfVariable = NULL;
+return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -309,7 +321,11 @@ double * ValeurDeBorneSup; double a; double b; double a0; char Borne; char Creer
 double PlageInitiale; double PlageFinale; double Alpha; double PlusGrandTerme; double PlusPetitTerme;
 double BorneSupCandidate; double BorneInfCandidate; char ContrainteCree;
 
-if ( ProbingOuNodePresolve->VariableInstanciee < 0 || Pne->pne_params->PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE ) return;
+# if PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE		  
+  return;
+# endif
+
+if ( ProbingOuNodePresolve->VariableInstanciee < 0 ) return;
 
 if ( Pne->ContraintesDeBorneVariable != NULL ) {
   if ( Pne->ContraintesDeBorneVariable->NombreDeContraintesDeBorne >= MAX_CONTRAINTES_DE_BORNE_VARIABLE ) return;
@@ -479,3 +495,5 @@ return;
 }
 
 /*----------------------------------------------------------------------------*/
+
+# endif

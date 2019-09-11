@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Recuperation des resultats
@@ -92,28 +101,28 @@ if ( Pne->YaUneSolution == SOLUTION_OPTIMALE_TROUVEE ) {
     if ( SensContrainteTrav[Cnt] == '=' ) {
       if ( fabs( S - BTrav[Cnt] ) > ToleranceViolation ) {
         Pne->YaUneSolution = SOLUTION_OPTIMALE_TROUVEE_MAIS_QUELQUES_CONTRAINTES_SONT_VIOLEES;
-		if (Pne->pne_params->VERBOSE_PNE == 1) {
-			printf("Contrainte d'egalite %d violee: valeur calculee %e second membre %e violation %e\n", Cnt, S,
-				BTrav[Cnt], fabs(S - BTrav[Cnt]));
-		}
+				# if VERBOSE_PNE == 1
+          printf("Contrainte d'egalite %d violee: valeur calculee %e second membre %e violation %e\n",Cnt,S,
+					        BTrav[Cnt],fabs( S - BTrav[Cnt] ));
+				# endif
       }
     }
     else if ( SensContrainteTrav[Cnt] == '<' ) {
       if ( S > BTrav[Cnt] + ToleranceViolation ) {
         Pne->YaUneSolution = SOLUTION_OPTIMALE_TROUVEE_MAIS_QUELQUES_CONTRAINTES_SONT_VIOLEES;
-		if (Pne->pne_params->VERBOSE_PNE == 1) {
-			printf("Contrainte %d de type < ou = violee: valeur calculee %e second membre %e violation %e\n", Cnt, S,
-				BTrav[Cnt], fabs(S - BTrav[Cnt]));
-		}
+				# if VERBOSE_PNE == 1
+          printf("Contrainte %d de type < ou = violee: valeur calculee %e second membre %e violation %e\n",Cnt,S,
+					        BTrav[Cnt],fabs( S - BTrav[Cnt] )); 
+				# endif				
       }
     }
     else if ( SensContrainteTrav[Cnt] == '>' ) {
       if ( S < BTrav[Cnt] - ToleranceViolation ) {
         Pne->YaUneSolution = SOLUTION_OPTIMALE_TROUVEE_MAIS_QUELQUES_CONTRAINTES_SONT_VIOLEES;
-		if (Pne->pne_params->VERBOSE_PNE == 1) {
-			printf("Contrainte %d de type > ou = violee: valeur calculee %e second membre %e violation %e\n", Cnt, S,
-				BTrav[Cnt], fabs(S - BTrav[Cnt]));
-		}
+				# if VERBOSE_PNE == 1
+          printf("Contrainte %d de type > ou = violee: valeur calculee %e second membre %e violation %e\n",Cnt,S,
+					        BTrav[Cnt],fabs( S - BTrav[Cnt] )); 
+				# endif	
 				
       }
     }
@@ -122,7 +131,7 @@ if ( Pne->YaUneSolution == SOLUTION_OPTIMALE_TROUVEE ) {
 
 for ( i = 0 ; i < Pne->NombreDeVariablesTrav ; i++ ) {
   if ( TypeDeVariableTrav[i] == ENTIER ) {
-    if ( fabs( UTrav[i] - floor( UTrav[i] ) ) <= Pne->pne_params->TOLERANCE_SUR_LES_ENTIERS ) {
+    if ( fabs( UTrav[i] - floor( UTrav[i] ) ) <= TOLERANCE_SUR_LES_ENTIERS ) {
       UTrav[i] = floor( UTrav[i] );
     }
     else UTrav[i] = ceil( UTrav[i] );
@@ -186,8 +195,17 @@ if ( VariablesDualesDesContraintesE != NULL ) {
   NuvarE = Probleme->IndicesColonnes;
 	Zborne = 1.e-6;
   for ( CntE = 0 ; CntE < NombreDeContraintesE ; CntE++ ) {
-    if ( VariablesDualesDesContraintesE[CntE] < VALEUR_NON_INITIALISEE ) continue;
+    if ( VariablesDualesDesContraintesE[CntE] < VALEUR_NON_INITIALISEE ) continue;		
     VariablesDualesDesContraintesE[CntE] = 0;
+
+    if ( Pne->YaDesVariablesEntieres == NON_PNE ) {
+      /* Si on est en continu, on ne sait pas (pour l'instant) recalculer exactement les variables
+	       duales des contraintes quand on fait des substitutions de variables. Donc on prefere ne pas
+		     faire ce genre de presolve. Todo: stocker toutes les transfromations de la matrice pour
+		     recalculer exactement les variables duales. */
+      continue;
+    }
+		
 		if ( SensE[CntE] != '=' ) continue; 
 		/* Contrainte de type = :
 			 C1 = le plus petit cout des variable a coefficient positif qui ne sont pas sur Xmax
@@ -195,7 +213,7 @@ if ( VariablesDualesDesContraintesE != NULL ) {
 			 C3 = le plus petit cout des variables a coefficient negatif qui ne sont pas sur Xmax
 			 C4 = le plus petit cout change de signe des variables a coefficient negatif qui ne sont pas su Xmin
 			 Et on affecte le min de C1, C2, C3, C4 
-     */
+     */		 
     C1 = 2 * VALEUR_NON_INITIALISEE;
     C2 = 2 * VALEUR_NON_INITIALISEE;
     C3 = 2 * VALEUR_NON_INITIALISEE;
@@ -210,7 +228,7 @@ if ( VariablesDualesDesContraintesE != NULL ) {
 
 			S += a * UE[VarE];
 			
-			CoutE = LE[VarE];
+			CoutE = LE[VarE];			
 			if ( TypeDeBorneE[VarE] == VARIABLE_FIXE ) goto NextIlE;					
 			if ( TypeDeBorneE[VarE] == VARIABLE_NON_BORNEE ) {
         if ( a > 0 ) {
@@ -272,16 +290,17 @@ if ( VariablesDualesDesContraintesE != NULL ) {
       NextIlE:
 		  ilE++;
 		}	
-	  u = 4 * VALEUR_NON_INITIALISEE;
-    if ( u > C1 ) u = C1;
+	  u = 4 * VALEUR_NON_INITIALISEE;    
+		if ( u > C1 ) u = C1;
     if ( u > C2 ) u = C2;
     if ( u > C3 ) u = C3;
-    if ( u > C4 ) u = C4;			
+    if ( u > C4 ) u = C4;
+						
 	  if ( u > VALEUR_NON_INITIALISEE ) u = 0;
 		
 		/* Il faut changer le signe pour se remettre dans le contexte d'un simplexe */
 		u = -u;
-		
+				
     /* Ici on n'a jamais une contrainte d'egalite */
     if ( Probleme->Sens[CntE]	== '<' ) {
       if ( S < Probleme->SecondMembre[CntE] + 1.e-7 ) u = 0;			
@@ -295,13 +314,13 @@ if ( VariablesDualesDesContraintesE != NULL ) {
 	}
 }
   
-if (Pne->pne_params->VERBOSE_PNE) {
-	if (Pne->YaUneSolution != PAS_DE_SOLUTION_TROUVEE) {
-		printf("  Valeur du critere: %lf \n", Critere);
-		printf("(attention c'est une valeur interne au solveur, en particulier elle ne tient\n");
-		printf(" pas compte de la contribution de variables fixes au critere)\n");
+#if VERBOSE_PNE
+  if ( Pne->YaUneSolution != PAS_DE_SOLUTION_TROUVEE ) {
+    printf("  Valeur du critere: %lf \n",Critere ); 
+    printf("(attention c'est une valeur interne au solveur, en particulier elle ne tient\n"); 
+    printf(" pas compte de la contribution de variables fixes au critere)\n");
 	}
-}
+#endif
 
 /* Controle d'existence de valeurs non initialisees */
 if ( VariablesDualesDesContraintesE != NULL ) {

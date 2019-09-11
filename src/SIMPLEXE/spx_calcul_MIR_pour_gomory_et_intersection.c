@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Calcul d'une mir sur les donnees preparees pour le calcul
@@ -76,7 +85,7 @@ PROBLEME_PNE * Pne;
 Pne = NULL;
 Pne = (PROBLEME_PNE *) Spx->ProblemePneDeSpx;
 
-ValeurDuZero = Spx->spx_params->ZERO_TERMES_DU_TABLEAU_POUR_GOMORY;
+ValeurDuZero = ZERO_TERMES_DU_TABLEAU_POUR_GOMORY;
 
 NbVarEcartDeCoupes = 0;
 
@@ -109,7 +118,7 @@ F0 = AlphaI0 - floor( AlphaI0 );
 BGomory = F0;
 
 /* Test de division par 0 */
-if ( fabs( 1. - F0 ) > Spx->spx_params->ZERO_GOMORY_1_F0 ) {  
+if ( fabs( 1. - F0 ) > ZERO_GOMORY_1_F0 ) {  
   F0SurUnMoinsF0 = F0 / ( 1. - F0 );
 }
 else return;
@@ -313,7 +322,7 @@ for ( VarSpx = 0 ; VarSpx < Spx->NombreDeVariables ; VarSpx++ ) {
   *NombreDeTermes = *NombreDeTermes + 1;	
 }
 
-if ( fabs( BGomory ) > Spx->spx_params->ZERO_TERMES_DU_TABLEAU_POUR_GOMORY ) {
+if ( fabs( BGomory ) > ZERO_TERMES_DU_TABLEAU_POUR_GOMORY ) {
   if ( fabs( CumulCorrections / BG0 ) > 1.e-8 ) {
     *NombreDeTermes = 0;
   }

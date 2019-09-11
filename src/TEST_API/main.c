@@ -1,10 +1,3 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
 #include "srs_api.h"
 
 #define difftimens(ts2, ts1) (double)ts2.tv_sec - (double)ts1.tv_sec + ((double)ts2.tv_nsec - (double)ts1.tv_nsec)/1.e9
@@ -21,7 +14,9 @@ void printResSpx(SRS_PROBLEM * srsProb) {
 }
 
 int main(int argc, char ** argv) {
-	SRS_PROBLEM * srsProb = NULL;
+	SRS_PROBLEM * srsProb = SRScreateprob();
+	SRSfreeprob(srsProb);
+	srsProb = SRScreateprob();
 
 	bool hotstart = false;
 	// *** read MPS MIP ***
@@ -30,12 +25,13 @@ int main(int argc, char ** argv) {
 			if (strcmp(argv[i], "hotstart") == 0) { hotstart = true; ++i; }
 
 			if (!hotstart) {
-				if (srsProb != NULL) SRSfreeprob(srsProb);
+				SRSfreeprob(srsProb);
 				srsProb = SRScreateprob();
 			}
-			printf("%s ", argv[i]);
+			printf("%s\n", argv[i]);
 			SRSreadmpsprob(srsProb, argv[i]);
 			SRSsetintparams(srsProb, SRS_PARAM_VERBOSE_PNE, 1);
+			SRSsetdoubleparams(srsProb, SRS_PARAM_MAX_TIME, 60);
 
 			struct timespec beginTime;
 			timespec_get(&(beginTime), TIME_UTC);
@@ -48,18 +44,21 @@ int main(int argc, char ** argv) {
 			double temps = difftimens(endTime, beginTime);
 
 			double objVal = -1.0;
+			double bestBoundVal = 0.;
+			double endGap = 0.;
 			int nbIter = -1;
 			SRSgetobjval(srsProb, &objVal);
-			printf("Objective value : %lf, %lf\n", objVal, temps);
+			if (srsProb->is_mip) {
+				SRSgetbestbound(srsProb, &bestBoundVal);
+				if (bestBoundVal != 0.)
+					endGap = (objVal - bestBoundVal) / 0.01 * bestBoundVal;
+			}
+			printf("ERD : Objective value : %lf, %lf %e (best bound %e) %s\n", objVal, temps, endGap, bestBoundVal, argv[i]);
 		}
 
 		SRSfreeprob(srsProb);
 		exit(0);
 	}
-
-	srsProb = SRScreateprob();
-	SRSfreeprob(srsProb);
-	srsProb = SRScreateprob();
 	
 #define nbCols 2
 #define nbRows 2

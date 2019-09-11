@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Utilitaires de creation de matrice de contraintes pour les
@@ -60,8 +69,12 @@ int NombreDeContraintesNatives; int NbTermesNecessaires; int * IndexDebut; int *
 int NombreDeVariablesNatives; int il; int NbTermesNatif; int NombreDeContraintes;
 int NbContraintesNecessaires; double * SecondMembre; char * Sens;  int * Colonne; double * Coefficient;
 MATRICE_DE_CONTRAINTES * Contraintes;
-double Marge; int Nb; double * L; int Var; 
-int Cnt; int ilC; int ilCmax;
+# if UTILISER_UNE_CONTRAINTE_DE_COUT_MAX == NON_PNE
+  double Marge; int Nb; double * L; int Var; 
+# endif
+# if UTILISER_LES_COUPES == OUI_PNE
+  int Cnt; int ilC; int ilCmax;
+# endif
 
 Contraintes = NULL;
 /* Allocation */
@@ -75,25 +88,25 @@ if ( Pne->YaUneSolutionEntiere == OUI_PNE ) {
   /* Pour la borne sur le cout */
 	NbContraintesNecessaires++;
 }
-if ( Pne->pne_params->UTILISER_LES_COUPES == OUI_PNE ) {
-	NbContraintesNecessaires += Pne->Coupes.NombreDeContraintes;
-}
+# if UTILISER_LES_COUPES == OUI_PNE
+  NbContraintesNecessaires += Pne->Coupes.NombreDeContraintes;
+# endif
 
 NbTermesNatif = Pne->TailleAlloueePourLaMatriceDesContraintes;
 
 NbTermesNecessaires = NbTermesNatif;
 
-if ( Pne->pne_params->UTILISER_UNE_CONTRAINTE_DE_COUT_MAX == OUI_PNE ) {
-	if ( Pne->YaUneSolutionEntiere == OUI_PNE ) {
-		/* Pour la borne sur le cout */
-		NbTermesNecessaires += NombreDeVariablesNatives;
-	}
-}
+# if UTILISER_UNE_CONTRAINTE_DE_COUT_MAX == OUI_PNE
+  if ( Pne->YaUneSolutionEntiere == OUI_PNE ) {
+    /* Pour la borne sur le cout */
+	  NbTermesNecessaires += NombreDeVariablesNatives;
+  }
+# endif
 
-if ( Pne->pne_params->UTILISER_LES_COUPES == OUI_PNE ) {
-	/* Les coupes */
-	for (Cnt = 0; Cnt < Pne->Coupes.NombreDeContraintes; Cnt++) NbTermesNecessaires += Pne->Coupes.Mdeb[Cnt] + Pne->Coupes.NbTerm[Cnt];
-}
+# if UTILISER_LES_COUPES == OUI_PNE
+  /* Les coupes */
+  for ( Cnt = 0 ; Cnt < Pne->Coupes.NombreDeContraintes ; Cnt++ ) NbTermesNecessaires += Pne->Coupes.Mdeb[Cnt] + Pne->Coupes.NbTerm[Cnt];
+# endif
 
 IndexDebut = (int *) malloc( NbContraintesNecessaires * sizeof( int ) );
 NombreDeTermes = (int *) malloc( NbContraintesNecessaires * sizeof( int ) );
@@ -125,47 +138,47 @@ memcpy( (char *) Coefficient, (char *) Pne->ATrav, NbTermesNatif * sizeof( doubl
 NombreDeContraintes = NombreDeContraintesNatives;
 il = NbTermesNatif;
 
-if ( Pne->pne_params->UTILISER_UNE_CONTRAINTE_DE_COUT_MAX == OUI_PNE ) {
-	/* creation de la contrainte de cout max */
-	if ( Pne->YaUneSolutionEntiere == OUI_PNE ) {
-		L = Pne->LTrav;
-		IndexDebut[NombreDeContraintes] = il;
-		Nb = 0;
-		for (Var = 0; Var < NombreDeVariablesNatives; Var++) {
-			if (L[Var] != 0.0) {
-				Colonne[il] = Var;
-				Coefficient[il] = L[Var];
-				il++; Nb++;
-			}
-		}
-		NombreDeTermes[NombreDeContraintes] = Nb;
+# if UTILISER_UNE_CONTRAINTE_DE_COUT_MAX == OUI_PNE
+  /* creation de la contrainte de cout max */
+  if ( Pne->YaUneSolutionEntiere == OUI_PNE ) {
+    L = Pne->LTrav;
+	  IndexDebut[NombreDeContraintes] = il;
+	  Nb = 0;
+    for ( Var = 0 ; Var < NombreDeVariablesNatives ; Var++ ) {
+      if ( L[Var] != 0.0 ) {
+        Colonne[il] = Var;
+        Coefficient[il] = L[Var];
+			  il++; Nb++;
+		  }
+	  }
+    NombreDeTermes[NombreDeContraintes] = Nb;
 
-		Marge = EPS_COUT_OPT * fabs(Pne->CoutOpt);
+	  Marge = EPS_COUT_OPT * fabs( Pne->CoutOpt );
 
-		SecondMembre[NombreDeContraintes] = Pne->CoutOpt - Marge - MARGE_OPTIMALITE;
-		Sens[NombreDeContraintes] = '<';
-		NombreDeContraintes++;
-	}
-}
+    SecondMembre[NombreDeContraintes] = Pne->CoutOpt - Marge - MARGE_OPTIMALITE;
+	  Sens[NombreDeContraintes] = '<';
+    NombreDeContraintes++;	
+  }
+# endif
 
-if ( Pne->pne_params->UTILISER_LES_COUPES == OUI_PNE ) {
-	/* Les coupes */
-	for (Cnt = 0; Cnt < Pne->Coupes.NombreDeContraintes; Cnt++) {
-		ilC = Pne->Coupes.Mdeb[Cnt];
+# if UTILISER_LES_COUPES == OUI_PNE
+  /* Les coupes */
+  for ( Cnt = 0 ; Cnt < Pne->Coupes.NombreDeContraintes ; Cnt++ ) {
+	  ilC = Pne->Coupes.Mdeb[Cnt] ;
 		ilCmax = ilC + Pne->Coupes.NbTerm[Cnt];
 		Nb = 0;
-		IndexDebut[NombreDeContraintes] = il;
-		while (ilC < ilCmax) {
-			Colonne[il] = Pne->Coupes.Nuvar[ilC];
-			Coefficient[il] = Pne->Coupes.A[ilC];
-			ilC++; il++; Nb++;
+	  IndexDebut[NombreDeContraintes] = il;		
+    while ( ilC < ilCmax ) {
+      Colonne[il] = Pne->Coupes.Nuvar[ilC];
+      Coefficient[il] = Pne->Coupes.A[ilC];      
+      ilC++; il++; Nb++;
 		}
-		NombreDeTermes[NombreDeContraintes] = Nb;
-		SecondMembre[NombreDeContraintes] = Pne->Coupes.B[Cnt];
-		Sens[NombreDeContraintes] = '<';
-		NombreDeContraintes++;
-	}
-}
+    NombreDeTermes[NombreDeContraintes] = Nb;
+    SecondMembre[NombreDeContraintes] = Pne->Coupes.B[Cnt];
+	  Sens[NombreDeContraintes] = '<';
+    NombreDeContraintes++;			
+	}	
+# endif
 
 Contraintes->NombreDeContraintes = NombreDeContraintes;
 

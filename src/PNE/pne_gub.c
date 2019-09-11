@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: En presence de contraintes Gub, generation d'un schema
@@ -122,7 +131,7 @@ for ( j = 0 ; j < Pne->NombreDeGub ; j++ ) {
   while ( il < ilMax ) {  
     Var = Pne->NuvarTrav [il];
     if ( Pne->TypeDeVariableTrav[Var] == ENTIER ) {
-      if ( fabs( Pne->UminTrav[Var] - Pne->UmaxTrav[Var] ) > Pne->pne_params->TOLERANCE_SUR_LES_ENTIERS ) {
+      if ( fabs( Pne->UminTrav[Var] - Pne->UmaxTrav[Var] ) > TOLERANCE_SUR_LES_ENTIERS ) {
         /* Norme L1 */
         F+= fabs( 0.5 - Pne->UTrav[Var] );
         NbVarCnt++;
@@ -180,11 +189,11 @@ for ( j = 0 ; j < Pne->NombreDeGub && NbGubTestees < NOMBRE_MAX_DE_GUB_TESTEES ;
 
     if ( Pne->TypeDeVariableTrav[Var] == ENTIER ) {
 
-      if ( fabs( Pne->UminTrav[Var] - Pne->UmaxTrav[Var] ) > Pne->pne_params->TOLERANCE_SUR_LES_ENTIERS ) {
+      if ( fabs( Pne->UminTrav[Var] - Pne->UmaxTrav[Var] ) > TOLERANCE_SUR_LES_ENTIERS ) {
         /* La variable n'a pas été instanciee */
         NumeroDeVariable[NbVarCnt] = Var;
         NbVarCnt++;
-	      if ( fabs( Pne->UmaxTrav[Var] - Pne->UTrav[Var] ) < Pne->pne_params->TOLERANCE_SUR_LES_ENTIERS ) {
+	      if ( fabs( Pne->UmaxTrav[Var] - Pne->UTrav[Var] ) < TOLERANCE_SUR_LES_ENTIERS ) {
 	        /* La variable se trouve sur borne max apres optimisation relaxee */
  	        /*NextCnt = OUI_PNE;*/
 	      }
@@ -327,14 +336,14 @@ for ( j = 0 ; j < Pne->NombreDeGub && NbGubTestees < NOMBRE_MAX_DE_GUB_TESTEES ;
   else { 
     ExistenceSolutionAGauche = NON_PNE;    
     CritereAGauche = CritereInfini; 
-	if (Pne->pne_params->VERBOSE_PNE) {
-		printf("Pas de solution a gauche\n");
-	}
+    #if VERBOSE_PNE
+      printf("Pas de solution a gauche\n"); 
+    #endif
   }
     
-  if (Pne->pne_params->VERBOSE_PNE) {
-	  printf("              CritereAGauche : %e \n", CritereAGauche);
-  }
+  #if VERBOSE_PNE
+    printf("              CritereAGauche : %e \n",CritereAGauche); 
+  #endif
   
   memcpy( (char *) Pne->UStrongBranching, (char *) Pne->UTrav , Pne->NombreDeVariablesTrav * sizeof( double ) );  
   NbVarComplADroite = 0;
@@ -375,14 +384,14 @@ for ( j = 0 ; j < Pne->NombreDeGub && NbGubTestees < NOMBRE_MAX_DE_GUB_TESTEES ;
        puisse etre choisie */
     ExistenceSolutionADroite = NON_PNE;
     CritereADroite = 2 * CritereInfini; 
-	if (Pne->pne_params->VERBOSE_PNE) {
-		printf("Pas de solution a droite \n");
-	}
+    #if VERBOSE_PNE
+      printf("Pas de solution a droite \n"); 
+    #endif
   }
     
-  if (Pne->pne_params->VERBOSE_PNE) {
-	  printf("              CritereADroite : %e\n", CritereADroite);
-  }
+  #if VERBOSE_PNE
+    printf("              CritereADroite : %e\n",CritereADroite);  
+  #endif
   
   printf("CritereAGauche: %e CritereADroite: %e SeuilNouveauCout: %e\n",CritereAGauche,CritereADroite,SeuilNouveauCout);
   /*
@@ -396,7 +405,6 @@ for ( j = 0 ; j < Pne->NombreDeGub && NbGubTestees < NOMBRE_MAX_DE_GUB_TESTEES ;
     DeltaXADroite = 0.0;
   }
   */
-  // /!\ Double definition
   ChoixDuTypeDeVariation = VALEUR_ABSOLUE_DE_LA_VARIATION;
   ChoixDuTypeDeVariation = PENTE_DE_LA_VARIATION;
   

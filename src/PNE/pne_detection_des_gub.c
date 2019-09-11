@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Detection de GUB (General Upper Bound constraints).
@@ -40,13 +49,13 @@ int * NbTerm; int * Mdeb; double * B; int * Nuvar; int * TypeDeVariable; int NbN
 double * A; int * NumeroDeContrainteDeLaGub; char * SensContrainte; int Var;
 char OnInverse; int Valeur; int * ValeurDInstanciationPourLaGub; int * TypeDeBorne;
 
-if ( Pne->pne_params->UTILISER_LES_GUB == NON_PNE ) {
-	Pne->NombreDeGub = 0;
-	if (Pne->pne_params->AffichageDesTraces == OUI_PNE) {
-		printf("Will not branch on GUB constraints\n");
-	}
+# if UTILISER_LES_GUB == NON_PNE
+  Pne->NombreDeGub = 0;
+  if ( Pne->AffichageDesTraces == OUI_PNE ) {
+    printf("Will not branch on GUB constraints\n");
+  }	
 	return;
-}
+# endif
 
 NombreDeContraintes = Pne->NombreDeContraintesTrav;
 NbTerm = Pne->NbTermTrav;
@@ -67,7 +76,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   if ( SensContrainte[Cnt] != '=' ) continue;
   
   N = NbTerm[Cnt];
-  if ( N < Pne->pne_params->MIN_TERMES_GUB ) continue;
+  if ( N < MIN_TERMES_GUB ) continue;
   il = Mdeb[Cnt];
   ilMax = il + NbTerm[Cnt];
 	NbNonFix = 0;
@@ -85,7 +94,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
     }
     il++;
   }  
-  if ( Gub == OUI_PNE && NbNonFix >= Pne->pne_params->MIN_TERMES_GUB ) { 
+  if ( Gub == OUI_PNE && NbNonFix >= MIN_TERMES_GUB ) { 
     NumeroDeContrainteDeLaGub[NombreDeGub] = Cnt;
 		ValeurDInstanciationPourLaGub[NombreDeGub] = Valeur;
     NombreDeGub++;
@@ -114,7 +123,7 @@ Pne->NombreDeGub = NombreDeGub;
 Pne->NumeroDeContrainteDeLaGub     = (int *) realloc( Pne->NumeroDeContrainteDeLaGub    , Pne->NombreDeGub * sizeof( int ) );
 Pne->ValeurDInstanciationPourLaGub = (int *) realloc( Pne->ValeurDInstanciationPourLaGub, Pne->NombreDeGub * sizeof( int ) );
 
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
   printf("%d GUB constraints found (native)\n",Pne->NombreDeGub);
 }
 

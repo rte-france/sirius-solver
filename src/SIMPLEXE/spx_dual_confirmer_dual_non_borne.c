@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Confirmation dual non borne (i.e. pas de solution) 
@@ -20,7 +29,7 @@
 
 # include "lu_define.h"
   
-//# define Spx->spx_params->VERBOSE_SPX 0
+# define VERBOSE_SPX 0
   
 /*----------------------------------------------------------------------------*/
 
@@ -32,10 +41,10 @@ double CBarreTMoins; double NBarreRTPlus; double NBarreRTMoins; double S; double
 double Violation; int CntChoix; int Cnt; int j; double * ErBMoinsUn; double * Erb; /* int   Var; int il ; int ilMax; */
 char NBarreRInitialise; double Seuil ; int Index;
 
-//if (Spx->spx_params->PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX){
-	int IndexMax; int Var; int YaDesBornesViolees; double ValBBarre; double * Xmax; double * SeuilDeViolationDeBorne;
-	int * VariableEnBaseDeLaContrainte; int * ColonneDeLaBaseFactorisee; char * TypeDeVariable; double * BBarre;
-//}
+# if PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX
+ int IndexMax; int Var; int YaDesBornesViolees; double ValBBarre; double * Xmax; double * SeuilDeViolationDeBorne;
+  int * VariableEnBaseDeLaContrainte; int * ColonneDeLaBaseFactorisee; char * TypeDeVariable; double * BBarre;
+# endif
 
 Spx->AdmissibilitePossible = NON_SPX;
 
@@ -52,63 +61,63 @@ if ( Spx->BBarre[Index] < Spx->Xmin[Spx->VariableSortante] ) {
 }
 else Violation = Spx->BBarre[Index] - Spx->Xmax[Spx->VariableSortante];
 
-if ( fabs( Violation ) > Spx->spx_params->SEUIL_MAX_DE_VIOLATION_DE_BORNE ) {
-	if (Spx->spx_params->VERBOSE_SPX){
-		printf("Violation trop importante %e on confirme le dual non borne, poids %e seuil de violation %e  SeuilDePivotDual %e\n", Violation,
-			Spx->DualPoids[Index], Spx->SeuilDeViolationDeBorne[Spx->VariableSortante], Spx->SeuilDePivotDual);
-	}
+if ( fabs( Violation ) > SEUIL_MAX_DE_VIOLATION_DE_BORNE ) {
+  #if VERBOSE_SPX
+    printf("Violation trop importante %e on confirme le dual non borne, poids %e seuil de violation %e  SeuilDePivotDual %e\n",Violation,
+		        Spx->DualPoids[Index],Spx->SeuilDeViolationDeBorne[Spx->VariableSortante],Spx->SeuilDePivotDual); 
+  #endif
   return;
 }
 
 
-if (Spx->spx_params->PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX) {
-	Xmax = Spx->Xmax;
-	SeuilDeViolationDeBorne = Spx->SeuilDeViolationDeBorne;
-	VariableEnBaseDeLaContrainte = Spx->VariableEnBaseDeLaContrainte;
-	ColonneDeLaBaseFactorisee = Spx->ColonneDeLaBaseFactorisee;
-	TypeDeVariable = Spx->TypeDeVariable;
-	BBarre = Spx->BBarre;
+# if PRICING_AVEC_VIOLATIONS_STRICTES == OUI_SPX
+  Xmax = Spx->Xmax;
+  SeuilDeViolationDeBorne = Spx->SeuilDeViolationDeBorne;
+  VariableEnBaseDeLaContrainte = Spx->VariableEnBaseDeLaContrainte;
+  ColonneDeLaBaseFactorisee = Spx->ColonneDeLaBaseFactorisee;
+  TypeDeVariable = Spx->TypeDeVariable;
+  BBarre = Spx->BBarre;
 
-	/* Si on travaille avec une gestion des tolerance nulles pour la liste des variables en base a controler, on verifie les valeurs
-	   par rapport aux tolerance. Si elles sont toutes respectees alors on a une solution admissible optimale */
-	if (Spx->UtiliserLaBaseReduite == OUI_SPX) IndexMax = Spx->RangDeLaMatriceFactorisee;
-	else IndexMax = Spx->NombreDeContraintes;
-	YaDesBornesViolees = NON_SPX;
-	for (Index = 0; Index < IndexMax; Index++) {
-		if (Spx->UtiliserLaBaseReduite == OUI_SPX) {
-			Var = VariableEnBaseDeLaContrainte[ColonneDeLaBaseFactorisee[Index]];
-		}
-		else {
-			Var = VariableEnBaseDeLaContrainte[Index];
-		}
-		if (TypeDeVariable[Var] == NON_BORNEE) continue;
-
-		ValBBarre = BBarre[Index];
-		if (ValBBarre < -SeuilDeViolationDeBorne[Var]) {
-			YaDesBornesViolees = OUI_SPX;
-			break;
-		}
-		if (TypeDeVariable[Var] == VARIABLE_BORNEE_DES_DEUX_COTES) {
-			if (ValBBarre > Xmax[Var] + SeuilDeViolationDeBorne[Var]) {
-				YaDesBornesViolees = OUI_SPX;
-				break;
-			}
-		}
+  /* Si on travaille avec une gestion des tolerance nulles pour la liste des variables en base a controler, on verifie les valeurs
+     par rapport aux tolerance. Si elles sont toutes respectees alors on a une solution admissible optimale */
+  if ( Spx->UtiliserLaBaseReduite == OUI_SPX ) IndexMax = Spx->RangDeLaMatriceFactorisee;
+  else IndexMax = Spx->NombreDeContraintes;
+  YaDesBornesViolees = NON_SPX;
+  for ( Index = 0 ; Index < IndexMax ; Index++ ) {
+    if ( Spx->UtiliserLaBaseReduite == OUI_SPX ) {
+      Var = VariableEnBaseDeLaContrainte[ColonneDeLaBaseFactorisee[Index]];
+	  }
+	  else {
+      Var = VariableEnBaseDeLaContrainte[Index];
+	  }
+    if ( TypeDeVariable[Var] == NON_BORNEE ) continue;
+		
+	  ValBBarre = BBarre[Index];
+    if ( ValBBarre < -SeuilDeViolationDeBorne[Var] ) {
+      YaDesBornesViolees = OUI_SPX;
+	    break;
+	  }
+	  if ( TypeDeVariable[Var] == VARIABLE_BORNEE_DES_DEUX_COTES ) {			
+	    if ( ValBBarre > Xmax[Var] + SeuilDeViolationDeBorne[Var] ) {
+        YaDesBornesViolees = OUI_SPX;
+	      break;
+			}		    		
+	  }
 	}
-
-	if (YaDesBornesViolees == NON_SPX) {
-		Spx->AdmissibilitePossible = OUI_SPX;
-		return;
+	
+	if ( YaDesBornesViolees == NON_SPX ) {
+    Spx->AdmissibilitePossible = OUI_SPX;
+    return;
 	}
-}
+# endif	 
 
-SeuilDePivot = Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;
+SeuilDePivot = VALEUR_DE_PIVOT_ACCEPTABLE;
 NBarreRInitialise = NON_SPX;
 NBarreR = 1; /* Pour ne pas avoir de warning a la compilation */
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf("Recherche des variables entrantes TPlus et TMoins pour confirmer le dual non borne\n"); fflush(stdout);
-}
+#if VERBOSE_SPX
+  printf("Recherche des variables entrantes TPlus et TMoins pour confirmer le dual non borne\n"); fflush(stdout);
+#endif
 
 Erb = NULL;
 if ( Spx->TypeDeStockageDeErBMoinsUn != COMPACT_SPX ) {
@@ -200,60 +209,60 @@ if ( NBarreRInitialise == OUI_SPX && CntChoix >= 0 ) {
 
 	/* Les variables t representent des variables d'ecart i.e. des possibilites de violation des contraintes */
 	/*
-  Seuil = Spx->spx_params->SEUIL_DE_VIOLATION_DE_BORNE_NON_NATIVE * Spx->ScaleB[CntChoix];
-  if ( Seuil < Spx->spx_params->SEUIL_MIN_DE_VIOLATION_DE_BORNE_NON_NATIVE ) Seuil = Spx->spx_params->SEUIL_MIN_DE_VIOLATION_DE_BORNE_NON_NATIVE;
-  else if ( Seuil > Spx->spx_params->SEUIL_MAX_DE_VIOLATION_DE_BORNE_NON_NATIVE ) Seuil = Spx->spx_params->SEUIL_MAX_DE_VIOLATION_DE_BORNE_NON_NATIVE;
+  Seuil = SEUIL_DE_VIOLATION_DE_BORNE_NON_NATIVE * Spx->ScaleB[CntChoix];
+  if ( Seuil < SEUIL_MIN_DE_VIOLATION_DE_BORNE_NON_NATIVE ) Seuil = SEUIL_MIN_DE_VIOLATION_DE_BORNE_NON_NATIVE;
+  else if ( Seuil > SEUIL_MAX_DE_VIOLATION_DE_BORNE_NON_NATIVE ) Seuil = SEUIL_MAX_DE_VIOLATION_DE_BORNE_NON_NATIVE;
 	*/
 	
-  Seuil = Spx->spx_params->SEUIL_DADMISSIBILITE * Spx->ScaleB[CntChoix];	 
-	if ( Seuil < 0.01 * Spx->spx_params->SEUIL_DADMISSIBILITE ) Seuil = 0.01 * Spx->spx_params->SEUIL_DADMISSIBILITE;  
-  else if ( Seuil > 10 * Spx->spx_params->SEUIL_DADMISSIBILITE ) Seuil = 10 * Spx->spx_params->SEUIL_DADMISSIBILITE;	  
+  Seuil = SEUIL_DADMISSIBILITE * Spx->ScaleB[CntChoix];	 
+	if ( Seuil < 0.01 * SEUIL_DADMISSIBILITE ) Seuil = 0.01 * SEUIL_DADMISSIBILITE;  
+  else if ( Seuil > 10 * SEUIL_DADMISSIBILITE ) Seuil = 10 * SEUIL_DADMISSIBILITE;	  
 	
-  if (Spx->spx_params->VERBOSE_SPX) {
-	  printf("Type de sortie %d Delta X a faire sur T %15.10lf Seuil %e\n", Spx->SortSurXmaxOuSurXmin, Spx->DeltaXSurLaVariableHorsBase,
-		  Seuil);
-  }
+  #if VERBOSE_SPX
+    printf("Type de sortie %d Delta X a faire sur T %15.10lf Seuil %e\n",Spx->SortSurXmaxOuSurXmin,Spx->DeltaXSurLaVariableHorsBase,
+		        Seuil); 
+  #endif
 		
   if ( fabs( Spx->DeltaXSurLaVariableHorsBase ) < Seuil ) {
     Spx->AdmissibilitePossible = OUI_SPX;		
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Rectification du diagnostique: admissibilite possible\n");
-		printf("Iteration %d DeltaXSurLaVariableHorsBase %e SeuilDeViolationDeBorne %e Spx->spx_params->SEUIL_DE_VIOLATION_DE_BORNE %e\n",
-			Spx->Iteration,
-			Spx->DeltaXSurLaVariableHorsBase,
-			Spx->SeuilDeViolationDeBorne[Spx->VariableSortante],
-			Spx->spx_params->SEUIL_DE_VIOLATION_DE_BORNE);
-		printf("             Variable sortante:  Xmin %e X %e Xmax %e\n",
-			Spx->Xmin[Spx->VariableSortante],
-			Spx->BBarre[Index],
-			Spx->Xmax[Spx->VariableSortante]);
-	}
+    #if VERBOSE_SPX
+      printf("Rectification du diagnostique: admissibilite possible\n");
+      printf("Iteration %d DeltaXSurLaVariableHorsBase %e SeuilDeViolationDeBorne %e SEUIL_DE_VIOLATION_DE_BORNE %e\n",
+              Spx->Iteration,
+	            Spx->DeltaXSurLaVariableHorsBase,
+	            Spx->SeuilDeViolationDeBorne[Spx->VariableSortante],
+	            SEUIL_DE_VIOLATION_DE_BORNE ); 
+      printf("             Variable sortante:  Xmin %e X %e Xmax %e\n",
+              Spx->Xmin[Spx->VariableSortante],
+	            Spx->BBarre[Index],
+	            Spx->Xmax[Spx->VariableSortante] );	  
+    #endif
   }
 	else {
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("On confirme le dual non borne\n");
-			printf("Iteration %d DeltaXSurLaVariableHorsBase %e SeuilDeViolationDeBorne %e Spx->spx_params->SEUIL_DE_VIOLATION_DE_BORNE %e\n",
-				Spx->Iteration,
-				Spx->DeltaXSurLaVariableHorsBase,
-				Spx->SeuilDeViolationDeBorne[Spx->VariableSortante],
-				Spx->spx_params->SEUIL_DE_VIOLATION_DE_BORNE);
-			printf("             Variable sortante:  Xmin %e X %e Xmax %e\n",
-				Spx->Xmin[Spx->VariableSortante],
-				Spx->BBarre[Index],
-				Spx->Xmax[Spx->VariableSortante]);
-		}
+    #if VERBOSE_SPX
+      printf("On confirme le dual non borne\n");
+      printf("Iteration %d DeltaXSurLaVariableHorsBase %e SeuilDeViolationDeBorne %e SEUIL_DE_VIOLATION_DE_BORNE %e\n",
+              Spx->Iteration,
+	            Spx->DeltaXSurLaVariableHorsBase,
+	            Spx->SeuilDeViolationDeBorne[Spx->VariableSortante],
+	            SEUIL_DE_VIOLATION_DE_BORNE ); 
+      printf("             Variable sortante:  Xmin %e X %e Xmax %e\n",
+              Spx->Xmin[Spx->VariableSortante],
+	            Spx->BBarre[Index],
+	            Spx->Xmax[Spx->VariableSortante] );	  			
+    #endif
 	}
 }
 else {
-  if ( fabs( Violation ) > Spx->spx_params->SEUIL_DE_VIOLATION_DE_BORNE ) {
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("On confirme le dual non borne NBarreRInitialise %d CntChoix %d\n", NBarreRInitialise, CntChoix);
-	  }
+  if ( fabs( Violation ) > SEUIL_DE_VIOLATION_DE_BORNE ) {
+    #if VERBOSE_SPX
+      printf("On confirme le dual non borne NBarreRInitialise %d CntChoix %d\n",NBarreRInitialise,CntChoix);
+    #endif
 	}
 	else {
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Rectification du diagnostique: admissibilite possible\n");
-		}
+    #if VERBOSE_SPX
+      printf("Rectification du diagnostique: admissibilite possible\n");
+    #endif
     Spx->AdmissibilitePossible = OUI_SPX;
 	}
 }

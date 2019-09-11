@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Calcul d'une borne sur le sac a dos
@@ -205,21 +214,28 @@ return( Z );
 /*-----------------------------------------------------------------------*/
 
 int PNE_MajorantKnapsack( int NombreDeVariables, int * C, double * A, double B0,
-                          char LesCoeffSontEntiers, int ProgDynamique, int SeuilProgDynamique )  
+                          char LesCoeffSontEntiers )  
 {
 int Var; double X; int Z; int U_Dantzig; int U0; int U1; char U0_Valide; char U1_Valide;
 char SolEntiere; int sigma0_s; int sigma1_s; double Marge; double B; int s;
 int U; char U_Valide; int Zdyn;
+# if UTILISER_AUSSI_LA_PROGRAMMATION_DYNAMIQUE == OUI_PNE
+  char ProgDyn;
+# endif
 
 Zdyn = -1;
-if ( ProgDynamique == OUI_PNE && B0 <= SeuilProgDynamique ) {
-	if ( LesCoeffSontEntiers == OUI_PNE ) {
-		/*printf("Programmation dynamique B0 %e\n",B0);*/
-		Z = PNE_KnapsackProgrammationDynamique(NombreDeVariables, C, A, B0);
-		Zdyn = Z;
-		/*return( Z);*/
-	}
-}
+# if UTILISER_AUSSI_LA_PROGRAMMATION_DYNAMIQUE == OUI_PNE
+  if ( B0 <= SEUIL_POUR_PROGRAMMATION_DYNAMIQUE ) {
+		ProgDyn = OUI_PNE;
+		if ( LesCoeffSontEntiers != OUI_PNE ) ProgDyn = NON_PNE;
+		if ( ProgDyn == OUI_PNE ) {
+      /*printf("Programmation dynamique B0 %e\n",B0);*/
+      Z = PNE_KnapsackProgrammationDynamique( NombreDeVariables, C, A, B0 );
+		  Zdyn = Z;
+		  /*return( Z);*/
+	  }
+  }
+# endif
 
 Marge = 1.e-8;
 SolEntiere = NON_PNE;

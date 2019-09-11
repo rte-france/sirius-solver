@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Programmation lineaire generalisee (pour Metrix)
@@ -21,7 +30,6 @@
 # define TRACES
 # undef TRACES
 
-//# define ZERO_CR  SEUIL_ADMISSIBILITE_DUALE_1
 # define ZERO_CR  SEUIL_ADMISSIBILITE_DUALE_1
 
 # define COEFF_NB_VAR_DEPART  10 /* Sert a multiplier le nombre de contraintes pour
@@ -229,7 +237,7 @@ if ( FaireProgrammationLineaireGeneralisee == NON_SPX || PbSpx->BaseDeDepartFour
     # ifdef TRACES
 		  printf(" simplexe classique ... \n");
     # endif		
-		SpxRetour = SPX_Simplexe( PbSpx , Spx , NULL );
+		SpxRetour = SPX_Simplexe( PbSpx , Spx );
 		VecteurDeTravail_1[0] = PbSpx->NombreDeContraintes ;
 
 		return( SpxRetour );
@@ -372,7 +380,7 @@ for ( Var = 0 ; Var < NombreDeVariables_PbSpx ; Var++ ) {
 
 SIMPLEXE:
 
-SpxRetour = SPX_Simplexe( PbSpx , Spx , NULL );
+SpxRetour = SPX_Simplexe( PbSpx , Spx );
   # ifdef TRACES
 if ( PbSpx->ExistenceDUneSolution != OUI_SPX ) {
   printf("Simplexe reduit: pas de solution \n");

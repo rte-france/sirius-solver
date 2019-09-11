@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Epuration de la base dans le cas du noeud racine du branch
@@ -89,17 +98,17 @@ if ( Spx->PremierSimplexe == OUI_SPX && *EpurerLaBase == OUI_SPX && 0 ) {
 		 faut verifier que le cout reduit de la variable entrante est nul */
 	/* Sinon ce qu'il faut faire c'est refaire des iterations de simplexe pour retrouver la base optimale. Comme les
 	   variables artificielles ont ete sorties, elle n'entreront plus en base */
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Recherche des variables basiques artificielles qui sont encore dans la base pour epuration \n");
-	}
+  #if VERBOSE_SPX
+    printf("Recherche des variables basiques artificielles qui sont encore dans la base pour epuration \n");
+  #endif	
   EpurationFaite = NON_SPX;
   for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
 	
     if ( OrigineDeLaVariable[Var]  != BASIQUE_ARTIFICIELLE ) continue;  
     if ( PositionDeLaVariable[Var] != EN_BASE_LIBRE ) continue;      
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Variable basique artificielle %d encore en base, on tente de la faire sortir \n", Var);
-	}
+    #if VERBOSE_SPX
+      printf("Variable basique artificielle %d encore en base, on tente de la faire sortir \n",Var);
+    #endif		
     /* La variable sortante est Var, seule une variable de la meme contrainte peut prendre sa place
        dans la base */
     Spx->VariableSortante = Var;
@@ -133,7 +142,7 @@ if ( Spx->PremierSimplexe == OUI_SPX && *EpurerLaBase == OUI_SPX && 0 ) {
     /*
 	 	il = Mdeb[Cnt];
     ilMax = il + NbTerm[Cnt];
-    Amx = Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE - 1.e-12;
+    Amx = VALEUR_DE_PIVOT_ACCEPTABLE - 1.e-12;
     while ( il < ilMax ) {
       Var1 = Indcol[il];
       if ( PositionDeLaVariable[Var1] != EN_BASE_LIBRE && Var1 != Var ) {
@@ -156,7 +165,7 @@ if ( Spx->PremierSimplexe == OUI_SPX && *EpurerLaBase == OUI_SPX && 0 ) {
       iLimite = Spx->NombreDeValeursNonNullesDeNBarreR;
 	    NumerosDesVariables = Spx->NumVarNBarreRNonNul;
     }
-    Amx = Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE - 1.e-12;		
+    Amx = VALEUR_DE_PIVOT_ACCEPTABLE - 1.e-12;		
     for ( i = 0 ; i < iLimite ; i++ ) {   
       Var1 = NumerosDesVariables[i];
 			S = fabs( NBarreR[Var1] );
@@ -179,9 +188,9 @@ if ( Spx->PremierSimplexe == OUI_SPX && *EpurerLaBase == OUI_SPX && 0 ) {
       }
     }
 		
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Variable sortante %d variable entrante %d Amx %e\n", Spx->VariableSortante, Spx->VariableEntrante, Amx);
-	}
+    #if VERBOSE_SPX      
+      printf("Variable sortante %d variable entrante %d Amx %e\n",Spx->VariableSortante,Spx->VariableEntrante,Amx);
+    #endif
 					
     if ( Spx->VariableEntrante >= 0 ) {
       EpurationFaite = OUI_SPX;	
@@ -205,9 +214,9 @@ if ( Spx->PremierSimplexe == OUI_SPX && *EpurerLaBase == OUI_SPX && 0 ) {
    l'utiliser dans le strong branching */
  
 if ( Spx->NombreDeChangementsDeBase > 0 && Spx->ExplorationRapideEnCours == NON_SPX ) { 
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Factorisation necessaire avant sauvegardes pour le strong branching ou les coupes de Gomory\n");
-	}
+  #if VERBOSE_SPX
+    printf("Factorisation necessaire avant sauvegardes pour le strong branching ou les coupes de Gomory\n");
+  #endif
   /* Remarque: il faudrait aussi verifier qu'on va effectivement faire du strong branching
                car il se peut que non et qu'on calcule des coupes a la place */
   SPX_FactoriserLaBase( Spx );	
@@ -233,9 +242,9 @@ if ( Spx->NombreDeChangementsDeBase > 0 && Spx->ExplorationRapideEnCours == NON_
 
 /* On peut maintenant supprimer toutes les variables BASIQUE_ARTIFICIELLE qui sont hors base */
 if ( Spx->PremierSimplexe == OUI_SPX ) {     
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Suppression des variables basiques artificielles qui ne sont plus dans la base \n");
-	}
+  #if VERBOSE_SPX      
+    printf("Suppression des variables basiques artificielles qui ne sont plus dans la base \n");
+  #endif	
   Var1 = Spx->NombreDeVariables;
   for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
     if ( OrigineDeLaVariable[Var] == BASIQUE_ARTIFICIELLE ) {
@@ -247,9 +256,9 @@ if ( Spx->PremierSimplexe == OUI_SPX ) {
   NombreDeVariables = Var1;
   for ( Var = Var1 ; Var < Spx->NombreDeVariables ; Var++ ) {
     if ( PositionDeLaVariable[Var] == EN_BASE_LIBRE ) continue;      
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Variable basique artificielle %d supprimee\n", Var);
-	}
+    #if VERBOSE_SPX      
+      printf("Variable basique artificielle %d supprimee\n",Var);
+    #endif		
 		/* La variable artificielle est hors base: on l'enleve des donnees. Pour cela on l'enleve simplement des contraintes.
 		   Les variables seront retassees ensuite */			
     C[Var] = 0.0;
@@ -276,10 +285,10 @@ if ( Spx->PremierSimplexe == OUI_SPX ) {
   for ( Var = Var1 ; Var < Spx->NombreDeVariables ; Var++ ) {
     if ( OrigineDeLaVariable[Var]  != BASIQUE_ARTIFICIELLE ) continue;
     if ( PositionDeLaVariable[Var] != EN_BASE_LIBRE ) continue;      
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("La variable basique artificielle %d reste dans les donnees du probleme avec le numero %d\n",
-			Var, NombreDeVariables);
-	}
+    #if VERBOSE_SPX      
+      printf("La variable basique artificielle %d reste dans les donnees du probleme avec le numero %d\n",
+			        Var,NombreDeVariables);
+    #endif     
 		
     TypeDeVariable[NombreDeVariables] = BORNEE;
     C[NombreDeVariables] = 1.0;

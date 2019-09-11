@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Appele par le branch and bound (ou branch and cut) pour
@@ -84,9 +93,9 @@ int i ; int j ; NOEUD * Noeud; BB * Bb; /*int * TypeDeBorneTravSv;*/ double * Um
 double * UmaxTrav; int * NumeroDeLaVariableModifiee; char * TypeDeBorneModifiee;
 double * NouvelleValeurDeBorne; char RelancerUnSimplexe; double * UTrav;
 
-if ( Pne->pne_params->UTILISER_UNE_CONTRAINTE_DE_COUT_MAX == OUI_PNE ) {
-	*UtiliserCoutDeLaMeilleureSolutionEntiere = NON;
-}
+# if UTILISER_UNE_CONTRAINTE_DE_COUT_MAX == OUI_PNE
+  *UtiliserCoutDeLaMeilleureSolutionEntiere = NON;
+# endif
 
 Bb = Pne->ProblemeBbDuSolveur;
 Noeud = Bb->NoeudEnExamen;
@@ -121,7 +130,7 @@ for( i = 0 ; i < Noeud->NombreDeBornesModifiees ; i++ ) {
 	  UmaxTrav[NumeroDeLaVariableModifiee[i]] = NouvelleValeurDeBorne[i];
 	}
 	else {
-	  if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+	  if ( Pne->AffichageDesTraces == OUI_PNE ) {
 		  printf("PNE_BranchAndBoundSolvePbRlx: erreur dans la limitation des bornes (etape reduced cost fixing)\n");
 		}
 	}
@@ -130,18 +139,18 @@ for( i = 0 ; i < Noeud->NombreDeBornesModifiees ; i++ ) {
 /* Modification des types de bornes */
 for ( i = 0 ; i < Pne->NombreDeVariablesTrav  ; i++ ) {
   if ( Pne->TypeDeBorneTrav[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {
-    if ( Pne->UmaxTrav[i] - Pne->UminTrav[i] < Pne->pne_params->PLAGE_REDUCED_COST_FIXING ) { 
+    if ( Pne->UmaxTrav[i] - Pne->UminTrav[i] < PLAGE_REDUCED_COST_FIXING ) { 
       Pne->TypeDeBorneTrav[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
     }
   }
   else if (  Pne->TypeDeBorneTrav[i] == VARIABLE_NON_BORNEE ) {
-    if ( Pne->UmaxTrav[i] - Pne->UminTrav[i] < Pne->pne_params->PLAGE_REDUCED_COST_FIXING ) {
+    if ( Pne->UmaxTrav[i] - Pne->UminTrav[i] < PLAGE_REDUCED_COST_FIXING ) { 
       Pne->TypeDeBorneTrav[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
     }
-    else if ( Pne->UminTrav[i] > -Pne->pne_params->PLAGE_REDUCED_COST_FIXING ) {
+    else if ( Pne->UminTrav[i] > -PLAGE_REDUCED_COST_FIXING ) {
       Pne->TypeDeBorneTrav[i] = VARIABLE_BORNEE_INFERIEUREMENT;
     }
-    else if ( Pne->UmaxTrav[i] < Pne->pne_params->PLAGE_REDUCED_COST_FIXING ) {
+    else if ( Pne->UmaxTrav[i] < PLAGE_REDUCED_COST_FIXING ) {
       /* A ce stade on ne peut plus utiliser le type de borne VARIABLE_BORNEE_SUPERIEUREMENT sans trop de complication */
       /* Pne->TypeDeBorneTrav[i] = VARIABLE_BORNEE_SUPERIEUREMENT; */
     }   
@@ -199,19 +208,19 @@ for ( j = 0 ; j < *NombreDeVariablesInstanciees ; j++ ) {
 /* Nouvelle modification des types de bornes */
 for ( i = 0 ; i < Pne->NombreDeVariablesTrav  ; i++ ) {
   if ( Pne->TypeDeBorneTrav[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {
-    if ( Pne->UmaxTrav[i] - Pne->UminTrav[i] < Pne->pne_params->PLAGE_REDUCED_COST_FIXING ) {
+    if ( Pne->UmaxTrav[i] - Pne->UminTrav[i] < PLAGE_REDUCED_COST_FIXING ) { 
       /*printf("Ancien TypeDeBorneTrav %d  modifie\n",Pne->TypeDeBorneTrav[i]);*/ 
       Pne->TypeDeBorneTrav[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
     }
   }
   else if (  Pne->TypeDeBorneTrav[i] == VARIABLE_NON_BORNEE ) {
-    if ( Pne->UmaxTrav[i] - Pne->UminTrav[i] < Pne->pne_params->PLAGE_REDUCED_COST_FIXING ) {
+    if ( Pne->UmaxTrav[i] - Pne->UminTrav[i] < PLAGE_REDUCED_COST_FIXING ) { 
       Pne->TypeDeBorneTrav[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
     }
-    else if ( Pne->UminTrav[i] > -Pne->pne_params->PLAGE_REDUCED_COST_FIXING ) {
+    else if ( Pne->UminTrav[i] > -PLAGE_REDUCED_COST_FIXING ) {
       Pne->TypeDeBorneTrav[i] = VARIABLE_BORNEE_INFERIEUREMENT;
     }
-    else if ( Pne->UmaxTrav[i] < Pne->pne_params->PLAGE_REDUCED_COST_FIXING ) {
+    else if ( Pne->UmaxTrav[i] < PLAGE_REDUCED_COST_FIXING ) {
       /* A ce stade on ne peut plus utiliser le type de borne VARIABLE_BORNEE_SUPERIEUREMENT sans trop de complication */
       /* Pne->TypeDeBorneTrav[i] = VARIABLE_BORNEE_SUPERIEUREMENT; */
     }   
@@ -224,12 +233,12 @@ for ( i = 0 ; i < Pne->NombreDeVariablesTrav  ; i++ ) {
 }
 
 /* Node presolve */
-if ( Pne->pne_params->FAIRE_DU_NODE_PRESOLVE == OUI_PNE ) {
-	if (Pne->YaDesVariablesEntieres == OUI_PNE && NumeroDePasse == 1) {
-		/* Attention il ne faut l'appeler qu'au premier calcul */
-		PNE_NodePresolve(Pne, Faisabilite);
-	}
-}
+# if FAIRE_DU_NODE_PRESOLVE == OUI_PNE
+  if ( Pne->YaDesVariablesEntieres == OUI_PNE && NumeroDePasse == 1 ) {  
+    /* Attention il ne faut l'appeler qu'au premier calcul */
+    PNE_NodePresolve( Pne, Faisabilite );			
+  }		
+# endif
 
 PNE_ControleCliquesAvantResolutionProblemeRelaxe( Pne, Faisabilite );
 
@@ -283,12 +292,12 @@ else if ( Pne->SolveurPourLeProblemeRelaxe == SIMPLEXE ) {
     if ( *Faisabilite == OUI_PNE && Pne->YaUneSolutionEntiere == OUI_PNE ) {
       RelancerUnSimplexe = PNE_ReducedCostFixing( Pne, PositionDeLaVariable );
       if ( RelancerUnSimplexe == OUI_PNE ) {
-			if (Pne->pne_params->VERBOSE_PNE) {
-				printf(" ReducedCostFixing : OnAFixeDesVariablesEntieres\n");
-			}
-			PremiereResolutionAuNoeudRacine = NON_PNE;
-			*BaseFournie = OUI_SPX;	
-			goto SimplexeDual;	
+        #if VERBOSE_PNE
+          printf(" ReducedCostFixing : OnAFixeDesVariablesEntieres\n");
+        #endif
+        PremiereResolutionAuNoeudRacine = NON_PNE;
+        *BaseFournie = OUI_SPX;	
+	      goto SimplexeDual;	
       }        
     }      
   }
@@ -308,32 +317,33 @@ if ( *Faisabilite == OUI_PNE ) {
 	
   /* En test: clonage du simplexe au noeud racine pour le reactiver de temps en temps */
 	/* S'il s'agit d'un probleme a variables entieres */
-	if( Pne->pne_params->RELANCE_PERIODIQUE_DU_SIMPLEXE_AU_NOEUD_RACINE == OUI_PNE ) {
-		if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {
-			/* S'il s'agit du dernier simplexe au noeud etudie */
-			if ( ChoisirLaVariableAInstancier == OUI_PNE ) {
-				/* S'il s'agit du noeud racine */
-				if ( Bb->NoeudEnExamen == Bb->NoeudRacine && Pne->Controls == NULL ) {
-					/* Si le probleme a une solution et qu'il reste des variables fractionnaires */		
-					if ( *Faisabilite == OUI_PNE && Pne->NombreDeVariablesAValeurFractionnaire != 0 ) {
-						PNE_CloneProblemeSpxDuNoeudRacine( Pne, PositionDeLaVariable, NbVarDeBaseComplementaires, ComplementDeLaBase ); 																					 
-					}
-				}
-			}
-		}
-	}
+	# if RELANCE_PERIODIQUE_DU_SIMPLEXE_AU_NOEUD_RACINE == OUI_PNE
+	  if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {
+	    /* S'il s'agit du dernier simplexe au noeud etudie */
+      if ( ChoisirLaVariableAInstancier == OUI_PNE ) {
+	      /* S'il s'agit du noeud racine */
+	      if ( Bb->NoeudEnExamen == Bb->NoeudRacine && Pne->Controls == NULL ) {
+ 		      /* Si le probleme a une solution et qu'il reste des variables fractionnaires */		
+          if ( *Faisabilite == OUI_PNE && Pne->NombreDeVariablesAValeurFractionnaire != 0 ) {
+            PNE_CloneProblemeSpxDuNoeudRacine( Pne, PositionDeLaVariable, NbVarDeBaseComplementaires, ComplementDeLaBase ); 																					 
+          }
+			  }
+		  }
+    }
+	# endif
 
-	if ( Pne->pne_params->UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE ) {
-		if ( Pne->pne_params->PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE ) {
-			if ( Pne->YaDesVariablesEntieres == OUI_PNE && Noeud == Bb->NoeudRacine ) {
-				PNE_VariableProbing(Pne);
-				if ( Pne->ProbingOuNodePresolve != NULL ) {
-					if ( Pne->ProbingOuNodePresolve->Faisabilite == NON_PNE ) *Faisabilite = NON_PNE;
-					else PNE_CliquesConflictGraph(Pne);
-				}
-			}
-		}
-	}
+  # if UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE
+	  # if PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE
+      if ( Pne->YaDesVariablesEntieres == OUI_PNE && Noeud == Bb->NoeudRacine ) {
+        PNE_VariableProbing( Pne );
+	      if ( Pne->ProbingOuNodePresolve != NULL ) {
+	        if ( Pne->ProbingOuNodePresolve->Faisabilite == NON_PNE ) *Faisabilite = NON_PNE;
+			    else PNE_CliquesConflictGraph( Pne );
+        }			
+      }	
+    # endif
+  # endif
+	
 }
 	
 if ( *Faisabilite == OUI_PNE ) {
@@ -359,9 +369,9 @@ if ( *Faisabilite == OUI_PNE ) {
                         );
     
   if( Pne->CestTermine == OUI_PNE ) {
-	  if (Pne->pne_params->VERBOSE_PNE) {
-		  printf(" Probleme relaxe: on a trouve une solution entiere \n");
-	  }
+    #if VERBOSE_PNE
+      printf(" Probleme relaxe: on a trouve une solution entiere \n");
+    #endif
     *LaSolutionEstEntiere = OUI_PNE;
     if ( 0 ) { /* Pas de traces s'il y a un 0 dans le if */
     { int Nb; int Var; int NbVar;

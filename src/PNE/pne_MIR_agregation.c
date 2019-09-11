@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Heuristique Marchand-Wolsey pour faire des MIR sur des
@@ -1333,17 +1342,17 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 	  /* Si la valeur de la variable continue est negative, c'est a cause des imprecisions et on evite de faire un calcul */
 		if ( ValeurDeLaVariableContinue < 0.0 ) goto RAZ;
 	
-		if ( Pne->pne_params->CALCULS_SUR_MIXED_0_1_KNAPSACK == OUI_PNE ) {
+    # if CALCULS_SUR_MIXED_0_1_KNAPSACK == OUI_PNE
 			if ( YaUneVariableS == OUI_PNE && ValeurDeLaVariableContinue != 0.0 ) {
-				PNE_Knapsack_0_1_AvecVariableContinue(Pne,
-					NombreDeVariablesBinaires, NumeroDeLaVariableBinaire, CoeffDeLaVariableBinaire,
-					b, ValeurDeLaVariableContinue,
-					NombreDeVariablesSubstituees, NumeroDesVariablesSubstituees,
-					TypeDeSubsitution, CoefficientDeLaVariableSubstituee
-				);
-			}
-			goto RAZ;
-		}
+        PNE_Knapsack_0_1_AvecVariableContinue( Pne,
+                                               NombreDeVariablesBinaires, NumeroDeLaVariableBinaire, CoeffDeLaVariableBinaire,
+                                               b, ValeurDeLaVariableContinue,
+												                       NombreDeVariablesSubstituees, NumeroDesVariablesSubstituees,
+												                       TypeDeSubsitution, CoefficientDeLaVariableSubstituee
+																						 );					
+      }
+			goto RAZ;			
+		# endif
 	
     /* cMIR separation */		
 	  /*printf("2- Avant CMIR NombreDeVariablesBinaires %d b = %e ValeurDeLaVariableContinue = %e\n",NombreDeVariablesBinaires,b,ValeurDeLaVariableContinue);*/		
@@ -1419,7 +1428,7 @@ free( TasPourKnapsack );
 
 if ( NbMIRCreees == 0 ) {	
   Pne->NbEchecsConsecutifsDeCalculsMIRmarchandWolsey++;
-	if ( Pne->NbEchecsConsecutifsDeCalculsMIRmarchandWolsey >= Pne->pne_params->NB_ECHECS_INHIB_MIR ) {
+	if ( Pne->NbEchecsConsecutifsDeCalculsMIRmarchandWolsey >= NB_ECHECS_INHIB_MIR ) {
     Pne->CalculDeMIRmarchandWolsey = NON_PNE;
 	}
 }
@@ -1429,7 +1438,7 @@ else {
 	if ( Bb->NoeudEnExamen->ProfondeurDuNoeud + 1 > Pne->ProfondeurMirMarchandWolseTrouvees ) {
     Pne->ProfondeurMirMarchandWolseTrouvees = Bb->NoeudEnExamen->ProfondeurDuNoeud + 1;
   }
-  if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+  if ( Pne->AffichageDesTraces == OUI_PNE ) {
 	  /*
 		printf("Mir cuts found %d at depth %d\n",NbMIRCreees,Bb->NoeudEnExamen->ProfondeurDuNoeud);
 	  fflush( stdout );

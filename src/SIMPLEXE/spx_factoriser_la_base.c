@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Factorisation LU de la base 
@@ -33,7 +42,7 @@
 
 # define TRACES 0
 
-//# define Spx->spx_params->VERBOSE_SPX 0
+# define VERBOSE_SPX 0
 
 # define COMPILE_DM 0
 # if COMPILE_DM == 1
@@ -160,7 +169,7 @@ else {
 	          Spx->RangDeLaMatriceFactorisee,Spx->NombreDeFactorisationsDeBaseReduite,Spx->ModifCoutsAutorisee);
 	# endif
 	/*
-	if ( Spx->NombreDeReactivationsDeLaBaseReduite < Spx->spx_params->NB_MAX_DE_REACTIVATIONS_DE_LA_BASE_REDUITE ) {
+	if ( Spx->NombreDeReactivationsDeLaBaseReduite < NB_MAX_DE_REACTIVATIONS_DE_LA_BASE_REDUITE ) {
 	  Spx->ForcerUtilisationDeLaBaseComplete--;
 	  if ( Spx->ForcerUtilisationDeLaBaseComplete <= 0 ) {
 			Spx->ForcerUtilisationDeLaBaseComplete = 0;
@@ -224,7 +233,7 @@ else {
 if ( NbTrm > SeuilInverseDense ) Spx->InverseProbablementDense = OUI_SPX;
 else Spx->InverseProbablementDense = NON_SPX;
 
-if ( NbTrm < Spx->spx_params->TAUX_DE_REMPLISSAGE_POUR_BASE_HYPER_CREUSE * N2 ) Spx->TypeDeCreuxDeLaBase = BASE_HYPER_CREUSE;
+if ( NbTrm < TAUX_DE_REMPLISSAGE_POUR_BASE_HYPER_CREUSE * N2 ) Spx->TypeDeCreuxDeLaBase = BASE_HYPER_CREUSE;
 else if ( NbTrm == N2 ) Spx->TypeDeCreuxDeLaBase = BASE_PLEINE;
 else Spx->TypeDeCreuxDeLaBase = BASE_CREUSE;
 
@@ -307,17 +316,17 @@ if ( Spx->FaireScalingLU < 0 ) Spx->FaireScalingLU = 0;
 
 if ( Matrice.ProblemeDeFactorisation != 0 ) {
   if ( CodeRetour != MATRICE_SINGULIERE ) {
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf(" Erreur dans la factorisation LU du simplexe, numero d'erreur %d \n", CodeRetour);
-	  }
+    #if VERBOSE_SPX
+      printf(" Erreur dans la factorisation LU du simplexe, numero d'erreur %d \n",CodeRetour); 
+    #endif
     Spx->AnomalieDetectee = OUI_SPX;
     longjmp( Spx->EnvSpx, Spx->AnomalieDetectee );
   }  
   /* Cas d'une matrice singuliere */
   if ( Spx->BaseInversibleDisponible == OUI_SPX && OnRetesteSiPivotNul == OUI_SPX ) { 
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("Base non inversible, on repart de la derniere base inversible disponible Iteration %d\n", Spx->Iteration);
-	  }
+    #if VERBOSE_SPX
+      printf("Base non inversible, on repart de la derniere base inversible disponible Iteration %d\n",Spx->Iteration);
+    #endif          
     Spx->ProblemeDeStabiliteDeLaFactorisation = NON_SPX;
 
     SeuilPivotMarkowitzParDefaut = NON_LU;
@@ -350,17 +359,17 @@ if ( Matrice.ProblemeDeFactorisation != 0 ) {
     }
 
 	  /* Il faut restaurer l'admissibilite duale si l'on utilise les bornes auxiliaires */
-#ifdef UTILISER_BORNES_AUXILIAIRES
-		RestaurerAdmissibiliteDuale = OUI_SPX;
-		/* On enleve toutes les bornes auxiliaires car elles seront retablies si necessaire */
-		for (Var = 0; Var < Spx->NombreDeVariables; Var++) {
-			if (Spx->StatutBorneSupCourante[Var] != BORNE_NATIVE) SPX_SupprimerUneBorneAuxiliaire(Spx, Var);
-		}
-		if (Spx->NombreDeBornesAuxiliairesUtilisees != 0) {
-			printf("Attention probleme dans SPX_Factorisation: le nombre de bornes auxiliaires n'est pas nul (valeur = %d)\n",
-				Spx->NombreDeBornesAuxiliairesUtilisees);
-		}
-#endif
+    # ifdef UTILISER_BORNES_AUXILIAIRES   
+		  RestaurerAdmissibiliteDuale = OUI_SPX;
+			/* On enleve toutes les bornes auxiliaires car elles seront retablies si necessaire */
+      for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
+        if ( Spx->StatutBorneSupCourante[Var] != BORNE_NATIVE ) SPX_SupprimerUneBorneAuxiliaire( Spx, Var );					
+      }
+			if ( Spx->NombreDeBornesAuxiliairesUtilisees != 0 ) {
+			  printf("Attention probleme dans SPX_Factorisation: le nombre de bornes auxiliaires n'est pas nul (valeur = %d)\n",
+				        Spx->NombreDeBornesAuxiliairesUtilisees);			
+			}			
+    # endif
 				
     /* Precaution: RAZ du Steepest Edge */
     SPX_InitDualPoids( Spx );
@@ -378,12 +387,12 @@ if ( Matrice.ProblemeDeFactorisation != 0 ) {
     if ( Spx->NombreMaxDeChoixAuHasard < 10 ) Spx->NombreMaxDeChoixAuHasard = 10;
 
 		/* On augmente le seuil dual de pivotage */
-		Spx->SeuilDePivotDual = Spx->spx_params->COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;		
+		Spx->SeuilDePivotDual = COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * VALEUR_DE_PIVOT_ACCEPTABLE;		
 						
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Iteration %d nombre de choix de pivot au hasard a faire parmi les choix acceptables: %d\n",
-				Spx->Iteration, Spx->NombreMaxDeChoixAuHasard);
-		}
+    #if VERBOSE_SPX
+      printf("Iteration %d nombre de choix de pivot au hasard a faire parmi les choix acceptables: %d\n",
+			        Spx->Iteration,Spx->NombreMaxDeChoixAuHasard);
+    #endif
 		
     /* On refait la factorisation */
     OnRetesteSiPivotNul = NON_SPX; /* Mais si on retombe sur un pivot nul alors c'est grave */
@@ -394,9 +403,9 @@ if ( Matrice.ProblemeDeFactorisation != 0 ) {
     /* Pas de base inversible disponible */
     Spx->AnomalieDetectee = OUI_SPX;
     if ( CodeRetour == MATRICE_SINGULIERE ) { 
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf(" Erreur dans la factorisation LU du simplexe, base non inversible et aucune base inversible disponible\n");
-		}
+      #if VERBOSE_SPX
+        printf(" Erreur dans la factorisation LU du simplexe, base non inversible et aucune base inversible disponible\n"); 
+      #endif
       Spx->AnomalieDetectee = SPX_MATRICE_DE_BASE_SINGULIERE;
     }		
     longjmp( Spx->EnvSpx, Spx->AnomalieDetectee );
@@ -437,15 +446,14 @@ if ( RestaurerAdmissibiliteDuale == OUI_SPX ) {
   Iteration            = Spx->Iteration;
   NombreMaxDIterations = Spx->NombreMaxDIterations;
   
-  if (Spx->spx_params->VERBOSE_SPX) {
-	  printf("Probleme de factorisation, restauration de l'admissibilite duale necessaire a l'iteration %d\n", Spx->Iteration);
-  }
+  #if VERBOSE_SPX
+    printf("Probleme de factorisation, restauration de l'admissibilite duale necessaire a l'iteration %d\n",Spx->Iteration); 
+  #endif 
 		
   /* Restauration des couts: normalement ca a deja ete fait sauf s'il n'y a pas eu de degenerescence duale */
 	memcpy( (char *) Spx->C, (char *) Spx->Csv, Spx->NombreDeVariables * sizeof( double ) );
-  for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = Spx->spx_params->NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;    
-
-  printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
+  for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;    
+    
   SPX_DualPhase1Simplexe( Spx );
 	
 	Spx->PhaseEnCours = PHASE_2;
@@ -471,7 +479,7 @@ if ( RestaurerAdmissibiliteDuale == OUI_SPX ) {
     if ( Spx->NombreMaxDeChoixAuHasard < 10 ) Spx->NombreMaxDeChoixAuHasard = 10;
 
 		/* On augmente le seuil dual de pivotage */
-		Spx->SeuilDePivotDual = Spx->spx_params->COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;		
+		Spx->SeuilDePivotDual = COEFF_AUGMENTATION_VALEUR_DE_PIVOT_ACCEPTABLE * VALEUR_DE_PIVOT_ACCEPTABLE;		
   }						
 		
 }

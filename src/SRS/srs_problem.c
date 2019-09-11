@@ -1,10 +1,3 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -12,15 +5,45 @@
 #include "pne_constantes_externes.h"
 #include "pne_fonctions.h"
 #include "spx_fonctions.h"
-
-#ifndef difftimens
 #define difftimens(ts2, ts1) (double)ts2.tv_sec - (double)ts1.tv_sec + ((double)ts2.tv_nsec - (double)ts1.tv_nsec)/1.e9
-#endif
 
 # ifdef __cplusplus
 extern "C"
 {
 # endif
+
+void PNE_copy_problem(PROBLEME_MPS * Mps, PROBLEME_A_RESOUDRE * Probleme, int ToleranceDOptimaliteExterne, double ToleranceExterne) {
+	Probleme->NombreDeVariables = Mps->NbVar;
+	Probleme->TypeDeVariable = Mps->TypeDeVariable;
+	Probleme->TypeDeBorneDeLaVariable = Mps->TypeDeBorneDeLaVariable;
+	Probleme->X = Mps->U;
+	Probleme->Xmax = Mps->Umax;
+	Probleme->Xmin = Mps->Umin;
+	Probleme->CoutLineaire = Mps->CoefsObjectif;
+	Probleme->NombreDeContraintes = Mps->NbCnt;
+	Probleme->SecondMembre = Mps->Rhs;
+	Probleme->Sens = Mps->SensDeLaContrainte;
+	Probleme->IndicesDebutDeLigne = Mps->Mdeb;
+	Probleme->NombreDeTermesDesLignes = Mps->NbTerm;
+	Probleme->CoefficientsDeLaMatriceDesContraintes = Mps->A;
+	Probleme->IndicesColonnes = Mps->Nuvar;
+	Probleme->VariablesDualesDesContraintes = Mps->VariablesDualesDesContraintes;
+	Probleme->SortirLesDonneesDuProbleme = NON_PNE;
+	Probleme->AlgorithmeDeResolution = SIMPLEXE; /* SIMPLEXE ou POINT_INTERIEUR */
+	Probleme->CoupesLiftAndProject = NON_PNE;
+	Probleme->AffichageDesTraces = OUI_PNE;
+	Probleme->FaireDuPresolve = OUI_PNE /* OUI_PNE */;
+	if (Probleme->FaireDuPresolve == NON_PNE) printf("!!!!!!!!!!!!!!  Attention pas de presolve   !!!!!!!!!\n");
+
+	Probleme->TempsDExecutionMaximum = 0;
+	Probleme->NombreMaxDeSolutionsEntieres = -1;
+	Probleme->ToleranceDOptimalite = 1.e-4; /* C'est en % donc 1.e-4 ca fait 1.e-6 */
+
+	if (ToleranceDOptimaliteExterne == 1) {
+		Probleme->ToleranceDOptimalite = ToleranceExterne;
+		printf("gap for optimality was given by the user: %f (must be postive or zero)\n", ToleranceExterne);
+	}
+}
 
 const char * SRSversion() {
 	return "SIRIUS V1.0.0";
@@ -74,18 +97,18 @@ int mallocAndCopyStringArray(size_t arraySize, char const *const * sourceArray, 
 }
 
 int computeColBoundType(double lb, double ub) {
-	if (lb > -SRS_infinite) {
-		if (ub < SRS_infinite) {
-			//if (lb == ub) {
-			//	return VARIABLE_FIXE;
-			//}
-			return VARIABLE_BORNEE_DES_DEUX_COTES;
-		}
-		return VARIABLE_BORNEE_INFERIEUREMENT;
-	}
-	else if (ub < SRS_infinite) {
-		return VARIABLE_BORNEE_SUPERIEUREMENT;
-	}
+	//if (lb != -SRS_infinite) {
+	//	if (ub != SRS_infinite) {
+	//		//if (lb == ub) {
+	//		//	return VARIABLE_FIXE;
+	//		//}
+	//		return VARIABLE_BORNEE_DES_DEUX_COTES;
+	//	}
+	//	return VARIABLE_BORNEE_INFERIEUREMENT;
+	//}
+	//else if (ub != SRS_infinite) {
+	//	return VARIABLE_BORNEE_SUPERIEUREMENT;
+	//}
 	return VARIABLE_NON_BORNEE;
 }
 // *** Enf of Utility functions ***
@@ -196,7 +219,7 @@ int SRSwritempsprob(PROBLEME_MPS * problem_mps, const char * fileName) {
 	PROBLEME_A_RESOUDRE problem_a_resoudre;
 	PROBLEME_PNE problem_pne;
 	PNE_copy_problem(problem_mps, &problem_a_resoudre, 0, 0.0);
-	PNE_EcrireJeuDeDonneesMPS_avecNom(&problem_pne, &problem_a_resoudre, fileName);
+	//FIXME PNE_EcrireJeuDeDonneesMPS_avecNom(&problem_pne, &problem_a_resoudre, fileName);
 
 	return 0;
 }
@@ -230,7 +253,7 @@ int SRSfreeprob(SRS_PROBLEM * problem_srs) {
 	}
 
 	if (problem_srs->problem_spx != NULL) {
-		SPX_LibererProblemeStandalone(problem_srs->problem_spx);
+		SPX_LibererProbleme(problem_srs->problem_spx);
 	}
 
 	if (problem_srs->problem_simplexe != NULL) {
@@ -329,7 +352,7 @@ int SRSsetcoefs(SRS_PROBLEM * problem_srs,
 	return 0;
 }
 
-int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, PNE_PARAMS ** pneParams, SPX_PARAMS ** spxParams) {
+int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs) {
 	if (problem_srs->is_mip) {
 		problem_srs->problem_mip = malloc(sizeof(PROBLEME_A_RESOUDRE));
 		PNE_copy_problem(problem_srs->problem_mps, problem_srs->problem_mip, 0, 0.0);
@@ -340,12 +363,7 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, PNE_PARAMS ** 
 		problem_srs->problem_mip->AffichageDesTraces = problem_srs->verbosePne;
 		//problem_srs->problem_mip->FaireDuScaling = problem_srs->scaling;
 
-		(*pneParams) = newDefaultPneParams();
-		(*spxParams) = (*pneParams)->spx_params;
-		(*spxParams)->VERBOSE_SPX = problem_srs->verboseSpx;
-		(*pneParams)->VERBOSE_PNE = problem_srs->verbosePne;
-		(*pneParams)->AffichageDesTraces = problem_srs->verbosePne;
-		(*pneParams)->TempsDExecutionMaximum = (int)problem_srs->maxTime;
+		problem_srs->problem_mip->TempsDExecutionMaximum = (int)problem_srs->maxTime;
 
 	} else {
 		PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
@@ -364,19 +382,12 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, PNE_PARAMS ** 
 		{
 			SPX_ModifierLeVecteurCouts(problem_spx, problem_mps->CoefsObjectif, problem_mps->NbVar);
 			SPX_ModifierLeVecteurSecondMembre(problem_spx, problem_mps->Rhs, problem_mps->SensDeLaContrainte, problem_mps->NbCnt);
-			
-			size_t arraySizeInBytes = problem_mps->NbVar * sizeof(double);
-			memcpy(problem_spx->Xmin, problem_mps->Umin, arraySizeInBytes);
-			memcpy(problem_spx->Xmax, problem_mps->Umax, arraySizeInBytes);
-
-			memcpy(problem_simplexe->Xmin, problem_mps->Umin, arraySizeInBytes);
-			memcpy(problem_simplexe->Xmax, problem_mps->Umax, arraySizeInBytes);
 
 			problem_simplexe->Contexte = BRANCH_AND_BOUND_OU_CUT_NOEUD;
 			problem_simplexe->BaseDeDepartFournie = UTILISER_LA_BASE_DU_PROBLEME_SPX;
-			(*spxParams) = problem_spx->spx_params;
-		} else {
-			(*spxParams) = newDefaultSpxParams();
+		}
+		else
+		{
 			problem_simplexe->Contexte = SIMPLEXE_SEUL;
 			problem_simplexe->BaseDeDepartFournie = NON_SPX;
 
@@ -394,20 +405,14 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, PNE_PARAMS ** 
 			problem_simplexe->DureeMaxDuCalcul = -1.;
 			problem_simplexe->NombreDeContraintesCoupes = 0;
 		}
-		(*spxParams)->VERBOSE_SPX = problem_srs->verboseSpx;
 		problem_simplexe->AffichageDesTraces = problem_srs->verboseSpx;
 		problem_simplexe->FaireDuScaling = problem_srs->scaling;
-
-		problem_simplexe->CoutMax = 0;
-		problem_simplexe->NbVarDeBaseComplementaires = 0;
 	}
 
 	return 0;
 }
 
-
 int SRSoptimize(SRS_PROBLEM * problem_srs) {
-	
 	int nbCols = problem_srs->problem_mps->NbVar;
 	if (problem_srs->maximize) {
 		for (int idxCol = 0; idxCol < nbCols; ++idxCol) {
@@ -415,20 +420,16 @@ int SRSoptimize(SRS_PROBLEM * problem_srs) {
 		}
 	}
 	
-	PNE_PARAMS * pneParams = NULL;
-	SPX_PARAMS * spxParams = NULL;
-	allocateProblemsAndPropagateParams(problem_srs, &pneParams, &spxParams);
-	
+	allocateProblemsAndPropagateParams(problem_srs);
+
 	struct timespec debut;
 	timespec_get(&debut, TIME_UTC);
 	if (problem_srs->is_mip) {
 		// Appel de pne
-		PNE_Solveur(problem_srs->problem_mip, pneParams);
-		free(pneParams->spx_params);
-		free(pneParams);
+		PNE_Solveur(problem_srs->problem_mip);
 	} else {
 		// Appel du simplexe
-		problem_srs->problem_spx = SPX_Simplexe(problem_srs->problem_simplexe, problem_srs->problem_spx, spxParams);
+		problem_srs->problem_spx = SPX_Simplexe(problem_srs->problem_simplexe, problem_srs->problem_spx);
 		//free(spxParams);
 	}
 	struct timespec fin;
@@ -471,7 +472,7 @@ int SRSgetmipitercount(SRS_PROBLEM * problem_srs, int * iterCount) {
 	if (problem_srs->problem_mip == NULL) {
 		return -1;
 	}
-	(*iterCount) = problem_srs->problem_mip->SommeDuNombreDIterations;
+	//FIXME (*iterCount) = problem_srs->problem_mip->SommeDuNombreDIterations;
 
 	return 0;
 }
@@ -501,33 +502,12 @@ int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simp
 	problem_simplexe->ChoixDeLAlgorithme = SPX_DUAL;
 
 	problem_simplexe->LibererMemoireALaFin = NON_SPX;
-	problem_simplexe->AffichageDesTraces = NON_SPX;
+	problem_simplexe->AffichageDesTraces = OUI_SPX;
 	problem_simplexe->CoutMax = -1;
 	problem_simplexe->UtiliserCoutMax = NON_SPX;
 
 	problem_simplexe->Contexte = SIMPLEXE_SEUL;
 	problem_simplexe->BaseDeDepartFournie = NON_SPX;
-
-	return 0;
-}
-
-SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * problem_simplexe)
-{
-	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
-	problem_mps->CoefsObjectif = problem_simplexe->CoutLineaire;
-	problem_mps->U = problem_simplexe->X;
-	problem_mps->Umin = problem_simplexe->Xmin;
-	problem_mps->Umax = problem_simplexe->Xmax;
-	problem_mps->NbVar = problem_simplexe->NombreDeVariables;
-	problem_mps->TypeDeBorneDeLaVariable = problem_simplexe->TypeDeVariable;
-	problem_mps->NbCnt = problem_simplexe->NombreDeContraintes;
-	problem_mps->Mdeb = problem_simplexe->IndicesDebutDeLigne;
-	problem_mps->NbTerm = problem_simplexe->NombreDeTermesDesLignes;
-	problem_mps->Nuvar = problem_simplexe->IndicesColonnes;
-	problem_mps->A = problem_simplexe->CoefficientsDeLaMatriceDesContraintes;
-	problem_mps->SensDeLaContrainte = problem_simplexe->Sens;
-	problem_mps->Rhs = problem_simplexe->SecondMembre;
-	problem_mps->VariablesDualesDesContraintes = problem_simplexe->CoutsMarginauxDesContraintes;
 
 	return 0;
 }
@@ -635,7 +615,7 @@ int SRSgetmipnodecount(SRS_PROBLEM * problem_srs, int * nodeCount) {
 	if (problem_srs->problem_mip == NULL) {
 		return -1;
 	}
-	(*nodeCount) = problem_srs->problem_mip->NombreDeProblemesResolus;
+	//FIXME (*nodeCount) = problem_srs->problem_mip->NombreDeProblemesResolus;
 
 	return 0;
 }
@@ -714,7 +694,7 @@ int SRSgetbestbound(SRS_PROBLEM * problem_srs, double * bestBoundVal) {
 		int status = SRSgetproblemstatus(problem_srs);
 		if (status == SRS_STATUS_OPTIMAL || status == SRS_STATUS_TIMEOUT_WITH_SOL)
 		{
-			(*bestBoundVal) = problem_srs->problem_mip->ValeurDuMeilleurMinorant;
+			//FIXEM (*bestBoundVal) = problem_srs->problem_mip->ValeurDuMeilleurMinorant;
 			return 0;
 		}
 		fprintf(stderr, "(ERROR) no solution found, can't get a best bound\n");

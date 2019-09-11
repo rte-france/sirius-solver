@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Comme son nom l'indique 
@@ -60,7 +69,7 @@ memset( (char *) Spx->Bs , 0 , Spx->NombreDeContraintes * sizeof( double ) );
 
 CoutDeLaVariableSortante = 0; /* Pour ne pas avoir de warning a la compilation */
 
-Spx->SeuilDePivotDual = Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;
+Spx->SeuilDePivotDual = VALEUR_DE_PIVOT_ACCEPTABLE;
 
 Spx->StrongBranchingEnCours = OUI_SPX;
 Spx->UtiliserLaLuUpdate     = NON_SPX;
@@ -158,9 +167,9 @@ Spx->NbCyclesSansControleDeDegenerescence = (int) floor( 0.5 * Spx->CycleDeContr
 Spx->Iteration               = 0;
 ControleFaitOptimumNonBorne = NON_SPX;
 ArretDemande                = NON_SPX;
-NbMaxIterations             = Spx->spx_params->NOMBRE_DITERATIONS_DE_STRONG_BRANCHING;
+NbMaxIterations             = NOMBRE_DITERATIONS_DE_STRONG_BRANCHING;
 
-if ( NbMaxIterations > Spx->spx_params->CYCLE_DE_REFACTORISATION_DUAL - 1 ) NbMaxIterations = Spx->spx_params->CYCLE_DE_REFACTORISATION_DUAL - 1;
+if ( NbMaxIterations > CYCLE_DE_REFACTORISATION_DUAL - 1 ) NbMaxIterations = CYCLE_DE_REFACTORISATION_DUAL - 1;
 
 /* Inutile de calculer BBarre a la premiere iteration */
 Spx->CalculerBBarre = NON_SPX; 
@@ -189,10 +198,10 @@ while ( 1 ) {
     /* Clause de sortie */
     *YaUneSolution  = OUI_SPX;
     *TypeDeSolution = STRONG_BRANCHING_MXITER_OU_REFACT;
-	if (Spx->spx_params->VERBOSE_SPX) {
-		if (Spx->Iteration >= NbMaxIterations) printf(" Fin strong branching par nombre max d'iterations atteint\n");
-		if (ArretDemande == OUI_SPX) printf(" Fin strong branching par refactorisation demandee \n");
-	}
+    #if VERBOSE_SPX
+      if( Spx->Iteration >= NbMaxIterations ) printf(" Fin strong branching par nombre max d'iterations atteint\n"); 
+      if( ArretDemande == OUI_SPX ) printf(" Fin strong branching par refactorisation demandee \n"); 
+    #endif		
     break;
   }
   
@@ -206,9 +215,9 @@ while ( 1 ) {
     if ( Spx->Cout + DeltaCoutFixe > Spx->CoutMax ) {        
       *YaUneSolution  = NON_SPX;
       *TypeDeSolution = STRONG_BRANCHING_COUT_MAX_DEPASSE;			
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf(" Fin strong branching par depassement du cout max \n");
-	  }
+      #if VERBOSE_SPX
+        printf(" Fin strong branching par depassement du cout max \n"); 
+      #endif			
       break;
     }
   }
@@ -218,9 +227,9 @@ while ( 1 ) {
   if ( Spx->Iteration > 1 ) SPX_DualChoixDeLaVariableSortante( Spx );  
   if ( Spx->VariableSortante < 0 ) {
     /* Optimalite atteinte */
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf(" Fin strong branching par optimalite\n");
-	  }
+    #if VERBOSE_SPX
+      printf(" Fin strong branching par optimalite\n"); 
+    #endif		
     *YaUneSolution  = OUI_SPX;
     *TypeDeSolution = STRONG_BRANCHING_OPTIMALITE;
     break; /* Fin du while car optimum atteint */
@@ -230,9 +239,9 @@ while ( 1 ) {
   SPX_DualVerifierErBMoinsUn( Spx ); 
   
   if ( Spx->FactoriserLaBase == OUI_SPX ) { 
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf(" Fin strong branching par FactoriserLaBase = OUI \n");
-	  }
+    #if VERBOSE_SPX
+      printf(" Fin strong branching par FactoriserLaBase = OUI \n"); 
+    #endif		
     *YaUneSolution  = OUI_SPX;
     *TypeDeSolution = STRONG_BRANCHING_REFACTORISATION;
     break; 
@@ -247,22 +256,22 @@ while ( 1 ) {
   SPX_DualChoixDeLaVariableEntrante( Spx );
   if ( Spx->VariableEntrante < 0 ) {  
    if ( Spx->AdmissibilitePossible == OUI_SPX ) {  
-	   if (Spx->spx_params->VERBOSE_SPX) {
-		   printf("Spx->AdmissibilitePossible = OUI_SPX => on considere quand meme qu'il y a une solution admissible\n");
-	   }
+      #if VERBOSE_SPX
+        printf("Spx->AdmissibilitePossible = OUI_SPX => on considere quand meme qu'il y a une solution admissible\n"); 
+      #endif			
       *YaUneSolution  = OUI_SPX;
       *TypeDeSolution = STRONG_BRANCHING_OPTIMALITE;
       break; 
     }
     else { 
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Spx->AdmissibilitePossible = NON_SPX\n");
-		}
+      #if VERBOSE_SPX
+        printf("Spx->AdmissibilitePossible = NON_SPX\n"); 
+      #endif			
     }
  
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf(" Fin strong branching par dual non borne \n");
-	}
+    #if VERBOSE_SPX
+      printf(" Fin strong branching par dual non borne \n"); 
+    #endif
 		
     *YaUneSolution  = NON_SPX;
 		*TypeDeSolution = STRONG_BRANCHING_PAS_DE_SOLUTION;
@@ -270,9 +279,9 @@ while ( 1 ) {
   }
 
   if ( Spx->FactoriserLaBase == OUI_SPX ) {
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf(" Fin strong branching par FactoriserLaBase = OUI \n");
-	  }
+    #if VERBOSE_SPX
+      printf(" Fin strong branching par FactoriserLaBase = OUI \n"); 
+    #endif		
     /* On ne peut pas s'arreter brutalement car il a pu y avoir des bound flip ce qui fait 
        que les valeurs des variables en base doivent etre recalculees */
     Spx->FactoriserLaBase = NON_SPX;
@@ -288,9 +297,9 @@ while ( 1 ) {
     /* Mise a jour des poids de la methode projected steepest edge */
     SPX_MajPoidsDualSteepestEdge( Spx );
     if ( Spx->FactoriserLaBase == OUI_SPX ) {
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf(" Fin strong branching par FactoriserLaBase = OUI \n");
-		}
+      #if VERBOSE_SPX
+        printf(" Fin strong branching par FactoriserLaBase = OUI \n"); 
+      #endif			
       Spx->FactoriserLaBase = NON_SPX;
       ArretDemande          = OUI_SPX;
     }
@@ -307,9 +316,9 @@ while ( 1 ) {
   SPX_FaireLeChangementDeBase( Spx );
 
 	/* Apres chaque chagement de base reussi on essaie de revenir au seuil de pivotage initial */
-	if ( Spx->SeuilDePivotDual > Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE ) {
-    Spx->SeuilDePivotDual /= Spx->spx_params->DIVISEUR_VALEUR_DE_PIVOT_ACCEPTABLE;
-	  if ( Spx->SeuilDePivotDual < Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE ) Spx->SeuilDePivotDual = Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;	
+	if ( Spx->SeuilDePivotDual > VALEUR_DE_PIVOT_ACCEPTABLE ) {
+    Spx->SeuilDePivotDual /= DIVISEUR_VALEUR_DE_PIVOT_ACCEPTABLE;
+	  if ( Spx->SeuilDePivotDual < VALEUR_DE_PIVOT_ACCEPTABLE ) Spx->SeuilDePivotDual = VALEUR_DE_PIVOT_ACCEPTABLE;	
 	}
 	
   /* Si la factorisation s'est mal passee */
@@ -363,9 +372,9 @@ if( TypeDeSortieSv == SORT_SUR_XMIN ) {
   }
 }
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf(" Iteration de sortie du strong branching %d\n", Spx->Iteration); fflush(stdout);
-}
+#if VERBOSE_SPX
+  printf(" Iteration de sortie du strong branching %d\n",Spx->Iteration); fflush(stdout);
+#endif
 
 /* On remet les donnees internes du simplexe dans l'etat initial */
 il = Spx->NombreDeVariables * sizeof( double );

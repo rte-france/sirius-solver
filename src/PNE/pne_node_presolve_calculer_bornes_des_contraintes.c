@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Appele par le node presolve, on y calcule les min et max
@@ -22,8 +31,6 @@
 # include "spx_define.h"
   
 # include "bb_define.h"
-
-#undef SEUIL_DADMISSIBILITE
 
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "pne_memoire.h"
@@ -137,15 +144,15 @@ for ( i = 0 ; i < NombreDeVariablesInstanciees ; i++ ) {
 
 /* On applique les contraintes de borne variable du variable probing */
 
-if ( Pne->pne_params->CONSTRUIRE_BORNES_VARIABLES == OUI_PNE ) {
-	PNE_NodePresolveAppliquerContraintesDeBornesVariables(Pne, Faisabilite);
-	if (*Faisabilite == NON_PNE) {
-# if TRACES == 1 
-		printf("NodePresolveInitBornesDesContraintes pas de solution apres application des contraintes de borne variable\n");
-# endif
+# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE  
+  PNE_NodePresolveAppliquerContraintesDeBornesVariables( Pne , Faisabilite );																		
+  if ( *Faisabilite == NON_PNE ) {
+	  # if TRACES == 1 
+		  printf("NodePresolveInitBornesDesContraintes pas de solution apres application des contraintes de borne variable\n");
+		# endif
 		return;
-	}
-}
+	}  
+# endif
 
 /* Boucle sur toutes les contraintes pour mettre a jour les indicateurs d'activite de depart */
 BorneInfConnue = Pne->ProbingOuNodePresolve->BorneInfConnue;
@@ -174,7 +181,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   if ( Nb == 0 ) {
 	  /* Tous les termes de la contrainte sont fixes */
     if ( SensContrainte[Cnt] == '<' ) {
-		  if ( Bmin[Cnt] > B[Cnt] + Pne->pne_params->SEUIL_DADMISSIBILITE && BminValide[Cnt] == OUI_PNE ) {
+		  if ( Bmin[Cnt] > B[Cnt] + SEUIL_DADMISSIBILITE && BminValide[Cnt] == OUI_PNE ) {
 	      # if TRACES == 1 
 		      printf("Contrainte d'inegalite NodePresolveInitBornesDesContraintes Nb = 0 pas de solution Bmin[%d] = %e B = %e\n",Cnt,Bmin[Cnt],B[Cnt]);
 		    # endif		
@@ -184,8 +191,8 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 	  }
 	  else {
 	    /* Contrainte d'egalite */			
-      if ( ( fabs( Bmax[Cnt] - Bmin[Cnt] ) > Pne->pne_params->SEUIL_DADMISSIBILITE && BmaxValide[Cnt] == OUI_PNE && BminValide[Cnt] == OUI_PNE ) ||
-			     ( fabs( Bmax[Cnt] - B[Cnt] ) > Pne->pne_params->SEUIL_DADMISSIBILITE && BmaxValide[Cnt] == OUI_PNE ) ) {
+      if ( ( fabs( Bmax[Cnt] - Bmin[Cnt] ) > SEUIL_DADMISSIBILITE && BmaxValide[Cnt] == OUI_PNE && BminValide[Cnt] == OUI_PNE ) ||
+			     ( fabs( Bmax[Cnt] - B[Cnt] ) > SEUIL_DADMISSIBILITE && BmaxValide[Cnt] == OUI_PNE ) ) {
 	      # if TRACES == 1 
 		      printf("Contrainte d'egalite NodePresolveInitBornesDesContraintes Nb = 0 pas de solution Bmin[%d] = %e Bmax[%d] = %e B = %e\n",Cnt,Bmin[Cnt],Cnt,Bmax[Cnt],B[Cnt]);
 		    # endif							 
@@ -196,7 +203,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   }
   else {
     if ( SensContrainte[Cnt] == '<' ) {
-		  if ( BminValide[Cnt] == OUI_PNE && Bmin[Cnt] > B[Cnt] + Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+		  if ( BminValide[Cnt] == OUI_PNE && Bmin[Cnt] > B[Cnt] + SEUIL_DADMISSIBILITE ) {
 	      # if TRACES == 1 
 		      printf("NodePresolveInitBornesDesContraintes pas de solution Bmin[%d] = %e %c B = %e BminSv %e\n",
 					        Cnt,Bmin[Cnt],SensContrainte[Cnt],B[Cnt],Pne->ProbingOuNodePresolve->BminSv[Cnt]);
@@ -214,14 +221,14 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 	  }
 		else {
 		  /* Contrainte d'egalite */
-	    if ( BmaxValide[Cnt] == OUI_PNE && Bmax[Cnt] < B[Cnt] - Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+	    if ( BmaxValide[Cnt] == OUI_PNE && Bmax[Cnt] < B[Cnt] - SEUIL_DADMISSIBILITE ) {
 	      # if TRACES == 1 
 		      printf("NodePresolveInitBornesDesContraintes pas de solution Bmax[%d] = %e B = %e\n",Cnt,Bmax[Cnt],B[Cnt]);
 		    # endif				
 			  *Faisabilite = NON_PNE;				
 			  return;							
 		  }
-	    if ( BminValide[Cnt] == OUI_PNE && Bmin[Cnt] > B[Cnt] + Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+	    if ( BminValide[Cnt] == OUI_PNE && Bmin[Cnt] > B[Cnt] + SEUIL_DADMISSIBILITE ) {
 	      # if TRACES == 1 
 		      printf("NodePresolveInitBornesDesContraintes pas de solution Bmin[%d] = %e B = %e\n",Cnt,Bmin[Cnt],B[Cnt]);
 		    # endif				
@@ -387,6 +394,8 @@ return;
 
 /*----------------------------------------------------------------------------*/
 
+# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+
 void PNE_NodePresolveAppliquerContraintesDeBornesVariables( PROBLEME_PNE * Pne,
 																			                      int * Faisabilite )
 {
@@ -402,7 +411,7 @@ char Bvalide; double NouvelleValeur; char UneVariableAEteFixee;
 return; /* Experimentalement on constate que ca consomme du temps et que ca n'apporte pas grand chose
            en terme de noeuds qui seront explores dans la recherche arborescente */  
 
-if ( Pne->ContraintesDeBorneVariable == NULL || Pne->pne_params->CONSTRUIRE_BORNES_VARIABLES ) return;
+if ( Pne->ContraintesDeBorneVariable == NULL ) return;
 
 Marge = 1.e-6;
 
@@ -531,5 +540,7 @@ FinBornesVariable:
 
 return;
 }
+
+# endif
 
 /*----------------------------------------------------------------------------*/

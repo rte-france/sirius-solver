@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Controle de l'optimalite
@@ -18,7 +27,7 @@
 # include "spx_fonctions.h"
 # include "spx_define.h"
 
-//# define Spx->spx_params->VERBOSE_SPX 0
+# define VERBOSE_SPX 0
 
 /*----------------------------------------------------------------------------*/
 
@@ -28,9 +37,9 @@ void SPX_DualControlerOptimalite( PROBLEME_SPX * Spx, int * NbControlesFinaux,
 int AdmissibiliteRestauree; int Marge; char CoutsReduitsAJour; int NombreDeCoutsBruitess;
 char OnVientDeFactoriser; int Var; char * CorrectionDuale; double * C; double * Csv;
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf("SPX_DualControlerOptimalite a l iteration %d\n", Spx->Iteration);
-}
+#if VERBOSE_SPX 
+  printf("SPX_DualControlerOptimalite a l iteration %d\n", Spx->Iteration);
+#endif
 
 Spx->YaUneSolution = NON_SPX;
 Spx->ModifCoutsAutorisee = NON_SPX;
@@ -41,7 +50,7 @@ else CoutsReduitsAJour = OUI_SPX;
 /* On verifie qu'on peut faire encore des iterations si necessaire */
 /* Attention une augmentation inconsidere de NombreMaxDIterations peut conduire le simplexe a ne
    jamais se terminer */
-if ( *NbControlesFinaux < Spx->spx_params->NOMBRE_MAX_DE_CONTROLES_FINAUX ) {  
+if ( *NbControlesFinaux < NOMBRE_MAX_DE_CONTROLES_FINAUX ) {  
   Marge = (int) ceil( 0.5 * Spx->NombreDeContraintes );
   if ( Spx->Iteration < Spx->NombreMaxDIterations ) {
 	  if ( Spx->NombreMaxDIterations - Marge < Spx->Iteration ) Spx->NombreMaxDIterations = Spx->Iteration + Marge;
@@ -58,7 +67,6 @@ if ( Spx->LesCoutsOntEteModifies == OUI_SPX ) {
 	C = Spx->C;
 	Csv = Spx->Csv;
 	for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
-
     if ( CorrectionDuale[Var] == 0 ) NombreDeCoutsBruitess++;
 		C[Var] = Csv[Var];
 	}
@@ -69,6 +77,7 @@ if ( Spx->LesCoutsOntEteModifies == OUI_SPX ) {
 
   Spx->LesCoutsOntEteModifies = NON_SPX;
   CoutsReduitsAJour = NON_SPX;
+
   if ( NombreDeCoutsBruitess > 0.1 * Spx->NombreDeVariables ) {
 	  if ( Spx->AffichageDesTraces == OUI_SPX )
 		  printf("On relance la base reduite\n");
@@ -83,7 +92,7 @@ if ( Spx->LesCoutsOntEteModifies == OUI_SPX ) {
 }
 
 /* Controle d'admissibilite duale */
-if ( *NbControlesFinaux < Spx->spx_params->NOMBRE_MAX_DE_CONTROLES_FINAUX ) { /* C'est pour eviter un cyclages pour des question d'epsilon */
+if ( *NbControlesFinaux < NOMBRE_MAX_DE_CONTROLES_FINAUX ) { /* C'est pour eviter un cyclages pour des question d'epsilon */
   /* Avant de verifier l'admissibilite duale il est preferable de calculer exactement les
 	   couts reduits pour eviter les derives dues a la mise a jour */
 	OnVientDeFactoriser = NON_SPX;
@@ -93,10 +102,10 @@ if ( *NbControlesFinaux < Spx->spx_params->NOMBRE_MAX_DE_CONTROLES_FINAUX ) { /*
     if ( Spx->ChoixDeVariableSortanteAuHasard == OUI_SPX ) {
       *NbControlesFinaux = *NbControlesFinaux + 1; /* Incrementer le compteur car sinon il y a risque cyclage */					
 		  /* Probleme: la refactorisation n'a pas marche */
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("SPX_DualControlerOptimalite: NbControlesFinaux %d ChoixDeVariableSortanteAuHasard: OUI\n",
-			  *NbControlesFinaux);
-	  }
+      #if VERBOSE_SPX 
+        printf( "SPX_DualControlerOptimalite: NbControlesFinaux %d ChoixDeVariableSortanteAuHasard: OUI\n",
+				         *NbControlesFinaux);  
+      #endif					
       return;
     }
     CoutsReduitsAJour = NON_SPX;
@@ -111,9 +120,9 @@ if ( *NbControlesFinaux < Spx->spx_params->NOMBRE_MAX_DE_CONTROLES_FINAUX ) { /*
   *NbControlesFinaux = *NbControlesFinaux + 1;			
   SPX_VerifierAdmissibiliteDuale( Spx , &AdmissibiliteRestauree );
   if ( AdmissibiliteRestauree == OUI_SPX ) { 
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("SPX_DualControlerOptimalite: admissibilite duale restauree, on refait des iterations duales\n");
-	  }
+    #if VERBOSE_SPX 
+      printf( "SPX_DualControlerOptimalite: admissibilite duale restauree, on refait des iterations duales\n");  
+    #endif				
     Spx->CalculerBBarre = OUI_SPX;		
 		/* La solution n'etait pas optimale, on repart dans les iterations */
 		return;
@@ -130,9 +139,9 @@ if ( *NbControlesFinaux < Spx->spx_params->NOMBRE_MAX_DE_CONTROLES_FINAUX ) { /*
 if ( *ControleSolutionFait == NON_SPX ) {
   /* Si la date de factorisation precedente est trop ancienne on refactorise la base */
   if ( Spx->NombreDeChangementsDeBase >= (int) (0.5 * Spx->CycleDeRefactorisation) ) { 
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("Factorisation de la base pour affiner la solution\n");
-	  }
+    #if VERBOSE_SPX 
+      printf("Factorisation de la base pour affiner la solution\n");
+    #endif		
     /* Bizarement, si on refactorise apres un nombre de changements de bases trop petit ca peut dire qu'il n'y a pas de solution ensuite */
     SPX_FactoriserLaBase( Spx );     
     Spx->CalculerBBarre      = OUI_SPX; 
@@ -154,9 +163,9 @@ if ( CoutsReduitsAJour == NON_SPX ) {
   /* Controle de l'admissibilite duale: si la solution n'est pas duale admissible, on sort sans solution */
   SPX_VerifierAdmissibiliteDuale( Spx , &AdmissibiliteRestauree );
   if ( AdmissibiliteRestauree == OUI_SPX ) { 
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("SPX_DualControlerOptimalite: solution primale admissible mais non duale adminissible\n");
-	  }
+    #if VERBOSE_SPX 
+      printf( "SPX_DualControlerOptimalite: solution primale admissible mais non duale adminissible\n");  
+    #endif
 
     /* Il faut recalculer BBarre puisqu'on a change des bornes */
     Spx->CalculerBBarre = OUI_SPX; 
@@ -166,9 +175,9 @@ if ( CoutsReduitsAJour == NON_SPX ) {
   }
 }
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf("SPX_DualControlerOptimalite: fin de phase 2 atteint en %d iterations\n", Spx->Iteration - 1);
-}
+#if VERBOSE_SPX 
+  printf( "SPX_DualControlerOptimalite: fin de phase 2 atteint en %d iterations\n",Spx->Iteration-1);
+#endif
 	 
 Spx->YaUneSolution = OUI_SPX;
 

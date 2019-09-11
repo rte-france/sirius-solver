@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Main de la PNE pour le standalone
@@ -30,6 +39,11 @@
   # include "pne_definition_arguments.h"
   # include "pne_constantes_externes.h"	       						 
   # include "pne_define.h"
+  extern "C"
+  {
+  void PNE_Solveur( PROBLEME_A_RESOUDRE * );
+  void PNE_LireJeuDeDonneesMPS( void );
+  }
 # else
   # include "pne_fonctions.h"
   # include "pne_constantes_externes.h"	       						 
@@ -37,9 +51,11 @@
 # endif
 
 # include "mps_define.h"
-//# include "mps_extern_global.h"
+# include "mps_extern_global.h"
 
 # include "bb_define.h"
+
+PROBLEME_A_RESOUDRE Probleme;
 
 /*----------------------------------------------------------------------------*/
 # ifdef TEST_MULTI_THREADING
@@ -53,9 +69,9 @@ void * StandAloneLancerUnThread( void * Arg )
   Probleme.X                       = Mps.U;
   Probleme.Xmax                    = Mps.Umax;
   Probleme.Xmin                    = Mps.Umin;
-  Probleme.CoutLineaire            = Mps.L;  
+  Probleme.CoutLineaire            = Mps.CoefsObjectif;  
   Probleme.NombreDeContraintes                   = Mps.NbCnt;
-  Probleme.SecondMembre                          = Mps.B;
+  Probleme.SecondMembre                          = Mps.Rhs;
   Probleme.Sens                                  = Mps.SensDeLaContrainte;
   Probleme.IndicesDebutDeLigne                   = Mps.Mdeb;
   Probleme.NombreDeTermesDesLignes               = Mps.NbTerm;
@@ -80,40 +96,13 @@ void * StandAloneLancerUnThread( void * Arg )
 # endif
 /*----------------------------------------------------------------------------*/
 
-void usage() {
-	printf("\nUtilisation :\n\n");
-	printf("ANTARES.exe -mps=\"fichier.mps\" [autres options]\n\n");
-	printf("Options disponibles:\n");
-	printf("  -mps=fichier    Chemin et nom du fichier au format mps a charger\n");
-	printf("  -params=fichier Chemin et nom du fichier de parametres a charger\n");
-	printf("  -gap=value      Tolerance d'optimalite pour la solution entiere (value est donne en pourcentage)\n");
-	printf("  -printv         Pour afficher la valeur des variables en fin d'optimisation\n");
-	printf("  -verif          Pour verifier que toutes les contraintes sont satisfaites par la solution trouvee\n");
-	printf("  -all            Pour faire l'equivalent de -printv et -verif\n");
-	printf("  -printp         Pour afficher la valeur des parameters en fin d'optimisation\n");
-	printf("  -outp=fichier   Chemin et nom du fichier dans lequel ecrire les parametres en fin d'optimisation\n");
-	printf("  -help ou -h     Pour obtenir la liste des options disponibles\n");
-	printf("\n");
-	exit(0);
-}
-
 int main( int argc , char ** argv ) {
-if (argc == 1)
-	usage();
 int i ; int j; int YaUneSolution; double Critere; int Cnt; double S; 
 int il; int ilMax; int CntMx; double Smx; double EcX; int Mip; double EcMoy; 
-char AfficherLesValeursDesVariables; char AfficherLesValeursDesParametres;
-char VerifierLesContraintes; char TestMultiThreading;
+char AfficherLesValeursDesVariables; char VerifierLesContraintes; char TestMultiThreading;
 int Nbn; char * pt; char s[256]; char * pts; char ToleranceDOptimaliteExterne;
 double ToleranceExterne;
-FILE * FlotDeSortie;
-char * nomFichierMps = "A_JEU_DE_DONNEES";
-char * nomFichierInputParams = NULL; char * nomFichierOutputParams = NULL;
-
-PROBLEME_A_RESOUDRE Probleme;
-PROBLEME_MPS Mps;
-
-
+FILE * FlotDeSortie; 
 # ifdef TEST_MULTI_THREADING
  int Erreur; pthread_t Thread[100]; int NbThread;   
 # endif
@@ -124,8 +113,17 @@ s[0] = '\0';
 ToleranceDOptimaliteExterne = 0;
 ToleranceExterne = 0.01;
 for ( i = 1 ; i < argc ; i++ ) {
-	if (strcmp(argv[i], "-help") == 0 || strcmp(argv[i], "-h") == 0)
-		usage();
+  if ( strcmp( argv[i] , "-help" ) == 0 || strcmp( argv[i] , "-h" ) == 0 ) {
+    printf("\n");
+    printf("Options disponibles:\n");
+    printf("  -help ou -h  Pour obtenir la liste des options disponibles\n");
+    printf("  -printv      Pour afficher la valeur des variables en fin d'optimisation\n");
+    printf("  -verif       Pour verifier que toutes les contraintes sont satisfaites par la solution trouvee\n");
+    printf("  -all         Pour faire l'equivalent de -printv et -verif\n");
+    printf("  -gap=value   Tolerance d'optimalite pour la solution entiere (value est donne en pourcentage)\n");
+    printf("\n");
+    exit(0);    
+  }
   if ( strcmp( argv[i] , "-printv" ) == 0 ) {
     AfficherLesValeursDesVariables = OUI_PNE;
     continue;  
@@ -170,35 +168,7 @@ for ( i = 1 ; i < argc ; i++ ) {
 			exit(0);
 		}
     continue;
-  }
-  if (strstr(argv[i], "-mps") != NULL) {
-	  pt = strstr(argv[i], "-mps");
-	  pt = strstr(pt, "=");
-	  if (pt == NULL) continue;
-	  pt++;
-	  nomFichierMps = pt;
-	  continue;
-  }
-  if (strstr(argv[i], "-params") != NULL) {
-	  pt = strstr(argv[i], "-params");
-	  pt = strstr(pt, "=");
-	  if (pt == NULL) continue;
-	  pt++;
-	  nomFichierInputParams = pt;
-	  continue;
-  }
-  if (strcmp(argv[i], "-printp") == 0) {
-	  AfficherLesValeursDesParametres = OUI_PNE;
-	  continue;
-  }
-  if (strstr(argv[i], "-outp") != NULL) {
-	  pt = strstr(argv[i], "-outp");
-	  pt = strstr(pt, "=");
-	  if (pt == NULL) continue;
-	  pt++;
-	  nomFichierOutputParams = pt;
-	  continue;
-  }
+  }	
   printf("Option %s inconnue, taper l'option -help pour connaitre la liste des options disponibles\n",argv[i]);
   exit(0);
 }
@@ -219,8 +189,7 @@ if( FlotDeSortie == NULL ) {
 /*
 printf("Debut de la lecture des donnees \n"); fflush(stdout);
 */
-
-PNE_LireJeuDeDonneesMPS(&Mps, nomFichierMps);
+PNE_LireJeuDeDonneesMPS();
 
 /*
 printf("Fin de la lecture des donnees \n"); fflush(stdout);
@@ -228,18 +197,18 @@ printf("Fin de la lecture des donnees \n"); fflush(stdout);
 /* Mip: indicateur positionne a OUI_MPS si on veut optimiser en variables entieres 
         et positionne a NON_MPS si on veut juste faire un simplexe */
 
-Mip = OUI_MPS;          	  			
+Mip = NON_MPS;          	  			
 if ( Mip == NON_MPS ) {    
   for ( j = 0 ; j < Mps.NbVar ; j++ ) Mps.TypeDeVariable[j] = REEL;
 }
 
 /*
 printf("**********  Attention on fait une maximisation i.e Cout = -Cout ******************\n");
-for ( j = 0 ; j < Mps.NbVar ; j++ ) Mps.L[j] = -Mps.L[j];
+for ( j = 0 ; j < Mps.NbVar ; j++ ) Mps.CoefsObjectif[j] = -Mps.CoefsObjectif[j];
 */
 
 goto PasDeBruitage;
-{ double Cout; double S; double UnSurRAND_MAX;
+{ double Cout; double S; double UnSurRAND_MAX; int NbVarEntieres; double Cmin; double Cmax;
   UnSurRAND_MAX = 1. / RAND_MAX;
   Cout = 1;
   for ( j = 0 ; j < Mps.NbVar ; j++ ){
@@ -248,7 +217,7 @@ goto PasDeBruitage;
       S = (rand() * UnSurRAND_MAX ) - 0.5 ;
       S *= 0.9;
 			Mps.CoefsObjectif[j] += S;  
-			if ( Mps.CoefsObjectif[j] != 0 ) printf("Mps.L[%d] = %e\n",j,Mps.CoefsObjectif[j]);
+			if ( Mps.CoefsObjectif[j] != 0 ) printf("Mps.CoefsObjectif[%d] = %e\n",j,Mps.CoefsObjectif[j]);
 		}
   }
 }
@@ -286,22 +255,47 @@ TestMultiThreading = NON_PNE;
   }
 # endif
 
-PNE_PARAMS * pneParams = newDefaultPneParams();
-if (nomFichierInputParams != NULL) {
-	PNE_LireJeuDeParametres_AvecNom(pneParams, nomFichierInputParams, 1);
-}
-
 /* Resolution */
-for ( j = 0 ; j < 1 ; j++ ) { /* Pour tester les fuites memoire on enchaine les resolutions du meme probleme */
-  PNE_copy_problem(&Mps, &Probleme, ToleranceDOptimaliteExterne, ToleranceExterne);
 
-  PNE_Solveur( &Probleme, pneParams );
+for ( j = 0 ; j < 1 ; j++ ) { /* Pour tester les fuites memoire on enchaine les resolutions du meme probleme */
+  Probleme.NombreDeVariables       = Mps.NbVar;
+  Probleme.TypeDeVariable          = Mps.TypeDeVariable;
+  Probleme.TypeDeBorneDeLaVariable = Mps.TypeDeBorneDeLaVariable;
+  Probleme.X                       = Mps.U;
+  Probleme.Xmax                    = Mps.Umax;
+  Probleme.Xmin                    = Mps.Umin;
+  Probleme.CoutLineaire            = Mps.CoefsObjectif;  
+  Probleme.NombreDeContraintes                   = Mps.NbCnt;
+  Probleme.SecondMembre                          = Mps.Rhs;
+  Probleme.Sens                                  = Mps.SensDeLaContrainte;
+  Probleme.IndicesDebutDeLigne                   = Mps.Mdeb;
+  Probleme.NombreDeTermesDesLignes               = Mps.NbTerm;
+  Probleme.CoefficientsDeLaMatriceDesContraintes = Mps.A;
+  Probleme.IndicesColonnes                       = Mps.Nuvar;
+  Probleme.VariablesDualesDesContraintes         = Mps.VariablesDualesDesContraintes;
+  Probleme.SortirLesDonneesDuProbleme = NON_PNE;
+  Probleme.AlgorithmeDeResolution     = SIMPLEXE; /* SIMPLEXE ou POINT_INTERIEUR */  
+  Probleme.CoupesLiftAndProject       = NON_PNE; 
+  Probleme.AffichageDesTraces         = NON_PNE; 
+  Probleme.FaireDuPresolve            = OUI_PNE /* OUI_PNE */;               
+  if ( Probleme.FaireDuPresolve == NON_PNE ) printf("!!!!!!!!!!!!!!  Attention pas de presolve   !!!!!!!!!\n");
+
+  Probleme.TempsDExecutionMaximum       = 0;  
+  Probleme.NombreMaxDeSolutionsEntieres = -1;   
+  Probleme.ToleranceDOptimalite         = 1.e-4; /* C'est en % donc 1.e-4 ca fait 1.e-6 */
+
+	if ( ToleranceDOptimaliteExterne == 1 ) {
+    Probleme.ToleranceDOptimalite = ToleranceExterne;
+		printf("gap for optimality was given by the user: %f (must be postive or zero)\n",ToleranceExterne);
+	}
+	
+  PNE_Solveur( &Probleme );
 
   YaUneSolution = Probleme.ExistenceDUneSolution;
 
 /*
 for ( j = 0 ; j < Mps.NbVar ; j++ ){
-  if ( Mps.TypeDeVariable[j] == ENTIER ) Mps.L[j] = 0.0;
+  if ( Mps.TypeDeVariable[j] == ENTIER ) Mps.CoefsObjectif[j] = 0.0;
 }
 */
 
@@ -515,7 +509,7 @@ if ( YaUneSolution == SOLUTION_OPTIMALE_TROUVEE ||
 				printf("Cnt %d sens < : S %e B %e\n",Cnt,S,Mps.Rhs[Cnt]);
       }
     }
-		/*printf("cnt %ld S %e B %e\n",Cnt,S,Mps.B[Cnt]);*/		
+		/*printf("cnt %ld S %e B %e\n",Cnt,S,Mps.Rhs[Cnt]);*/		
   }
   if ( CntMx >= 0 ) {
     printf("Higher violation:\n");
@@ -531,16 +525,7 @@ if ( YaUneSolution == SOLUTION_OPTIMALE_TROUVEE ||
    
 }
 
-if (AfficherLesValeursDesParametres == OUI_PNE) {
-	printf("Valeurs des parametres :\n");
-	printf(PNE_EcrireParams(pneParams, OUI_PNE));
-	printf(SPX_EcrireParams(pneParams->spx_params, OUI_PNE));
-}
-
-if (nomFichierOutputParams != NULL) {
-	PNE_EcrireJeuDeParametres_AvecNom(pneParams, nomFichierOutputParams, OUI_PNE);
-}
-
 printf("\n");
+
 exit(0);
 }

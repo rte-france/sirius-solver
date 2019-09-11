@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Calcul des coupes 
@@ -183,7 +192,7 @@ if ( Pne->ResolutionDuNoeudReussie == OUI_PNE ) {
 		else if ( Type == 'K' ) Pne->NbKInsere++;
 		else if ( Type == 'I' ) Pne->NbIInsere++;
 
-	if( Pne->pne_params->UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE ) {
+    # if UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE
 		  if ( Pne->Cliques != NULL ) {
 		    i = Pne->CoupesCalculees[IndiceDeCoupe]->IndexDansCliques;
 		    if ( i >= 0 && i < Pne->Cliques->NombreDeCliques ) Pne->Cliques->LaCliqueEstDansLePool[i] = OUI_PNE;
@@ -193,14 +202,14 @@ if ( Pne->ResolutionDuNoeudReussie == OUI_PNE ) {
 		    if ( i >= 0 && i < Pne->CoupesDeProbing->NombreDeCoupesDeProbing ) Pne->CoupesDeProbing->LaCoupDeProbingEstDansLePool[i] = OUI_PNE;
       }
 		 
-	  if ( Pne->pne_params->CONSTRUIRE_BORNES_VARIABLES == OUI_PNE ) {
-		  if (Pne->ContraintesDeBorneVariable != NULL) {
-			  i = Pne->CoupesCalculees[IndiceDeCoupe]->IndexDansContraintesDeBorneVariable;
-			  if (i >= 0 && i < Pne->ContraintesDeBorneVariable->NombreDeContraintesDeBorne) Pne->ContraintesDeBorneVariable->LaContrainteDeBorneVariableEstDansLePool[i] = OUI_PNE;
-		  }
-	  }
+      # if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+      if ( Pne->ContraintesDeBorneVariable != NULL ) {
+		    i = Pne->CoupesCalculees[IndiceDeCoupe]->IndexDansContraintesDeBorneVariable;				
+		    if ( i >= 0 && i < Pne->ContraintesDeBorneVariable->NombreDeContraintesDeBorne ) Pne->ContraintesDeBorneVariable->LaContrainteDeBorneVariableEstDansLePool[i] = OUI_PNE;
+      }
+			# endif
 			
-    }
+    # endif
 		
     if ( Pne->CoupesKNegligees != NULL ) {
 		  i = Pne->CoupesCalculees[IndiceDeCoupe]->IndexDansKNegligees;
@@ -251,11 +260,11 @@ if ( Pne->ResolutionDuNoeudReussie == OUI_PNE ) {
   }
 }
 
-if (Pne->pne_params->VERBOSE_PNE == OUI_PNE) {
-	printf("-> Nombre de coupes calculees %d  Nombre de coupes conservees %d\n", Pne->NombreDeCoupesCalculees, NbCoupesConservees);
-}
+#if VERBOSE_PNE
+  printf("-> Nombre de coupes calculees %d  Nombre de coupes conservees %d\n",Pne->NombreDeCoupesCalculees,NbCoupesConservees); 
+#endif
 	
-if ( Bb->AffichageDesTraces == OUI && Pne->pne_params->VERBOSE_PNE == OUI_PNE ) {
+if ( Bb->AffichageDesTraces == OUI && VERBOSE_PNE == 1 ) {
   if ( Pne->NbGDuCycle != 0 || Pne->NbIDuCycle != 0 || Pne->NbKDuCycle != 0 ) {
     printf("Generating new cuts (family cut: computed/kept)   ");
     if ( Pne->NbGDuCycle != 0 ) {	

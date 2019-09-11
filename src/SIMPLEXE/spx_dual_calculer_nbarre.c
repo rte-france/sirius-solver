@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Calcul de NBarre pour la variable sortante
@@ -26,7 +35,7 @@
 # define COEFF_MULT_DE_LA_PERTURBATION 10.
 
 # define SEUIL_DE_BRUITAGE_FIXE NON_SPX
-# define SEUIL_DE_BRUITAGE (10.*Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2)
+# define SEUIL_DE_BRUITAGE (10.*SEUIL_ADMISSIBILITE_DUALE_2)
 
 # define TENIR_COMPTE_DES_BORNES_POUR_LA_VALEUR_DE_BRUITAGE OUI_SPX
 # define VARIATION_MAX_DU_COUT_SUR_CHANGEMENT_DE_BORNE_1 /*50*/ 100
@@ -38,7 +47,7 @@
 
 # define BRUITAGE_SUR_VARIABLES_BORNEES_DES_DEUX_COTES OUI_SPX
 
-# define EPS_HARRIS_MAX Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2 /*(2*Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2)*/
+# define EPS_HARRIS_MAX SEUIL_ADMISSIBILITE_DUALE_2 /*(2*SEUIL_ADMISSIBILITE_DUALE_2)*/
 
 /*----------------------------------------------------------------------------*/
 void SPX_TenterRestaurationCalculErBMoinsEnHyperCreux( PROBLEME_SPX * Spx )
@@ -46,9 +55,9 @@ void SPX_TenterRestaurationCalculErBMoinsEnHyperCreux( PROBLEME_SPX * Spx )
 int Cnt; double * ErBMoinsUn; int Count;
 	
 if ( Spx->CountEchecsErBMoins == 0 ) {
-  if ( Spx->Iteration % Spx->spx_params->CYCLE_TENTATIVE_HYPER_CREUX == 0 ) {
-		Spx->NbEchecsErBMoins    = Spx->spx_params->SEUIL_REUSSITE_CREUX;
-		Spx->CountEchecsErBMoins = Spx->spx_params->SEUIL_REUSSITE_CREUX + 2;
+  if ( Spx->Iteration % CYCLE_TENTATIVE_HYPER_CREUX == 0 ) {
+		Spx->NbEchecsErBMoins    = SEUIL_REUSSITE_CREUX;
+		Spx->CountEchecsErBMoins = SEUIL_REUSSITE_CREUX + 2;
 	}
 }
 if ( Spx->CountEchecsErBMoins == 0 ) return;
@@ -60,9 +69,9 @@ Count = 0;
 for ( Cnt = 0 ; Cnt < Spx->NombreDeContraintes ; Cnt++ ) if ( ErBMoinsUn[Cnt] != 0.0 ) Count++;
 if ( Count < 0.1 * Spx->NombreDeContraintes ) Spx->NbEchecsErBMoins--;
 if ( Spx->NbEchecsErBMoins <= 0 ) {
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Remise en service de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n", Spx->Iteration);
-	}
+  # if VERBOSE_SPX
+    printf("Remise en service de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n",Spx->Iteration);
+	# endif
   Spx->AvertissementsEchecsErBMoins = 0;
   Spx->CountEchecsErBMoins = 0;
 	Spx->CalculErBMoinsUnEnHyperCreux = OUI_SPX;
@@ -70,11 +79,11 @@ if ( Spx->NbEchecsErBMoins <= 0 ) {
 else if ( Spx->CountEchecsErBMoins <= 0 ) {
   Spx->CountEchecsErBMoins = 0;
   if ( Spx->CalculErBMoinsUnEnHyperCreux == NON_SPX ) Spx->AvertissementsEchecsErBMoins++;
-  if ( Spx->AvertissementsEchecsErBMoins >= Spx->spx_params->SEUIL_ABANDON_HYPER_CREUX ) {
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("Arret prolonge de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n", Spx->Iteration);
-	  }
-	  Spx->CalculErBMoinsEnHyperCreuxPossible = NON_SPX;
+  if ( Spx->AvertissementsEchecsErBMoins >= SEUIL_ABANDON_HYPER_CREUX ) {
+    # if VERBOSE_SPX
+      printf("Arret prolonge de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n",Spx->Iteration);
+	  # endif
+		Spx->CalculErBMoinsEnHyperCreuxPossible = NON_SPX;
 	}
 }
 
@@ -250,8 +259,8 @@ for ( i = 0 ; i < iLimite ; i++ ) {
   UnSurNBarreR = 1. / NBarreR_x;	
   X = CBarre[Var] * UnSurNBarreR;
 	
-  if ( Spx->spx_params->COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] > EpsHarrisMax ) EpsHarris = EpsHarrisMax * UnSurNBarreR;
-  else 	EpsHarris = Spx->spx_params->COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] * UnSurNBarreR;	
+  if ( COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] > EpsHarrisMax ) EpsHarris = EpsHarrisMax * UnSurNBarreR;
+  else 	EpsHarris = COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] * UnSurNBarreR;	
 	
   if ( PositionDeLaVariable_x == HORS_BASE_SUR_BORNE_INF ) {		
     /* Le cout reduit est positif (sauf s'il y a des infaisabilites duales) */				
@@ -270,7 +279,7 @@ for ( i = 0 ; i < iLimite ; i++ ) {
 		  # if SEUIL_DE_BRUITAGE_FIXE == OUI_SPX
 			  SeuilModifCout = SEUIL_DE_BRUITAGE;				     
 			# else
-			  SeuilModifCout = Spx->spx_params->COEFF_SEUIL_POUR_MODIFICATION_DE_COUT *  SeuilDAmissibiliteDuale[Var];				     
+			  SeuilModifCout = COEFF_SEUIL_POUR_MODIFICATION_DE_COUT *  SeuilDAmissibiliteDuale[Var];				     
 			# endif
 
       # if BRUITAGE_SUR_VARIABLES_BORNEES_DES_DEUX_COTES == OUI_SPX			
@@ -309,7 +318,7 @@ for ( i = 0 ; i < iLimite ; i++ ) {
 		  # if SEUIL_DE_BRUITAGE_FIXE == OUI_SPX
 			  SeuilModifCout = SEUIL_DE_BRUITAGE;				     	
 			# else		
-			  SeuilModifCout = Spx->spx_params->COEFF_SEUIL_POUR_MODIFICATION_DE_COUT *  SeuilDAmissibiliteDuale[Var];				     
+			  SeuilModifCout = COEFF_SEUIL_POUR_MODIFICATION_DE_COUT *  SeuilDAmissibiliteDuale[Var];				     
 			# endif
 
       # if BRUITAGE_SUR_VARIABLES_BORNEES_DES_DEUX_COTES == OUI_SPX					
@@ -370,21 +379,21 @@ Xmin = Spx->Xmin;
 
 Spx->LesCoutsOntEteModifies = OUI_SPX;
 
-S = Spx->CoefficientPourLaValeurDePerturbationDeCoutAPosteriori * COEFF_MULT_DE_LA_PERTURBATION * Spx->spx_params->VALEUR_PERTURBATION_COUT_A_POSTERIORI;
+S = Spx->CoefficientPourLaValeurDePerturbationDeCoutAPosteriori * COEFF_MULT_DE_LA_PERTURBATION * VALEUR_PERTURBATION_COUT_A_POSTERIORI;
 
 if ( ToutModifier == NON_SPX ) {
   Delta = S / (double) NbDeg;
   /* Plus grande des corrections inferieure a un seuil */   
   if ( NbDeg * Delta > MinAbsCBarreNonDeg ) Delta = MinAbsCBarreNonDeg / NbDeg;
   /* Correction pas trop petite quand-meme */
-  if ( NbDeg * Delta < Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2 ) Delta = Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2 / NbDeg;		
+  if ( NbDeg * Delta < SEUIL_ADMISSIBILITE_DUALE_2 ) Delta = SEUIL_ADMISSIBILITE_DUALE_2 / NbDeg;		
 }
 else {
   Delta = S / (double) NbDeg0;
   /* Plus grande des corrections inferieure a un seuil */  
   if ( NbDeg0 * Delta > MinAbsCBarreNonDeg ) Delta = MinAbsCBarreNonDeg / NbDeg0;
   /* Correction pas trop petite quand-meme */
-  if ( NbDeg0 * Delta < Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2 ) Delta = Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2 / NbDeg0;	
+  if ( NbDeg0 * Delta < SEUIL_ADMISSIBILITE_DUALE_2 ) Delta = SEUIL_ADMISSIBILITE_DUALE_2 / NbDeg0;	
 }
 
 S = Delta;
@@ -408,7 +417,7 @@ for ( j = 0 ; j < Spx->NombreDeVariablesATester ; j++ ) {
 	# if SEUIL_DE_BRUITAGE_FIXE == OUI_SPX
     SeuilModifCout = SEUIL_DE_BRUITAGE;
   # else
-    SeuilModifCout = Spx->spx_params->COEFF_SEUIL_POUR_MODIFICATION_DE_COUT * SeuilDAmissibiliteDuale[Var];
+    SeuilModifCout = COEFF_SEUIL_POUR_MODIFICATION_DE_COUT * SeuilDAmissibiliteDuale[Var];
   # endif
 	
   if ( PositionDeLaVariable[Var] == HORS_BASE_SUR_BORNE_INF ) {
@@ -467,8 +476,8 @@ for ( j = 0 ; j < Spx->NombreDeVariablesATester ; j++ ) {
 						
 			X = CBarre[Var] / NBarreR[Var];
 			
-      if ( Spx->spx_params->COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] > EpsHarrisMax ) EpsHarris = EpsHarrisMax  / NBarreR[Var];
-      else 	EpsHarris = Spx->spx_params->COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] / NBarreR[Var];
+      if ( COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] > EpsHarrisMax ) EpsHarris = EpsHarrisMax  / NBarreR[Var];
+      else 	EpsHarris = COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] / NBarreR[Var];
 	
       if ( SortSurXmaxOuSurXmin != SORT_SUR_XMIN ) {			
         CBarreSurNBarreR             [j] = X;
@@ -535,8 +544,8 @@ for ( j = 0 ; j < Spx->NombreDeVariablesATester ; j++ ) {
 			
 			X = CBarre[Var] / NBarreR[Var];				 			
 			
-      if ( Spx->spx_params->COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] > EpsHarrisMax ) EpsHarris = EpsHarrisMax  / NBarreR[Var];
-      else 	EpsHarris = Spx->spx_params->COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] / NBarreR[Var];
+      if ( COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] > EpsHarrisMax ) EpsHarris = EpsHarrisMax  / NBarreR[Var];
+      else 	EpsHarris = COEFF_TOLERANCE_POUR_LE_TEST_DE_HARRIS * SeuilDAmissibiliteDuale[Var] / NBarreR[Var];
 			
       if ( SortSurXmaxOuSurXmin != SORT_SUR_XMIN ) {
         CBarreSurNBarreR             [j] = X;

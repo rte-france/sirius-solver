@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Heuristique, on fixe des variables peu fractionnaires et
@@ -44,12 +53,9 @@
 void PNE_HeuristiquePilotage( PROBLEME_PNE * Pne, char * PasDeSolutionEntiereDansSousArbre ) 
 {
 BB * Bb; CONTROLS * ControlsDuProblemeEnCours; char ProblemeTropGros; 
-int ExistenceDUneSolution;
 
 *PasDeSolutionEntiereDansSousArbre = NON_PNE;
   
-ExistenceDUneSolution = NON_PNE;
-
 return;
   
 if ( Pne->PremFrac < 0 ) return;
@@ -80,15 +86,15 @@ if ( Pne->Critere > 0.9999 * Pne->CoutOpt && Pne->Critere > Pne->CoutOpt - 10 ) 
 
 Bb = (BB *) Pne->ProblemeBbDuSolveur;
 
-if ( Pne->pne_params->RELANCE_PERIODIQUE_DU_SIMPLEXE_AU_NOEUD_RACINE == OUI_PNE ) {
-	if (Bb->NombreDeProblemesResolus % 30 == 0) {
-		PNE_RelanceDuSimplexeAuNoeudRacine(Pne, &ExistenceDUneSolution);
-		if (ExistenceDUneSolution == OUI_PNE) {
-			printf("Relance ReducedCostFixingAuNoeudRacine \n");
-			PNE_ReducedCostFixingAuNoeudRacine(Pne);
-		}
-	}
-}
+# if RELANCE_PERIODIQUE_DU_SIMPLEXE_AU_NOEUD_RACINE == OUI_PNE
+  if ( Bb->NombreDeProblemesResolus % 30 == 0 ) {
+    PNE_RelanceDuSimplexeAuNoeudRacine(  Pne, &ExistenceDUneSolution );
+    if ( ExistenceDUneSolution == OUI_PNE ) {
+	    printf("Relance ReducedCostFixingAuNoeudRacine \n");
+	    PNE_ReducedCostFixingAuNoeudRacine( Pne );
+	  }
+  }
+# endif
 
 if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > 2 && 0 ) return;
 
@@ -96,7 +102,7 @@ if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > 2 && 0 ) return;
    grande. La profondeur du noeud racine est 0 */
 if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > 1 ) {
   /* NombreDeProblemesResolus est egal au nombre de noeuds resolus */
-  if ( Bb->NombreDeProblemesResolus % Pne->pne_params->CYCLE_HEURISTIQUES != 0 ) return;
+  if ( Bb->NombreDeProblemesResolus % CYCLE_HEURISTIQUES != 0 ) return;
 }
 
 ProblemeTropGros = NON_PNE;  
@@ -104,7 +110,7 @@ if ( Pne->YaUneSolutionEntiere == OUI_PNE ) {
   if ( Pne->StopHeuristiqueRINS == NON_PNE ) {
     if ( Pne->FaireHeuristiqueRINS == NON_PNE ) {
       Pne->NombreDeRefusSuccessifsHeuristiqueRINS++;
-	    if ( Pne->NombreDeRefusSuccessifsHeuristiqueRINS > Pne->pne_params->NB_MAX_REFUS_SUCCESSIFS ) {
+	    if ( Pne->NombreDeRefusSuccessifsHeuristiqueRINS > NB_MAX_REFUS_SUCCESSIFS ) {
         Pne->FaireHeuristiqueRINS = OUI_PNE;  
 		    Pne->NombreDeSolutionsHeuristiqueRINS = 0;
 		    Pne->NombreDEchecsSuccessifsHeuristiqueRINS = 0;
@@ -122,7 +128,7 @@ if ( Pne->YaUneSolutionEntiere == OUI_PNE ) {
 if ( Pne->StopHeuristiqueFixation == NON_PNE && Pne->YaUneSolutionEntiere == NON_PNE ) {
   if ( Pne->FaireHeuristiqueFixation == NON_PNE ) {
     Pne->NombreDeRefusSuccessifsHeuristiqueFixation++;
-	  if ( Pne->NombreDeRefusSuccessifsHeuristiqueFixation > Pne->pne_params->NB_MAX_REFUS_SUCCESSIFS ) {
+	  if ( Pne->NombreDeRefusSuccessifsHeuristiqueFixation > NB_MAX_REFUS_SUCCESSIFS ) {
       Pne->FaireHeuristiqueFixation = OUI_PNE;
 	  	Pne->NombreDeSolutionsHeuristiqueFixation = 0;    
       Pne->NombreDeRefusSuccessifsHeuristiqueFixation = 0;
@@ -140,7 +146,7 @@ if ( Pne->StopHeuristiqueFixation == NON_PNE && Pne->YaUneSolutionEntiere == NON
 if ( Pne->StopHeuristiqueFractionalDive == NON_PNE ) {
   if ( Pne->FaireHeuristiqueFractionalDive == NON_PNE ) {
     Pne->NombreDeRefusSuccessifsHeuristiqueFractionalDive++;
-	  if ( Pne->NombreDeRefusSuccessifsHeuristiqueFractionalDive > Pne->pne_params->NB_MAX_REFUS_SUCCESSIFS ) {
+	  if ( Pne->NombreDeRefusSuccessifsHeuristiqueFractionalDive > NB_MAX_REFUS_SUCCESSIFS ) {
       Pne->FaireHeuristiqueFractionalDive = OUI_PNE;
 	  	Pne->NombreDeSolutionsHeuristiqueFractionalDive = 0;    
       Pne->NombreDeRefusSuccessifsHeuristiqueFractionalDive = 0;

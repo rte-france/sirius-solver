@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: On regarde si la resolution de certaines equations est 
@@ -43,6 +52,14 @@ double * SecondMembreDeLaContrainteSingleton; int * CorrespondanceCntPneCntEntre
 *NbModifications = 0;
 
 Pne = (PROBLEME_PNE *) Presolve->ProblemePneDuPresolve;
+
+if ( Pne->YaDesVariablesEntieres == NON_PNE ) {
+  /* Si on est en continu, on ne sait pas (pour l'instant) recalculer exactement les variables
+	   duales des contraintes quand on fait des substitutions de variables. Donc on prefere ne pas
+		 faire ce genre de presolve. Todo: stocker toutes les transfromations de la matrice pour
+		 recalculer exactement les variables duales. */
+  return;
+}
 
 if ( Pne->NbLignesSingleton >= Pne->NombreDeContraintesTrav ) return;
 if ( Pne->NombreDOperationsDePresolve >= Pne->TailleTypeDOperationDePresolve ) return;
@@ -120,7 +137,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   if ( SensContrainte[Cnt] == '=' ) {	
     /* Test d'admissibilite */	
     if ( TypeBrn == VARIABLE_BORNEE_INFERIEUREMENT ) { 
-      if ( X < BorneInfPourPresolve[VarNonFix] - Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+      if ( X < BorneInfPourPresolve[VarNonFix] - SEUIL_DADMISSIBILITE ) {
 				# if VERBOSE_PRS == 1
           printf("*** Ligne singleton -> La contrainte %d ne peut pas etre satisfaite\n",Cnt);
           printf("                       Variable %d BorneInfPourPresolve %e  X %e \n",
@@ -130,7 +147,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
       }
     }
     else if ( TypeBrn == VARIABLE_BORNEE_SUPERIEUREMENT ) { 
-      if ( X > BorneSupPourPresolve[VarNonFix] + Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+      if ( X > BorneSupPourPresolve[VarNonFix] + SEUIL_DADMISSIBILITE ) { 
 				# if VERBOSE_PRS == 1
           printf("*** Ligne singleton -> La contrainte %d ne peut pas etre satisfaite\n",Cnt);
           printf("                       Variable %d X %e BorneSupPourPresolve %e\n",
@@ -140,7 +157,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
       }
     }		
     else if ( TypeBrn == VARIABLE_BORNEE_DES_DEUX_COTES ) { 
-      if ( X < BorneInfPourPresolve[VarNonFix] - Pne->pne_params->SEUIL_DADMISSIBILITE || X > BorneSupPourPresolve[VarNonFix] + Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+      if ( X < BorneInfPourPresolve[VarNonFix] - SEUIL_DADMISSIBILITE || X > BorneSupPourPresolve[VarNonFix] + SEUIL_DADMISSIBILITE ) { 
 				# if VERBOSE_PRS == 1
           printf("*** Ligne singleton -> La contrainte %d ne peut pas etre satisfaite\n",Cnt);
           printf("                       Variable %d BorneInfPourPresolve %e  X %e BorneSupPourPresolve %e\n",

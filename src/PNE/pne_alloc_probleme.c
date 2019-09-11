@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Allocations et liberation du probleme 
@@ -51,14 +60,14 @@ Pne->ProblemeSpxDuSolveur = NULL;
 Pne->ProblemeSpxDuNoeudRacine = NULL;
 Pne->MatriceDesContraintesAuNoeudRacine = NULL;
 
-NbVarAlloc = NombreDeVariablesE   + Pne->pne_params->INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_VARIABLES_PNE;
-NbCntAlloc = NombreDeContraintesE + Pne->pne_params->INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_PNE;
+NbVarAlloc = NombreDeVariablesE   + INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_VARIABLES_PNE;
+NbCntAlloc = NombreDeContraintesE + INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_PNE;  
 
-if (Pne->pne_params->VERBOSE_PNE){
+#if VERBOSE_PNE
   printf("Allocations memoire du PNE:\n");
   printf("Nombre de variables allouees: %d\n", NbVarAlloc);
   printf("Nombre de contraintes allouees: %d\n", NbCntAlloc);
-}
+#endif
 
 /* Calcul d'un majorant du nombre de Gub */
 /* Recherche de GUB */
@@ -143,13 +152,13 @@ for ( ilMax = -1 , i = 0 ; i < NombreDeContraintesE ; i++ ) {
 
 /*ilMax+= Pne->NombreDeContraintesAllouees;*/ /* Afin de pouvoir mettre tout de suite le probleme sous 
                                                  la forme standard si on le souhaite */
-ilMax += Pne->pne_params->MARGE_EN_FIN_DE_CONTRAINTE * NombreDeContraintesE;
+ilMax += MARGE_EN_FIN_DE_CONTRAINTE * NombreDeContraintesE;
 																						
-ilMax+= Pne->pne_params->INCREMENT_DALLOCATION_POUR_LA_MATRICE_DES_CONTRAINTES_PNE;
+ilMax+= INCREMENT_DALLOCATION_POUR_LA_MATRICE_DES_CONTRAINTES_PNE; 
 
-if (Pne->pne_params->VERBOSE_PNE) {
-	printf("Taille allouee pour la matrice des contrainte: %d \n", ilMax);
-}
+#if VERBOSE_PNE
+  printf("Taille allouee pour la matrice des contrainte: %d \n", ilMax);
+#endif
 
 Pne->TailleAlloueePourLaMatriceDesContraintes = ilMax;
 
@@ -316,7 +325,7 @@ int NbVarAlloc;
 /*
 printf(" Augmentation du nombre de variables\n"); fflush(stdout);
 */
-NbVarAlloc = Pne->NombreDeVariablesAllouees + Pne->pne_params->INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_VARIABLES_PNE;
+NbVarAlloc = Pne->NombreDeVariablesAllouees + INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_VARIABLES_PNE;
 
 Pne->NombreDeVariablesAllouees = NbVarAlloc;
 
@@ -402,7 +411,7 @@ int NbCntAlloc;
 
 /*printf(" Augmentation du nombre de contraintes\n"); fflush(stdout);*/
 
-NbCntAlloc = Pne->NombreDeContraintesAllouees + Pne->pne_params->INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_PNE;
+NbCntAlloc = Pne->NombreDeContraintesAllouees + INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_PNE;  
 
 Pne->NombreDeContraintesAllouees = NbCntAlloc;
 
@@ -451,7 +460,7 @@ int ilMax;
 
 /*printf(" Augmentation de la taille de la matrice des contraintes\n"); fflush(stdout);*/
 
-ilMax = Pne->TailleAlloueePourLaMatriceDesContraintes + Pne->pne_params->INCREMENT_DALLOCATION_POUR_LA_MATRICE_DES_CONTRAINTES_PNE;
+ilMax = Pne->TailleAlloueePourLaMatriceDesContraintes + INCREMENT_DALLOCATION_POUR_LA_MATRICE_DES_CONTRAINTES_PNE; 
 
 Pne->TailleAlloueePourLaMatriceDesContraintes = ilMax;
 
@@ -481,8 +490,8 @@ void PNE_AllocCoupes( PROBLEME_PNE * Pne )
 {
 int NbCntAlloc; int ilMax;
 
-NbCntAlloc = Pne->pne_params->INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_PNE;
-ilMax      = Pne->pne_params->INCREMENT_DALLOCATION_POUR_LA_MATRICE_DES_CONTRAINTES_PNE;
+NbCntAlloc = INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_PNE;  
+ilMax      = INCREMENT_DALLOCATION_POUR_LA_MATRICE_DES_CONTRAINTES_PNE; 
 /*   
 printf("Allocations memoire pour les coupes du PNE\n");
 */
@@ -525,7 +534,7 @@ int NbCntAlloc;
 /*
 printf(" Augmentation du nombre de coupes\n"); fflush(stdout);
 */
-NbCntAlloc = Pne->Coupes.NombreDeContraintesAllouees + Pne->pne_params->INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_PNE;
+NbCntAlloc = Pne->Coupes.NombreDeContraintesAllouees + INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_PNE;  
 
 Pne->Coupes.NombreDeContraintesAllouees = NbCntAlloc;
 
@@ -562,7 +571,7 @@ int ilMax;
 /*
 printf(" Augmentation de la taille de la matrice des coupes\n"); fflush(stdout);
 */
-ilMax = Pne->Coupes.TailleAlloueePourLaMatriceDesContraintes + Pne->pne_params->INCREMENT_DALLOCATION_POUR_LA_MATRICE_DES_CONTRAINTES_PNE;
+ilMax = Pne->Coupes.TailleAlloueePourLaMatriceDesContraintes + INCREMENT_DALLOCATION_POUR_LA_MATRICE_DES_CONTRAINTES_PNE; 
 
 Pne->Coupes.TailleAlloueePourLaMatriceDesContraintes = ilMax;
 

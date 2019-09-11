@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Resolution de Min c x sous contrainte Ax = b par un  
@@ -21,98 +30,6 @@
 # include "spx_define.h"
 
 /*----------------------------------------------------------------------------*/
-
-
-void SPX_print_parameters_PROBLEME_SPX(PROBLEME_SPX * Spx) {
-	printf("%35s : %10d\n", "NbCycles", Spx->NbCycles);
-	printf("%35s : %10d\n", "AffichageDesTraces", Spx->AffichageDesTraces);
-	printf("%35s : %10d\n", "TypeDePricing", Spx->TypeDePricing);
-	printf("%35s : %10d\n", "FaireDuScalingSPX", Spx->FaireDuScalingSPX);
-	printf("%35s : %10d\n", "StrategieAntiDegenerescence", Spx->StrategieAntiDegenerescence);
-	printf("%35s : %10d\n", "CycleDeControleDeDegenerescence", Spx->CycleDeControleDeDegenerescence);
-	printf("%35s : %10d\n", "EcrireLegendePhase1", Spx->EcrireLegendePhase1);
-	printf("%35s : %10d\n", "EcrireLegendePhase2", Spx->EcrireLegendePhase2);
-	printf("%35s : %10d\n", "Contexte", Spx->Contexte);
-	printf("%35s : %10d\n", "AlgorithmeChoisi", Spx->AlgorithmeChoisi);
-	printf("%35s : %10d\n", "LaBaseDeDepartEstFournie", Spx->LaBaseDeDepartEstFournie);
-	printf("%35s : %10d\n", "YaUneSolution", Spx->YaUneSolution);
-	printf("%35s : %10d\n", "NombreMaxDIterations", Spx->NombreMaxDIterations);
-	printf("%35s : %10.6f\n", "DureeMaxDuCalcul", Spx->DureeMaxDuCalcul);
-	printf("%35s : %10d\n", "CycleDeRefactorisation", Spx->CycleDeRefactorisation);
-	printf("%35s : %10.6f\n", "UnSurRAND_MAX", Spx->UnSurRAND_MAX);
-	printf("%35s : %10d\n", "FaireDuRaffinementIteratif", Spx->FaireDuRaffinementIteratif);
-	printf("%35s : %10d\n", "ChoixDeVariableSortanteAuHasard", Spx->ChoixDeVariableSortanteAuHasard);
-	printf("%35s : %10d\n", "BaseInversibleDisponible", Spx->BaseInversibleDisponible);
-	printf("%35s : %10d\n", "NombreMaxDeChoixAuHasard", Spx->NombreMaxDeChoixAuHasard);
-	printf("%35s : %10d\n", "NombreDeChoixFaitsAuHasard", Spx->NombreDeChoixFaitsAuHasard);
-	printf("%35s : %10d\n", "AdmissibilitePossible", Spx->AdmissibilitePossible);
-	printf("%35s : %10d\n", "InverseProbablementDense", Spx->InverseProbablementDense);
-	printf("%35s : %10d\n", "ToleranceSurLesVariablesEntieresAjustees", Spx->ToleranceSurLesVariablesEntieresAjustees);
-	printf("%35s : %10d\n", "NombreDeVariablesAllouees", Spx->NombreDeVariablesAllouees);
-	printf("%35s : %10d\n", "NombreDeContraintesAllouees", Spx->NombreDeContraintesAllouees);
-	printf("%35s : %10d\n", "NbTermesAlloues", Spx->NbTermesAlloues);
-	printf("%35s : %10d\n", "PresenceDeVariablesDeBornesIdentiques", Spx->PresenceDeVariablesDeBornesIdentiques);
-	printf("%35s : %10d\n", "NombreDeVariables", Spx->NombreDeVariables);
-	printf("%35s : %10d\n", "NombreDeVariablesACoutNonNul", Spx->NombreDeVariablesACoutNonNul);
-	printf("%35s : %10d\n", "NombreDeVariablesNatives", Spx->NombreDeVariablesNatives);
-	printf("%35s : %10d\n", "NombreDeVariablesDuProblemeSansCoupes", Spx->NombreDeVariablesDuProblemeSansCoupes);
-	printf("%35s : %10d\n", "NombreDeBornesAuxiliairesUtilisees", Spx->NombreDeBornesAuxiliairesUtilisees);
-	printf("%35s : %10d\n", "IterationPourBornesAuxiliaires", Spx->IterationPourBornesAuxiliaires);
-	printf("%35s : %10.6f\n", "CoeffMultiplicateurDesBornesAuxiliaires", Spx->CoeffMultiplicateurDesBornesAuxiliaires);
-	printf("%35s : %10.6f\n", "ScaleLigneDesCouts", Spx->ScaleLigneDesCouts);
-	printf("%35s : %10d\n", "NombreDeContraintes", Spx->NombreDeContraintes);
-	printf("%35s : %10d\n", "NombreDeContraintesDuProblemeSansCoupes", Spx->NombreDeContraintesDuProblemeSansCoupes);
-	printf("%35s : %10.6f\n", "ValeurMoyenneDuSecondMembre", Spx->ValeurMoyenneDuSecondMembre);
-	printf("%35s : %10.6f\n", "PlusGrandTermeDeLaMatrice", Spx->PlusGrandTermeDeLaMatrice);
-	printf("%35s : %10.6f\n", "PlusPetitTermeDeLaMatrice", Spx->PlusPetitTermeDeLaMatrice);
-	printf("%35s : %10.6f\n", "RapportDeScaling", Spx->RapportDeScaling);
-	printf("%35s : %10.6f\n", "CoutMoyen", Spx->CoutMoyen);
-	printf("%35s : %10.6f\n", "EcartDeBornesMoyen", Spx->EcartDeBornesMoyen);
-	printf("%35s : %10.6f\n", "PerturbationMax", Spx->PerturbationMax);
-	printf("%35s : %10d\n", "StockageParColonneSauvegarde", Spx->StockageParColonneSauvegarde);
-	printf("%35s : %10d\n", "LastEta", Spx->LastEta);
-	printf("%35s : %10d\n", "RemplissageMaxDeLaFPI", Spx->RemplissageMaxDeLaFPI);
-	printf("%35s : %10d\n", "StockageParColonneSauvegarde", Spx->StockageParColonneSauvegarde);
-	printf("%35s : %10d\n", "Iteration", Spx->Iteration);
-	printf("%35s : %10d\n", "NbCyclesSansControleDeDegenerescence", Spx->NbCyclesSansControleDeDegenerescence);
-	printf("%35s : %10d\n", "ChangementDeBase", Spx->ChangementDeBase);
-	printf("%35s : %10d\n", "VariableEntrante", Spx->VariableEntrante);
-	printf("%35s : %10.6f\n", "DeltaXSurLaVariableHorsBase", Spx->DeltaXSurLaVariableHorsBase);
-	printf("%35s : %10d\n", "VariableSortante", Spx->VariableSortante);
-	printf("%35s : %10d\n", "SortSurXmaxOuSurXmin", Spx->SortSurXmaxOuSurXmin);
-	printf("%35s : %10d\n", "NombreDeChangementsDeBase", Spx->NombreDeChangementsDeBase);
-	printf("%35s : %10d\n", "StrongBranchingEnCours", Spx->StrongBranchingEnCours);
-	printf("%35s : %10d\n", "PremierSimplexe", Spx->PremierSimplexe);
-	printf("%35s : %10d\n", "BBarreAEteCalculeParMiseAJour", Spx->BBarreAEteCalculeParMiseAJour);
-	printf("%35s : %10d\n", "CBarreAEteCalculeParMiseAJour", Spx->CBarreAEteCalculeParMiseAJour);
-	printf("%35s : %10d\n", "NbABarreSNonNuls", Spx->NbABarreSNonNuls);
-	printf("%35s : %10d\n", "CalculerBBarre", Spx->CalculerBBarre);
-	printf("%35s : %10d\n", "FaireMiseAJourDeBBarre", Spx->FaireMiseAJourDeBBarre);
-	printf("%35s : %10d\n", "BuffNbBoundFlip", Spx->BuffNbBoundFlip);
-	printf("%35s : %10d\n", "NbItBoundFlip", Spx->NbItBoundFlip);
-	printf("%35s : %10d\n", "NbBoundFlipIterationPrecedente", Spx->NbBoundFlipIterationPrecedente);
-	printf("%35s : %10d\n", "NbBoundFlip", Spx->NbBoundFlip);
-	printf("%35s : %10.6f\n", "ABarreSCntBase", Spx->ABarreSCntBase);
-	printf("%35s : %10d\n", "NombreDeContraintesASurveiller", Spx->NombreDeContraintesASurveiller);
-	printf("%35s : %10d\n", "NombreDeValeursNonNullesDeNBarreR", Spx->NombreDeValeursNonNullesDeNBarreR);
-	printf("%35s : %10.6f\n", "SeuilDePivotDual", Spx->SeuilDePivotDual);
-	printf("%35s : %10d\n", "NombreDeVariablesATester", Spx->NombreDeVariablesATester);
-	printf("%35s : %10d\n", "PremierPassage", Spx->PremierPassage);
-	printf("%35s : %10d\n", "FaireTriRapide", Spx->FaireTriRapide);
-	printf("%35s : %10d\n", "TypeDeStockageDeErBMoinsUn", Spx->TypeDeStockageDeErBMoinsUn);
-	printf("%35s : %10d\n", "NbTermesNonNulsDeErBMoinsUn", Spx->NbTermesNonNulsDeErBMoinsUn);
-	printf("%35s : %10.6f\n", "DeltaPiSurLaVariableEnBase", Spx->DeltaPiSurLaVariableEnBase);
-	printf("%35s : %10d\n", "CalculerCBarre", Spx->CalculerCBarre);
-	printf("%35s : %10.6f\n", "SommeDesInfaisabilitesPrimales", Spx->SommeDesInfaisabilitesPrimales);
-	printf("%35s : %10.6f\n", "Cout", Spx->Cout);
-	printf("%35s : %10.6f\n", "CoutMax", Spx->CoutMax);
-	printf("%35s : %10d\n", "UtiliserCoutMax", Spx->UtiliserCoutMax);
-	printf("%35s : %10.6f\n", "PartieFixeDuCout", Spx->PartieFixeDuCout);
-	printf("%35s : %10d\n", "LeSteepestEdgeEstInitilise", Spx->LeSteepestEdgeEstInitilise);
-	printf("%35s : %10d\n", "LesCoutsOntEteModifies", Spx->LesCoutsOntEteModifies);
-	printf("%35s : %10d\n", "ModifCoutsAutorisee", Spx->ModifCoutsAutorisee);
-	printf("%35s : %10.6f\n", "CoefficientPourLaValeurDePerturbationDeCoutAPosteriori", Spx->CoefficientPourLaValeurDePerturbationDeCoutAPosteriori);
-}
 
 void SPX_SimplexeCalculs( PROBLEME_SIMPLEXE * Probleme , PROBLEME_SPX * Spx )
 {
@@ -131,15 +48,12 @@ double * CoutsReduits; int Var;
 /*                     */
 int Cnt; int i; double UnSurScaleLigneDesCouts; double C; double u; int il_E; int il_EMx; int Cnt_E;
 int * CorrespondanceCntEntreeCntSimplexe; double * Pi; double * ScaleB; char * CorrectionDuale;
-
-int check_NombreDeCoutsBruitess;
-
-int j = 0;
 /*int * CorrespondanceVarEntreeVarSimplexe;*/
 
 /*----------------------------------------------------------------------------------------------------*/  
 
-//SPX_print_parameters_PROBLEME_SPX(Spx);
+/*printf("Debut SPX_SimplexeCalculs\n");*/
+
 Contexte             = Probleme->Contexte;
 NombreMaxDIterations = Probleme->NombreMaxDIterations; 
  
@@ -213,12 +127,12 @@ Spx->ExplorationRapideEnCours = NON_SPX;
 
 /*----------------------------------------------------------------------------------------------------*/  
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf("Entree dans le simplexe: \n");
-	printf("      nombre de variables  :  %d\n", NbVar_E);
-	printf("      nombre de contraintes:  %d\n", NbContr_E);
-	fflush(stdout);
-}
+#if VERBOSE_SPX
+  printf("Entree dans le simplexe: \n");
+  printf("      nombre de variables  :  %d\n",NbVar_E);
+  printf("      nombre de contraintes:  %d\n",NbContr_E);
+  fflush(stdout);
+#endif
 
 *ExistenceDUneSolution = NON_SPX; /* Precaution. En realite la mise a jour est faite au moment
                                      du return c'est pour ca qu'il n'en faut qu'un seul */ 
@@ -227,12 +141,11 @@ Spx->YaUneSolution   = OUI_SPX;
 Spx->PremierSimplexe = NON_SPX;
 
 if ( Spx->StrategieAntiDegenerescence == AGRESSIF ) {
-  Spx->CycleDeControleDeDegenerescence = Spx->spx_params->CYCLE_DE_CONTROLE_DE_DEGENERESCENCE_AGRESSIF;
+  Spx->CycleDeControleDeDegenerescence = CYCLE_DE_CONTROLE_DE_DEGENERESCENCE_AGRESSIF;
 }
 else {
-  Spx->CycleDeControleDeDegenerescence = Spx->spx_params->CYCLE_DE_CONTROLE_DE_DEGENERESCENCE_PEU_AGRESSIF;
+  Spx->CycleDeControleDeDegenerescence = CYCLE_DE_CONTROLE_DE_DEGENERESCENCE_PEU_AGRESSIF;
 }
-
 
 if      ( Contexte == BRANCH_AND_BOUND_OU_CUT       ) Spx->Contexte = BRANCH_AND_BOUND_OU_CUT;
 else if ( Contexte == BRANCH_AND_BOUND_OU_CUT_NOEUD ) Spx->Contexte = BRANCH_AND_BOUND_OU_CUT_NOEUD;
@@ -279,9 +192,9 @@ else {
   Spx->AnomalieDetectee = OUI_SPX;
   longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
 }
+
 Spx->FlagStabiliteDeLaFactorisation       = 0;  
 Spx->ProblemeDeStabiliteDeLaFactorisation = NON_SPX;
-
 
 /* Pour etre certain de ne pas utiliser a tort les infos sur les coupes. Ainsi en dehors d'un contexte de branch and bound
    avec possibilités de coupes, l'appelant n'a pas a initialiser NombreDeContraintesCoupes */
@@ -289,53 +202,48 @@ if ( Spx->Contexte == SIMPLEXE_SEUL || Spx->Contexte == BRANCH_AND_BOUND_OU_CUT 
 
 if ( Spx->Contexte == SIMPLEXE_SEUL || Spx->Contexte == BRANCH_AND_BOUND_OU_CUT ) {
   SPX_AllouerProbleme( Spx , NbVar_E , NbContr_E , Mdeb_E , NbTerm_E );
-
-  //for (Var = 0; Var < Spx->NombreDeVariables; ++Var) {
-	 // printf("%6d %6d\n", Var, (int)Spx->PositionDeLaVariable[Var]);
-  //}
   SPX_ConstruireLeProbleme( Spx , C_E , X_E , Xmin_E     , Xmax_E   , NbVar_E  , TypeVar_E , 
                             NbContr_E , Mdeb_E     , NbTerm_E , Indcol_E , A_E       , 
                             TypeDeContrainte_E     , B_E                  , 
                             PositionDeLaVariable_E , *NbVarDeBaseComplementaires_E   , 
-                            ComplementDeLaBase_E   , CoutMax , UtiliserCoutMax );	
-
-
+                            ComplementDeLaBase_E   , CoutMax , UtiliserCoutMax );			    
 }
 else {
-	SPX_ModifierLeProbleme(Spx, C_E, X_E, Xmin_E, Xmax_E, NbVar_E, TypeVar_E,
-		CoutMax, UtiliserCoutMax);
-	if (Spx->LaBaseDeDepartEstFournie != UTILISER_LA_BASE_DU_PROBLEME_SPX) {
-		/* Si on a choisi d'utiliser la base du probleme simplexe courant, alors il est inutile de la reconstruire.
-		   De plus, on ne peut pas ajouter de coupes (donc de contraintes) sinon le probleme change et la base
-		   n'a meme plus la bonne dimension */
-		SPX_ConstruireLaBaseDuProblemeModifie(Spx, NbVar_E, PositionDeLaVariable_E, *NbVarDeBaseComplementaires_E,
-			ComplementDeLaBase_E);
+  SPX_ModifierLeProbleme( Spx , C_E, X_E, Xmin_E, Xmax_E, NbVar_E, TypeVar_E,  
+	                  CoutMax  , UtiliserCoutMax );
+  if ( Spx->LaBaseDeDepartEstFournie != UTILISER_LA_BASE_DU_PROBLEME_SPX ) {
+    /* Si on a choisi d'utiliser la base du probleme simplexe courant, alors il est inutile de la reconstruire.
+       De plus, on ne peut pas ajouter de coupes (donc de contraintes) sinon le probleme change et la base
+       n'a meme plus la bonne dimension */
+    SPX_ConstruireLaBaseDuProblemeModifie( Spx , NbVar_E, PositionDeLaVariable_E, *NbVarDeBaseComplementaires_E,
+                                           ComplementDeLaBase_E );
+																					 
+    /* Les coupes */
+    SPX_AjouterLesCoupes( Spx , NombreDeContraintesCoupes, PositionDeLaVariableDEcartCoupes,  
+                          MdebCoupes               , NbTermCoupes                    ,   
+                          NuvarCoupes              , ACoupes                         ,       
+                          BCoupes ); 
 
-		/* Les coupes */
-		SPX_AjouterLesCoupes(Spx, NombreDeContraintesCoupes, PositionDeLaVariableDEcartCoupes,
-			MdebCoupes, NbTermCoupes,
-			NuvarCoupes, ACoupes,
-			BCoupes);
+    SPX_CompleterLaBaseDuProblemeModifie( Spx , NbVar_E, NbContr_E , PositionDeLaVariable_E ); 
 
-		SPX_CompleterLaBaseDuProblemeModifie(Spx, NbVar_E, NbContr_E, PositionDeLaVariable_E);
-
-		/* Maintenant il faut faire le chainage de la transposee */
-			/* Pour l'instant: si on fait de la relaxation de contraintes on refait systeùatiquement le chainage a cause
-			   de Spx->CNbTermSansCoupes */
-		if (NombreDeContraintesCoupes > 2 * Spx->NombreDeContraintesDuProblemeSansCoupes) {
-			SPX_ChainageDeLaTransposee(Spx, COMPACT);
-		}
-		else {
-			SPX_ModifierLeChainageDeLaTransposee(Spx);
-		}
-	}
-	else {
-		Spx->LaBaseDeDepartEstFournie = OUI_SPX;
-		/* Reinitialisation des corrections duales meme si on repart de la base du probleme SPX */
-		CorrectionDuale = Spx->CorrectionDuale;
-		for (i = 0; i < Spx->NombreDeVariables; i++) CorrectionDuale[i] = Spx->spx_params->NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;
-	}
+    /* Maintenant il faut faire le chainage de la transposee */
+		/* Pour l'instant: si on fait de la relaxation de contraintes on refait systeùatiquement le chainage a cause
+		   de Spx->CNbTermSansCoupes */
+    if ( NombreDeContraintesCoupes > 2 * Spx->NombreDeContraintesDuProblemeSansCoupes ) {
+      SPX_ChainageDeLaTransposee( Spx , COMPACT );
+    }
+    else {
+      SPX_ModifierLeChainageDeLaTransposee( Spx );
+    }
+  }
+  else {
+    Spx->LaBaseDeDepartEstFournie = OUI_SPX;
+    /* Reinitialisation des corrections duales meme si on repart de la base du probleme SPX */
+    CorrectionDuale = Spx->CorrectionDuale;
+    for ( i = 0 ; i < Spx->NombreDeVariables ; i++ ) CorrectionDuale[i] = NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;    				
+  }
 }
+
 if ( Spx->YaUneSolution == NON_SPX ) goto FinDuSimplexe;
 
 SPX_BruitageInitialDesCouts( Spx );
@@ -350,8 +258,8 @@ Spx->ForcerUtilisationDeLaBaseComplete = 0;
 Spx->NombreDeFactorisationsDeBaseReduite = 0;
 Spx->NombreDeReactivationsDeLaBaseReduite = 0;
 
-Spx->NombreDeBasesCompletesSuccessives = Spx->spx_params->NB_DE_BASES_COMPLETES_SUCCESSIVES;
-Spx->NombreDeBasesReduitesSuccessives = Spx->spx_params->NB_DE_BASE_REDUITE_SUCCESSIVES_SANS_PRISE_EN_COMPTE_DES__VIOLATIONS;
+Spx->NombreDeBasesCompletesSuccessives = NB_DE_BASES_COMPLETES_SUCCESSIVES;
+Spx->NombreDeBasesReduitesSuccessives = NB_DE_BASE_REDUITE_SUCCESSIVES_SANS_PRISE_EN_COMPTE_DES__VIOLATIONS;
 Spx->NombreDinfaisabilitesSiBaseReduite = Spx->NombreDeContraintes;
 Spx->NbEchecsReductionNombreDinfaisabilitesSiBaseReduite = 0;
 Spx->InitBaseReduite = OUI_SPX;
@@ -360,29 +268,27 @@ for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->PositionHorsBaseRedu
 
 Spx->Iteration = 0;
 Spx->NombreDeChangementsDeBase = 0;
-Spx->NombreMaxDIterations      = Spx->spx_params->NOMBRE_MAX_DITERATIONS; 
+Spx->NombreMaxDIterations      = NOMBRE_MAX_DITERATIONS; 
 if ( Spx->NombreMaxDIterations <= ( 5 * Spx->NombreDeContraintes ) ) {
   Spx->NombreMaxDIterations = 5 * Spx->NombreDeContraintes;
 }
 /* Prise en compte de la valeur fournie si elle est valide */
 if ( NombreMaxDIterations > 0 ) Spx->NombreMaxDIterations = NombreMaxDIterations;
 
-if ( Spx->AlgorithmeChoisi == SPX_PRIMAL ) Spx->CycleDeRefactorisation = Spx->spx_params->CYCLE_DE_REFACTORISATION; 
-else                                       Spx->CycleDeRefactorisation = Spx->spx_params->CYCLE_DE_REFACTORISATION_DUAL;
+if ( Spx->AlgorithmeChoisi == SPX_PRIMAL ) Spx->CycleDeRefactorisation = CYCLE_DE_REFACTORISATION; 
+else                                       Spx->CycleDeRefactorisation = CYCLE_DE_REFACTORISATION_DUAL;
 
 /*Spx->LastEta               = -1;*/
 Spx->RemplissageMaxDeLaFPI = (int) floor( 0.6 * Spx->NombreDeContraintes * Spx->CycleDeRefactorisation ) + 1;
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf("Dans le simplexe: \n");
-	printf("      nombre de variables  :  %d\n", Spx->NombreDeVariables);
-	printf("      nombre de contraintes:  %d\n", Spx->NombreDeContraintes); fflush(stdout);
-}
+#if VERBOSE_SPX
+  printf("Dans le simplexe: \n");
+  printf("      nombre de variables  :  %d\n",Spx->NombreDeVariables);
+  printf("      nombre de contraintes:  %d\n",Spx->NombreDeContraintes); fflush(stdout);
+#endif
 
 Spx->StrongBranchingEnCours = NON_SPX;
-//for (Var = 0; Var < Spx->NombreDeVariables; ++Var) {
-//	printf("%6d %6d\n", Var, (int)Spx->PositionDeLaVariable[Var]);
-//}
+
 /* Factoriser la premiere base */
 Spx->BaseInversibleDisponible = NON_SPX;
 SPX_FactoriserLaBase( Spx );
@@ -397,9 +303,9 @@ else {
   SPX_DualSimplexe( Spx );
 }
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf("Fin du simplexe a l iteration %d\n", Spx->Iteration);
-}
+#if VERBOSE_SPX
+  printf("Fin du simplexe a l iteration %d\n",Spx->Iteration);
+#endif
 
 # ifdef UTILISER_BORNES_AUXILIAIRES
   /* Controle: il ne doit JAMAIS rester de bornes auxilaires */
@@ -587,7 +493,7 @@ printf(" Lancement d'une verification d'admissiblite par le simplexe lui-meme ..
       if (Spx->PositionDeLaVariable[i] != EN_BASE_SUR_BORNE_INF ) { 
        /* printf("*** Pas de solution car variable de base %d valeur %lf EN_BASE Xmax %lf \n",
                 i,Spx->BBarre[Spx->ContrainteDeLaVariableEnBase[i]],Spx->Xmax[i]); */  
-        if ( Spx->Xmax[i] > 1.1 * Spx->spx_params->SEUIL_DE_DEGENERESCENCE ) { 
+        if ( Spx->Xmax[i] > 1.1 * SEUIL_DE_DEGENERESCENCE ) { 
           printf("*** Pas de solution car variable de base %d valeur %lf EN_BASE Xmax %lf \n",
                   i,Spx->BBarre[Spx->ContrainteDeLaVariableEnBase[i]],Spx->Xmax[i]); 
           Spx->AnomalieDetectee = OUI_SPX;
@@ -738,9 +644,9 @@ printf(" CONTROLE D AMISSIBILITE EN SORTIE DE SIMPLEXE SATISFAISANT\n");
 
 }
 else {
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Pas de solution \n");
-	}
+  #if VERBOSE_SPX
+    printf("Pas de solution \n");
+  #endif
   /* On recupere quand meme les resultats sur les coupes. Pourquoi (au contraire, c'est idiot) ? */
   /*
   if ( Spx->Contexte != SIMPLEXE_SEUL && NombreDeContraintesCoupes > 0 ) {

@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Calcul d'une couope de knapsack sur une coupe de Gomory
@@ -37,22 +46,26 @@
 /*----------------------------------------------------------------------------*/
 
 void PNE_CalculerUneKnapsackSurGomoryOuIntersection( PROBLEME_PNE * Pne,  
-													double * Coefficient_CG,
-													int * IndiceDeLaVariable_CG,
-													double SecondMembre,
-													int NombreDeTermes,
-													double PlusGrandCoeff )
+                                                     double * Coefficient_CG,
+																										 int * IndiceDeLaVariable_CG,
+																										 double SecondMembre,
+																										 int NombreDeTermes,
+																										 double PlusGrandCoeff )
 {
 int i; char Kpossible; int Var; char CouvertureTrouvee; int NbT; double CoeffMx; double CoeffMn;
 double * Coeff; int * Variable; int * TypeDeBorneTrav; double * UminTrav; double Coefficient;
 int * TypeDeVariableTrav; double * UmaxTrav; char Trouve; char RendreLesCoeffsEntiers;
 char Mixed_0_1_Knapsack; 
 
-int Cnt1; double bBorne; int VarBin; double u; double l; char Found; int i1; double Normalisation;
+int Cnt1; double bBorne; int VarBin; double u; double l; char Found; int i1;
 
-if ( Pne->pne_params->NORMALISER_LES_COUPES_SUR_LES_G_ET_I != OUI_PNE ) {
-	PlusGrandCoeff = 1.; /* Pour ne pas avoir de warning a a compilation */
-}
+# if NORMALISER_LES_COUPES_SUR_LES_G_ET_I == OUI_PNE
+  double Normalisation;
+# endif
+
+# if NORMALISER_LES_COUPES_SUR_LES_G_ET_I != OUI_PNE
+  PlusGrandCoeff = 1.; /* Pour ne pas avoir de warning a a compilation */
+# endif
 
 Mixed_0_1_Knapsack = NON_PNE;
 
@@ -66,12 +79,12 @@ UminTrav = Pne->UminTrav;
 UmaxTrav = Pne->UmaxTrav;
 
 /* Si les Gomory et les coupes d'intersection sont normalisees, on revient aux valeurs initiales */
-if(Pne->pne_params->NORMALISER_LES_COUPES_SUR_LES_G_ET_I == OUI_PNE) {
+# if NORMALISER_LES_COUPES_SUR_LES_G_ET_I == OUI_PNE
   Normalisation = PlusGrandCoeff;  
   SPX_ArrondiEnPuissanceDe2( &Normalisation );
   for ( i = 0 ; i < NombreDeTermes ; i++ ) Coefficient_CG[i] *= Normalisation;          
   SecondMembre *= Normalisation;
-}
+# endif
 
 CoeffMx = -LINFINI_PNE;
 CoeffMn =  LINFINI_PNE;
@@ -209,7 +222,7 @@ if ( SecondMembre >= 0.0 ) {
 	if ( Trouve == NON_PNE ) Kpossible = NON_PNE;
 }
 
-if ( Kpossible == OUI_PNE && NbT >= Pne->pne_params->MIN_TERMES_POUR_KNAPSACK && NbT <= MAX_TERMES_POUR_KNAPSACK_DANS_COUPE ) {
+if ( Kpossible == OUI_PNE && NbT >= MIN_TERMES_POUR_KNAPSACK && NbT <= MAX_TERMES_POUR_KNAPSACK_DANS_COUPE ) {
   /*
 	printf("On peut tenter une K sur la Gomory  NbT %d \n",NbT);			
 	for ( i = 0 ; i < NbT ; i++ ) {

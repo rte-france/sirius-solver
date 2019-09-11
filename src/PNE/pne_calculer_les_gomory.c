@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Calcul des coupes 
@@ -39,9 +48,9 @@ double Fractionnalite; BB * Bb; int NbCalculs;
 
 NbCalculs = 0;
 
-if (Pne->pne_params->VERBOSE_PNE) {
-	printf("-> Determination des coupes de GOMORY \n"); fflush(stdout);
-}
+#if VERBOSE_PNE
+  printf("-> Determination des coupes de GOMORY \n"); fflush(stdout);
+#endif
 
 if ( Pne->PremFrac >= 0 ) {
   Ok = SPX_PreparerLeCalculDesGomory( (PROBLEME_SPX *) Pne->ProblemeSpxDuSolveur,
@@ -72,7 +81,7 @@ while ( i >= 0 && Count < CountMx ) {
 	Fractionnalite = fabs( UTrav - floor( UTrav ) );
 	if ( fabs( UTrav - ceil ( UTrav ) ) < Fractionnalite ) Fractionnalite = fabs( UTrav - ceil ( UTrav ) );
 	
-  if( Fractionnalite < Pne->pne_params->SEUIL_FRACTIONNALITE_POUR_FAIRE_UNE_COUPE_DE_GOMORY ) break;
+  if( Fractionnalite < SEUIL_FRACTIONNALITE_POUR_FAIRE_UNE_COUPE_DE_GOMORY ) break;
 
 	NbCalculs++;
   PNE_CalculerUneGomoryEnVariablesMixtes( Pne, Var, Fractionnalite );
@@ -87,9 +96,9 @@ while ( i >= 0 && Count < CountMx ) {
 
 FinPneGomory:
 
-if (Pne->pne_params->VERBOSE_PNE) {
-	printf("-> Nombre de coupes de GOMORY ajoutees %d \n", Pne->NombreDeCoupesAjoute);
-}
+#if VERBOSE_PNE
+  printf("-> Nombre de coupes de GOMORY ajoutees %d \n",Pne->NombreDeCoupesAjoute); 
+#endif
 /*
   printf("-> Nombre de coupes de GOMORY ajoutees %d sur %d  NombreDeVariablesAValeurFractionnaire %d\n",
 	Pne->NombreDeCoupesAjoute,NbCalculs,Pne->NombreDeVariablesAValeurFractionnaire); 
@@ -110,11 +119,11 @@ int NombreDeVariablesTrav; int * IndiceDeLaVariable; double * Coefficient; doubl
 double RapportMaxDesCoeffs; double ZeroPourCoeffVariablesDEcart; double ZeroPourCoeffVariablesNative;
 double RelaxRhsAbs; double RelaxRhsRel;
 
-RapportMaxDesCoeffs = Pne->pne_params->RAPPORT_MAX_COEFF_COUPE_GOMORY;
-ZeroPourCoeffVariablesDEcart = Pne->pne_params->ZERO_POUR_COEFF_VARIABLE_DECART_DANS_COUPE_GOMORY_OU_INTERSECTION;
-ZeroPourCoeffVariablesNative = Pne->pne_params->ZERO_POUR_COEFF_VARIABLE_NATIVE_DANS_COUPE_GOMORY_OU_INTERSECTION;
-RelaxRhsAbs = Pne->pne_params->RELAX_RHS_GOMORY_ABS;
-RelaxRhsRel = Pne->pne_params->RELAX_RHS_GOMORY_REL;
+RapportMaxDesCoeffs = RAPPORT_MAX_COEFF_COUPE_GOMORY;
+ZeroPourCoeffVariablesDEcart = ZERO_POUR_COEFF_VARIABLE_DECART_DANS_COUPE_GOMORY_OU_INTERSECTION;
+ZeroPourCoeffVariablesNative = ZERO_POUR_COEFF_VARIABLE_NATIVE_DANS_COUPE_GOMORY_OU_INTERSECTION;
+RelaxRhsAbs = RELAX_RHS_GOMORY_ABS;
+RelaxRhsRel = RELAX_RHS_GOMORY_REL;
 
 IndiceDeLaVariable = Pne->IndiceDeLaVariable_CG;
 Coefficient = Pne->Coefficient_CG;
@@ -155,12 +164,12 @@ for ( i = 0 ; i < NombreDeTermes ; i++ ) {
   
 if ( S > SecondMembre ) {  
   X = fabs( SecondMembre - S );	 
-  if ( X > Pne->pne_params->SEUIL_VIOLATION_COUPE_DE_GOMORY ) {
+  if ( X > SEUIL_VIOLATION_COUPE_DE_GOMORY ) {
 		 
     /* Mise a jour de la matrice pour les coupes d'intersection sauf si la coupe a trop de termes car on perd pas mal de
 		   precision dans les coupes d'intersection. Le coeff sur le nombre de variables est totalement arbitraire */
 		
-		if ( Fractionnalite > Pne->pne_params->SEUIL_FRACTIONNALITE_POUR_COUPE_INTERSECTION /*&& NombreDeTermes < (0.95 * NombreDeVariablesTrav)*/ ) {   
+		if ( Fractionnalite > SEUIL_FRACTIONNALITE_POUR_COUPE_INTERSECTION /*&& NombreDeTermes < (0.95 * NombreDeVariablesTrav)*/ ) {   
       SPX_MatriceCoupesDIntersection( (PROBLEME_SPX *) Pne->ProblemeSpxDuSolveur );
 		}	 
 		 	
@@ -175,9 +184,7 @@ if ( S > SecondMembre ) {
 		  
     /* On met la Gomory dans le probleme */
 		
-	if ( Pne->pne_params->NORMALISER_LES_COUPES_SUR_LES_G_ET_I == OUI_PNE && PlusGrandCoeff >= Pne->pne_params->SEUIL_POUR_NORMALISER_LES_COUPES_SUR_LES_G_ET_I ) {
-		PNE_NormaliserUnCoupe(Pne->Coefficient_CG, &SecondMembre, NombreDeTermes, PlusGrandCoeff);
-	}
+    PNE_NormaliserUnCoupe( Pne->Coefficient_CG, &SecondMembre, NombreDeTermes, PlusGrandCoeff );
 	 
     PNE_EnrichirLeProblemeCourantAvecUneCoupe( Pne, 'G', NombreDeTermes, SecondMembre, X, Coefficient, IndiceDeLaVariable );     		
 		
@@ -191,15 +198,16 @@ if ( S > SecondMembre ) {
  
 
 																							 
-	if ( Pne->pne_params->KNAPSACK_SUR_GOMORY == OUI_SPX ) {
-		/* Il faut le faire apres le stockage de la coupe car la recherche des knapsack modifie
-			 Pne->Coefficient_CG et Pne->IndiceDeLaVariable_CG */
-			 /* On regarde si on peut faire une K sur la coupe */
-		if ( X > Pne->pne_params->VIOLATION_MIN_POUR_K_SUR_COUPE && OnAEcrete != OUI_SPX ) {
-			PNE_CalculerUneKnapsackSurGomoryOuIntersection(Pne, Coefficient, IndiceDeLaVariable,
-				SecondMembre, NombreDeTermes, PlusGrandCoeff);
-		}
-	}
+		# if KNAPSACK_SUR_GOMORY == OUI_SPX
+		  /* Il faut le faire apres le stockage de la coupe car la recherche des knapsack modifie
+			   Pne->Coefficient_CG et Pne->IndiceDeLaVariable_CG */
+      /* On regarde si on peut faire une K sur la coupe */
+			if ( X > VIOLATION_MIN_POUR_K_SUR_COUPE && OnAEcrete != OUI_SPX ) {
+        PNE_CalculerUneKnapsackSurGomoryOuIntersection( Pne, Coefficient, IndiceDeLaVariable,
+										  																  SecondMembre, NombreDeTermes, PlusGrandCoeff );		
+		  }
+		# endif
+																							 
   }  	
   else { 
 	  /*

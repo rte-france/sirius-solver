@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Variable probing et node presolve
@@ -21,8 +30,6 @@
 # include "spx_define.h"
   
 # include "bb_define.h"
-
-#undef SEUIL_DADMISSIBILITE
 
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "pne_memoire.h"
@@ -47,27 +54,27 @@ void PNE_ProbingControleFaisabiliteSiMajBminOuBmax( PROBLEME_PNE * Pne, char Sen
                                                     char BmaxValide, double Bmax, int Cnt )
 {
 if ( BminValide == OUI_PNE && BmaxValide == OUI_PNE ) {
-  if ( Bmin > Bmax + Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+  if ( Bmin > Bmax + SEUIL_DADMISSIBILITE ) {
     Pne->ProbingOuNodePresolve->Faisabilite = NON_PNE;
 		return;
 	}  
 }
 
 if ( BorneMiseAJour == MAJ_BMIN ) {
-  if ( Bmin > B + Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+  if ( Bmin > B + SEUIL_DADMISSIBILITE ) {	
     Pne->ProbingOuNodePresolve->Faisabilite = NON_PNE;			 
     return;
   }
 }
 else if ( BorneMiseAJour == MAJ_BMAX ) {
   if ( SensContrainte == '=' ) {
-    if ( Bmax < B - Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+    if ( Bmax < B - SEUIL_DADMISSIBILITE ) {		
 			Pne->ProbingOuNodePresolve->Faisabilite = NON_PNE;			
 			return;							
 		}		
 	}
 	else { /* Contrainte < */
-    if ( Bmax < B - Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+    if ( Bmax < B - SEUIL_DADMISSIBILITE ) {		
 		  if ( Pne->ProbingOuNodePresolve->VariableInstanciee < 0 ) return;		
 		  /* On va essayer une coupe de probing sur la contrainte */
       if ( Pne->ProbingOuNodePresolve->FlagCntCoupesDeProbing[Cnt] == 0 ) {
@@ -323,7 +330,7 @@ while ( ic >= 0 ) {
 	}
 	if ( SensContrainte[Cnt] == '<' ) {
 	  if ( BmaxValide[Cnt] == OUI_PNE ) {
-      if ( Bmax[Cnt] <= B[Cnt] + Pne->pne_params->SEUIL_DADMISSIBILITE ) goto NextIc;
+      if ( Bmax[Cnt] <= B[Cnt] + SEUIL_DADMISSIBILITE ) goto NextIc;
     }				
     if ( A[ic] >= 0 ) {
 		  if ( SensDeVariation == '-' ) goto NextIc;
@@ -482,7 +489,7 @@ ProbingOuNodePresolve->IndexLibreContraintesAAnalyser = 0;
 
 for ( i = 0 ; i < ProbingOuNodePresolve->NombreDeContraintesAAnalyser ; i++ ) {
   if ( NbParcours > SeuilNbTermesMatrice ) {
-		if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+		if ( Pne->AffichageDesTraces == OUI_PNE ) {
 			printf("Probing stopped after checking %d elements of the matrix (max is %d)\n",NbParcours,SeuilNbTermesMatrice);
     }
 		Pne->ArreterCliquesEtProbing = OUI_PNE;
@@ -504,7 +511,7 @@ for ( i = 0 ; i < ProbingOuNodePresolve->NombreDeContraintesAAnalyser ; i++ ) {
 	/*
   if ( SensCnt == '<' ) {
 	  if ( BmxValide == OUI_PNE ) {
-      if ( Bmx <= BCnt + Spx->spx_params->SEUIL_DADMISSIBILITE ) continue;
+      if ( Bmx <= BCnt + SEUIL_DADMISSIBILITE ) continue;
 		}
 	}
 	*/

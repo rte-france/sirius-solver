@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: S'il y a des variables entieres on ajoute la contrainte de
@@ -35,9 +44,9 @@ int Var; int NombreDeVariables; int NombreDeContraintes; int * Mdeb; int * NbTer
 int * Nuvar; double * A; int NbT; double * CoutLineaire; int Cnt; int il; int Nb;
 
 /* Je ne recommande pas d'utiliser la contrainte de cout max */
-if ( Pne->pne_params->UTILISER_UNE_CONTRAINTE_DE_COUT_MAX == NON_PNE ) {
-	return;
-}
+# if UTILISER_UNE_CONTRAINTE_DE_COUT_MAX == NON_PNE
+  return;
+# endif
 
 if ( Pne->NombreDeContraintesTrav + 1 > Pne->NombreDeContraintesAllouees ) {
   PNE_AugmenterLeNombreDeContraintes( Pne );

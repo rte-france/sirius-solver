@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: 
@@ -24,7 +33,7 @@
 # define SEUIL_CARRE_DE_NORME_TROP_FAIBLE  1.e-4 /*1.e-4*/
 # define DUAL_POIDS_INITIAL 1.0
 
-//# define Spx->spx_params->VERBOSE_SPX 0
+# define VERBOSE_SPX 0
 
 /*----------------------------------------------------------------------------*/
 void SPX_InitDualPoids( PROBLEME_SPX * Spx )
@@ -32,15 +41,14 @@ void SPX_InitDualPoids( PROBLEME_SPX * Spx )
 int Var; int Cnt; char * PositionDeLaVariable; char * InDualFramework;
 double * DualPoids; double * Tau;
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf("SPX_InitDualPoids\n");
-}
+# if VERBOSE_SPX
+  printf("SPX_InitDualPoids\n");
+# endif
 
 PositionDeLaVariable = Spx->PositionDeLaVariable;
 InDualFramework      = Spx->InDualFramework;
 
 for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
-	
   if ( PositionDeLaVariable[Var] == EN_BASE_LIBRE ) InDualFramework[Var] = OUI_SPX;
   else                                              InDualFramework[Var] = NON_SPX;
 }
@@ -94,10 +102,10 @@ if ( ResolutionEnHyperCreux == OUI_SPX ) {
     /* Ca s'est pas bien passe et on s'est forcement retrouve en VECTEUR_LU */
 		Spx->NbEchecsTau++;			
 		/*printf("Echec hyper creux Tau iteration %d\n",Spx->Iteration);*/
-		if ( Spx->NbEchecsTau >= Spx->spx_params->SEUIL_ECHEC_CREUX_STEEPEST  ) {
-			if (Spx->spx_params->VERBOSE_SPX) {
-				printf("Arret de l'hyper creux pour le steepest edge, iteration %d\n", Spx->Iteration);
-			}
+		if ( Spx->NbEchecsTau >= SEUIL_ECHEC_CREUX_STEEPEST  ) {
+      # if VERBOSE_SPX
+		    printf("Arret de l'hyper creux pour le steepest edge, iteration %d\n",Spx->Iteration);
+	    # endif
 		  Spx->CalculTauEnHyperCreux = NON_SPX;
 		  Spx->CountEchecsTau = 0;
 		}			
@@ -122,15 +130,15 @@ if ( HyperCreuxInitial == NON_SPX ) {
 							 qu'on puisse faire de l'hyper creux dans le steepest edge */
             for ( il = 0 , i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
               if ( InDualFramework[NumerosDesVariablesHorsBase[i]] == OUI_SPX ) il++;
-			}
-			if ( il > ceil ( 0.2 * Spx->NombreDeVariablesHorsBase ) )  {							
+						}
+						if ( il > ceil ( 0.2 * Spx->NombreDeVariablesHorsBase ) )  {							
               SPX_ResetReferenceSpace( Spx );
-			  if (Spx->spx_params->VERBOSE_SPX) {
-				  printf("Iteration %d reset reference space car on peut plus faire d'hyper creux\n", Spx->Iteration);
-			  }
+              # if VERBOSE_SPX
+							  printf("Iteration %d reset reference space car on peut plus faire d'hyper creux\n",Spx->Iteration);
+	            # endif
 							*ResetRefSpace = OUI_SPX;
 							return;  
-			}
+						}
 					}								 
 				}					
         /* Fin test */
@@ -155,11 +163,11 @@ else {
 }
 
 if ( Spx->DualPoids[IndexCntBase] > /*2.*/ 4. * BetaP || Spx->DualPoids[IndexCntBase] < /*0.5*/ 0.25 * BetaP ) {
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Iteration %d BetaP %e Spx->DualPoids[CntBase] %e CntBase %d\n", Spx->Iteration, BetaP, Spx->DualPoids[IndexCntBase], IndexCntBase);
-		printf("VariableSortante %d VariableEntrante %d\n", Spx->VariableSortante, Spx->VariableEntrante);
-		printf("Iteration %d RESET REFERENCE SPACE par derive excessive des poids\n", Spx->Iteration);
-	}
+  #if VERBOSE_SPX
+    printf("Iteration %d BetaP %e Spx->DualPoids[CntBase] %e CntBase %d\n",Spx->Iteration,BetaP,Spx->DualPoids[IndexCntBase],IndexCntBase); 
+    printf("VariableSortante %d VariableEntrante %d\n",Spx->VariableSortante,Spx->VariableEntrante); 
+    printf("Iteration %d RESET REFERENCE SPACE par derive excessive des poids\n",Spx->Iteration);
+  #endif
 	*ResetRefSpace = OUI_SPX;
   SPX_ResetReferenceSpace( Spx );	
   return;
@@ -242,9 +250,9 @@ if ( ResoudreLeSysteme == OUI_SPX ) {
 		      Rapport = ABarreS * UnSurABarreSCntBase;									
           X = DualPoids[Index] + ( ( ( -2. * Tau[Index] ) + ( Rapport * BetaP ) ) * Rapport );			
           if ( X < SEUIL_CARRE_DE_NORME_TROP_FAIBLE ) {			  
-			  if (Spx->spx_params->VERBOSE_SPX) {
-				  printf("Iteration %d Cnt %d X %e => RESET REFERENCE SPACE par carre de norme trop faible\n", Spx->Iteration, Index, X);
-			  }
+	          #if VERBOSE_SPX
+              printf("Iteration %d Cnt %d X %e => RESET REFERENCE SPACE par carre de norme trop faible\n",Spx->Iteration,Index,X);
+            #endif				
             SPX_ResetReferenceSpace( Spx ); 
             return;				
           }										
@@ -260,9 +268,9 @@ if ( ResoudreLeSysteme == OUI_SPX ) {
 		      Rapport = ABarreS * UnSurABarreSCntBase;									
           X = DualPoids[Index] + ( ( ( -2. * Tau[Index] ) + ( Rapport * BetaP ) ) * Rapport );			
           if ( X < SEUIL_CARRE_DE_NORME_TROP_FAIBLE ) {			  
-			  if (Spx->spx_params->VERBOSE_SPX) {
-				  printf("Iteration %d Cnt %d X %e => RESET REFERENCE SPACE par carre de norme trop faible\n", Spx->Iteration, Index, X);
-			  }
+	          #if VERBOSE_SPX
+              printf("Iteration %d Cnt %d X %e => RESET REFERENCE SPACE par carre de norme trop faible\n",Spx->Iteration,Index,X);
+            #endif				
             SPX_ResetReferenceSpace( Spx ); 
             return;				
           }									
@@ -279,10 +287,10 @@ if ( ResoudreLeSysteme == OUI_SPX ) {
       Index = CntDeABarreSNonNuls[i];
       DualPoids[Index] += ( ( -2. * Tau[Index] ) + ( Rapport * BetaP ) ) * Rapport;			
       if ( DualPoids[Index] < SEUIL_CARRE_DE_NORME_TROP_FAIBLE ) {			  
-		  if (Spx->spx_params->VERBOSE_SPX) {
-			  printf("Iteration %d Cnt %d X %e => RESET REFERENCE SPACE par carre de norme trop faible\n",
-				  Spx->Iteration, Index, DualPoids[Index]);
-		  }
+	      #if VERBOSE_SPX
+          printf("Iteration %d Cnt %d X %e => RESET REFERENCE SPACE par carre de norme trop faible\n",
+					        Spx->Iteration,Index,DualPoids[Index]);
+        #endif					
         SPX_ResetReferenceSpace( Spx ); 
         return;				
       }						
@@ -303,9 +311,9 @@ else {
         Rapport = ABarreS * UnSurABarreSCntBase;						
         X = DualPoids[Index] + ( Rapport * BetaP * Rapport );						
         if ( X < SEUIL_CARRE_DE_NORME_TROP_FAIBLE ) {			  
-			if (Spx->spx_params->VERBOSE_SPX) {
-				printf("Iteration %d Cnt %d X %e => RESET REFERENCE SPACE par carre de norme trop faible\n", Spx->Iteration, Index, X);
-			}
+	        #if VERBOSE_SPX
+            printf("Iteration %d Cnt %d X %e => RESET REFERENCE SPACE par carre de norme trop faible\n",Spx->Iteration,Index,X);
+          #endif				
           SPX_ResetReferenceSpace( Spx ); 
           return;				
         }								
@@ -320,9 +328,9 @@ else {
       Index = CntDeABarreSNonNuls[i];
       X = DualPoids[Index] + ( Rapport * BetaP * Rapport );									
       if ( X < SEUIL_CARRE_DE_NORME_TROP_FAIBLE ) {			  
-		  if (Spx->spx_params->VERBOSE_SPX) {
-			  printf("Iteration %d Cnt %d X %e => RESET REFERENCE SPACE par carre de norme trop faible\n", Spx->Iteration, Index, X);
-		  }
+	      #if VERBOSE_SPX
+          printf("Iteration %d Cnt %d X %e => RESET REFERENCE SPACE par carre de norme trop faible\n",Spx->Iteration,Index,X);
+        #endif				
         SPX_ResetReferenceSpace( Spx ); 
         return;				
       }			
@@ -349,9 +357,9 @@ void SPX_TenterRestaurationCalculTauEnHyperCreux( PROBLEME_SPX * Spx )
 int Index; double * Tau; int Count; int IndexMax; 
 
 if ( Spx->CountEchecsTau == 0 ) {
-  if ( Spx->Iteration % Spx->spx_params->CYCLE_TENTATIVE_HYPER_CREUX == 0 ) {
-		Spx->NbEchecsTau    = Spx->spx_params->SEUIL_REUSSITE_CREUX;
-		Spx->CountEchecsTau = Spx->spx_params->SEUIL_REUSSITE_CREUX + 2;
+  if ( Spx->Iteration % CYCLE_TENTATIVE_HYPER_CREUX == 0 ) {
+		Spx->NbEchecsTau    = SEUIL_REUSSITE_CREUX;
+		Spx->CountEchecsTau = SEUIL_REUSSITE_CREUX + 2;
 	}
 }
 if ( Spx->CountEchecsTau == 0 ) return;
@@ -373,9 +381,9 @@ for ( Index = 0 ; Index < IndexMax ; Index++ ) if ( Tau[Index] != 0.0 ) Count++;
 
 if ( Count < 0.1 * IndexMax ) Spx->NbEchecsTau--;
 if ( Spx->NbEchecsTau <= 0 ) {
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Remise en service de l'hyper creux pour le steepest edge, iteration %d\n", Spx->Iteration);
-	}
+  # if VERBOSE_SPX
+    printf("Remise en service de l'hyper creux pour le steepest edge, iteration %d\n",Spx->Iteration);
+	# endif
   Spx->AvertissementsEchecsTau = 0;
   Spx->CountEchecsTau = 0;
 	Spx->CalculTauEnHyperCreux = OUI_SPX;
@@ -383,10 +391,10 @@ if ( Spx->NbEchecsTau <= 0 ) {
 else if ( Spx->CountEchecsTau <= 0 ) {
   Spx->CountEchecsTau = 0;
   if ( Spx->CalculTauEnHyperCreux == NON_SPX ) Spx->AvertissementsEchecsTau++;
-  if ( Spx->AvertissementsEchecsTau >= Spx->spx_params->SEUIL_ABANDON_HYPER_CREUX ) {
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("Arret prolonge de l'hyper creux pour le steepest edge, iteration %d\n", Spx->Iteration);
-	  }
+  if ( Spx->AvertissementsEchecsTau >= SEUIL_ABANDON_HYPER_CREUX ) {
+	  # if VERBOSE_SPX
+      printf("Arret prolonge de l'hyper creux pour le steepest edge, iteration %d\n",Spx->Iteration);
+	  # endif
 	  Spx->CalculTauEnHyperCreuxPossible = NON_SPX;
 	}
 }

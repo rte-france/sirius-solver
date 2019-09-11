@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
    FONCTION: Modification du probleme dans un contexte de branch and 
              bound. En effet, d'un probleme a un autre, la seule 
@@ -254,7 +263,7 @@ NbContr_E = 0; /* Pour ne pas avoir de warning a la compilation */
 
 CorrectionDuale = Spx->CorrectionDuale;
 
-for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) CorrectionDuale[Var] = Spx->spx_params->NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;     
+for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) CorrectionDuale[Var] = NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;     
 
 /* Pour les contraintes et les variables restantes */
 

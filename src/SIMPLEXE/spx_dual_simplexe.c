@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Resolution de Min c x sous contrainte Ax = b par un  
@@ -27,7 +36,7 @@
 
 # define MX_DUAL_NON_BORNE 2 /*5*/
 
-//# define Spx->spx_params->VERBOSE_SPX 0
+# define VERBOSE_SPX 0
 
 /*----------------------------------------------------------------------------*/
 
@@ -42,9 +51,9 @@ double StockageCout1; double StockageCout2; double DeltaStockageCout; int SeuilP
 char ControlerAdmissibiliteDuale; PROBLEME_PNE * Pne; BB * Bb; int i; char PresenceSeuilPourRedemarrageBaseRacine;
 int NeutralisationVerificationDuCyclage;
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	printf("Entree dans l algorithme dual du simplexe\n");
-}
+#if VERBOSE_SPX
+  printf("Entree dans l algorithme dual du simplexe\n"); 
+#endif
 
 /* Ensuite Bs sera toujours remis a 0 des qu'on aura fini de s'en servir */
 memset( (char *) Spx->Bs , 0 , Spx->NombreDeContraintes * sizeof( double ) );
@@ -52,7 +61,6 @@ memset( (char *) Spx->Bs , 0 , Spx->NombreDeContraintes * sizeof( double ) );
 SeuilPourRedemarrageBaseRacine = Spx->NombreMaxDIterations << 1;
 PresenceSeuilPourRedemarrageBaseRacine = NON_SPX;
 Pne = (PROBLEME_PNE *) Spx->ProblemePneDeSpx;
-
 if ( Pne != NULL ) {
   Bb = (BB *) Pne->ProblemeBbDuSolveur;
   if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {
@@ -80,14 +88,14 @@ IterationStockageCout1 = -1;
 IterationStockageCout2 = -1;
 BaseReconstruite = NON_SPX;
 
-Spx->SeuilDePivotDual = Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;
+Spx->SeuilDePivotDual = VALEUR_DE_PIVOT_ACCEPTABLE;
   
 Spx->NbBoundFlipIterationPrecedente = 0;
 
 Spx->TypeDeStockageDeABarreS = VECTEUR_SPX;
 	
 Spx->NombreDeBornesAuxiliairesUtilisees      = 0;
-Spx->IterationPourBornesAuxiliaires          = Spx->spx_params->ITERATION_POUR_BORNES_AUXILIAIRES;
+Spx->IterationPourBornesAuxiliaires          = ITERATION_POUR_BORNES_AUXILIAIRES;
 Spx->CoeffMultiplicateurDesBornesAuxiliaires = 1;
 
 Spx->LesCoutsOntEteModifies = NON_SPX;
@@ -103,17 +111,15 @@ Spx->NbCyclesSansControleDeDegenerescence = Spx->CycleDeControleDeDegenerescence
 
 /* Initialisation des poids de la methode projected steepest edge */
 if ( Spx->LeSteepestEdgeEstInitilise == NON_SPX ) SPX_InitDualPoids( Spx );  
-//for (Var = 0; Var < Spx->NombreDeVariables; ++Var) {
-//	printf("%6d %6d\n", Var, (int)Spx->PositionDeLaVariable[Var]);
-//}
+
 /* Que la base soit fournie ou non, on appelle toujours ce sous-programme. S'il s'avere 
    que la base fournie etait duale realisable, il se contente de repositionner 
    les variables et se termine tout de suite */ 
 SPX_DualPhase1Simplexe( Spx );
 if ( Spx->LaBaseEstDualeAdmissible == NON_SPX ) { 
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Pas de base duale admissible disponible\n");
-	}
+  #if VERBOSE_SPX
+    printf("Pas de base duale admissible disponible\n");
+  #endif	
   Spx->YaUneSolution = NON_SPX;
   return;
 }
@@ -172,11 +178,11 @@ while ( 1 ) {
 		
 	}
 	
-  if (Spx->spx_params->VERBOSE_SPX) {
-	  if (Spx->FaireDuRaffinementIteratif > 0) {
-		  printf("RaffinementIteratif %d demande a l'iteration %d\n", Spx->FaireDuRaffinementIteratif, Spx->Iteration);
+  #if VERBOSE_SPX
+    if ( Spx->FaireDuRaffinementIteratif > 0 ) {
+	    printf("RaffinementIteratif %d demande a l'iteration %d\n",Spx->FaireDuRaffinementIteratif,Spx->Iteration);
 	  }
-  }
+	# endif
 		
   if ( Spx->DureeMaxDuCalcul > 0 ) SPX_ControleDuTempsEcoule( Spx );
 		
@@ -197,11 +203,11 @@ while ( 1 ) {
 		  else if ( VerificationCyclage == NON_SPX ) {			
 		    Var = Spx->VariableSortante;
         if ( Spx->SortSurXmaxOuSurXmin == SORT_SUR_XMAX ) {
-			    if ( Spx->BBarre[Spx->ContrainteDeLaVariableEnBase[Var]] - Spx->Xmax[Var] < 100. * Spx->spx_params->SEUIL_DE_VIOLATION_DE_BORNE ) Spx->YaUneSolution = OUI_SPX;
+			    if ( Spx->BBarre[Spx->ContrainteDeLaVariableEnBase[Var]] - Spx->Xmax[Var] < 100. * SEUIL_DE_VIOLATION_DE_BORNE ) Spx->YaUneSolution = OUI_SPX;
 			  	else Spx->YaUneSolution = NON_SPX;
 			  }
 			  else if ( Spx->SortSurXmaxOuSurXmin == SORT_SUR_XMIN ) {
-			    if ( Spx->Xmin[Var] - Spx->BBarre[Spx->ContrainteDeLaVariableEnBase[Var]] < 100. * Spx->spx_params->SEUIL_DE_VIOLATION_DE_BORNE ) Spx->YaUneSolution = OUI_SPX;
+			    if ( Spx->Xmin[Var] - Spx->BBarre[Spx->ContrainteDeLaVariableEnBase[Var]] < 100. * SEUIL_DE_VIOLATION_DE_BORNE ) Spx->YaUneSolution = OUI_SPX;
 				  else Spx->YaUneSolution = NON_SPX;			
         }
 			  else Spx->YaUneSolution = NON_SPX;			
@@ -214,9 +220,9 @@ while ( 1 ) {
       break;
     }		
     else if ( VerificationCyclage == NON_SPX ) {	
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("On positionne VerificationCyclage a OUI_SPX iteration %d  NombreMaxDIterations %d\n", Spx->Iteration, Spx->NombreMaxDIterations);
-		}
+      # if VERBOSE_SPX
+		    printf("On positionne VerificationCyclage a OUI_SPX iteration %d  NombreMaxDIterations %d\n",Spx->Iteration,Spx->NombreMaxDIterations);
+			# endif
 	    /* On verifie qu'il n'y a aucun progres dans la fonction cout. S'il y en a, on continue les iterations.
 		     Pour cela, on calcule le cout entre k iterations */
       VerificationCyclage = OUI_SPX;
@@ -248,7 +254,7 @@ while ( 1 ) {
 			  Spx->ModifCoutsAutorisee = NON_SPX;
 			}
 			*/
-		  for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = Spx->spx_params->NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT; 
+		  for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT; 
     }
 	}
 	
@@ -266,7 +272,7 @@ while ( 1 ) {
 	   en restant dual realisable */
 	# ifdef UTILISER_BORNES_AUXILIAIRES
 	if ( Spx->NombreDeBornesAuxiliairesUtilisees > 0 ) {
-    if ( Spx->Iteration % Spx->spx_params->CYCLE_POUR_SUPPRESSION_DES_BORNES_AUXILIAIRES == 0 ) {
+    if ( Spx->Iteration % CYCLE_POUR_SUPPRESSION_DES_BORNES_AUXILIAIRES == 0 ) {
 		  SPX_DualSupprimerLesBornesAuxiliaires( Spx );
 		}
 	}
@@ -279,7 +285,7 @@ while ( 1 ) {
   }
 	
   NbCyclesSansVerifDuale++;
-  if ( NbCyclesSansVerifDuale == Spx->spx_params->CYCLE_DE_VERIF_ADMISSIBILITE_DUALE ) {
+  if ( NbCyclesSansVerifDuale == CYCLE_DE_VERIF_ADMISSIBILITE_DUALE ) {
 	  /* Ici l'utilite du calcul du cout et le calcul de X en fonction de la position est de permettre l'affichage
 		   du deroulement du calcul */
     SPX_CalculDuCout( Spx ); 	
@@ -287,9 +293,9 @@ while ( 1 ) {
     SPX_VerifierAdmissibiliteDuale( Spx , &AdmissibiliteRestauree );
     NbCyclesSansVerifDuale = 0;
     if ( AdmissibiliteRestauree == OUI_SPX ) {
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Controle d'admissibilite duale iteration %d : la base n'etait pas duale realisable\n", Spx->Iteration);
-		}
+			# if VERBOSE_SPX
+        printf( "Controle d'admissibilite duale iteration %d : la base n'etait pas duale realisable\n",Spx->Iteration); 
+      # endif
 			Spx->CalculerBBarre = OUI_SPX;
       Spx->CalculerCBarre = OUI_SPX; 
       goto Debut;
@@ -325,7 +331,7 @@ while ( 1 ) {
       if ( Spx->Cout <= Spx->CoutMax ) goto FinTestDepassementCoutMax;				
 			
       /* Controle d'admissibilite duale */
-      if ( NbControlesFinaux < Spx->spx_params->NOMBRE_MAX_DE_CONTROLES_FINAUX ) { /* C'est pour eviter un cyclages pour des questions d'epsilon */			
+      if ( NbControlesFinaux < NOMBRE_MAX_DE_CONTROLES_FINAUX ) { /* C'est pour eviter un cyclages pour des questions d'epsilon */			
         NbControlesFinaux++;				
         SPX_VerifierAdmissibiliteDuale( Spx , &AdmissibiliteRestauree );
         NbCyclesSansVerifDuale = 0;
@@ -342,51 +348,51 @@ while ( 1 ) {
       if ( Pne != NULL ) {
         Bb = (BB *) Pne->ProblemeBbDuSolveur;          
         BB_LeverLeFlagDeSortieDuSimplexeParDepassementDuCoutMax( Bb ); 
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Arret du Simplexe dual par depassement du cout max, iterations %d  Cout %e CoutMax %e\n", Spx->Iteration - 1, Spx->Cout, Spx->CoutMax);
-		}
+        #if VERBOSE_SPX 
+          printf( "Arret du Simplexe dual par depassement du cout max, iterations %d  Cout %e CoutMax %e\n",Spx->Iteration-1,Spx->Cout,Spx->CoutMax);
+        #endif		  
       } 
       break;
     } 
   }
 	FinTestDepassementCoutMax:
   /* On a depasse le nombre max d'iteration et on est en train de verifier s'il y a cyclage */
-  if (VerificationCyclage == OUI_SPX) {
-	  if (Spx->Iteration == IterationStockageCout1) {
+  if ( VerificationCyclage == OUI_SPX ) {
+	  if ( Spx->Iteration == IterationStockageCout1 )  {
 		  /*SPX_CalculDuCout( Spx );*/
-		  SPX_CalculDuCoutSimplifie(Spx);
-		  StockageCout1 = Spx->Cout;
-	  }
-	  else if (Spx->Iteration == IterationStockageCout2) {
+      SPX_CalculDuCoutSimplifie( Spx );		
+			StockageCout1 = Spx->Cout;
+		}
+		else if ( Spx->Iteration == IterationStockageCout2 ) {
 		  /*SPX_CalculDuCout( Spx );*/
-		  SPX_CalculDuCoutSimplifie(Spx);
-		  StockageCout2 = Spx->Cout;
-		  if (StockageCout2 < StockageCout1 + DeltaStockageCout) {
+      SPX_CalculDuCoutSimplifie( Spx );		
+      StockageCout2 = Spx->Cout;
+			if ( StockageCout2 < StockageCout1 + DeltaStockageCout ) {
 			  /* Arret confirme */
-			  Spx->YaUneSolution = NON_SPX;
-			  break;
-		  }
-		  else {
+        Spx->YaUneSolution = NON_SPX;		
+        break;				
+			}
+			else {
 			  /* L'arret est en sursis */
-			  VerificationCyclage = NON_SPX;
-			  Spx->NombreMaxDIterations += NeutralisationVerificationDuCyclage; /* Afin de neutraliser la verification du cycale pendant un certain temps */
-			  if (Spx->spx_params->VERBOSE_SPX) {
-				  printf("On positionne VerificationCyclage a NON_SPX  iteration %d\n", Spx->Iteration);
-			  }
-		  }
-	  }
-  }
+        VerificationCyclage = NON_SPX;
+        Spx->NombreMaxDIterations += NeutralisationVerificationDuCyclage; /* Afin de neutraliser la verification du cycale pendant un certain temps */				
+        # if VERBOSE_SPX
+				  printf("On positionne VerificationCyclage a NON_SPX  iteration %d\n",Spx->Iteration);
+        # endif				
+			}                       
+    }
+	}
 
   /* Si on est en mode branch and bound et qu'on a du mal a trouver l'optimum, on repart
 	   de la base optimale du noeud racine sans les coupes (les variables d'ecart des coupes
 		 sont alors positionnees en base */
   if ( Spx->Iteration > SeuilPourRedemarrageBaseRacine && PresenceSeuilPourRedemarrageBaseRacine == OUI_SPX ) {
 	  if ( BaseReconstruite == NON_SPX ) {		
-		  if (Spx->spx_params->VERBOSE_SPX) {
-			  printf(" \n");
-			  printf("------> Convergence lente, on tente de repartir d'une BASE du noeud racine\n");
-			  printf(" \n");
-		  }
+      #if VERBOSE_SPX
+        printf(" \n");
+        printf("------> Convergence lente, on tente de repartir d'une BASE du noeud racine\n");
+        printf(" \n");
+      #endif			
       /* Attention il faut avoir resolu le noeud racine sans coupes */
 			SPX_DualReconstruireUneBase( Spx , &Echec );
 			if ( Echec == OUI_SPX ) {
@@ -407,24 +413,23 @@ while ( 1 ) {
       memcpy( (char *) Spx->C, (char *) Spx->Csv, Spx->NombreDeVariables * sizeof( double ) );
       Spx->LesCoutsOntEteModifies = NON_SPX;
 			
-      for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = Spx->spx_params->NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;			
+      for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;			
 			
 			Spx->YaUneSolution = OUI_SPX; /* Car c'est positionne a NON_SPX en cas de probleme */
       SPX_FactoriserLaBase( Spx );
       if ( Spx->YaUneSolution == NON_SPX ) {
-		  if (Spx->spx_params->VERBOSE_SPX) {
-			  printf("Base non inversible ou probleme pour trouver une base duale admissible\n");
-		  }
+        #if VERBOSE_SPX
+			    printf("Base non inversible ou probleme pour trouver une base duale admissible\n");
+        #endif
         break;				
       }
 			Spx->YaUneSolution = NON_SPX; /* Car le positionnement a OUI_SPX n'etait que pour la factorisation */
-      SPX_InitDualPoids( Spx );  		
-	  printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
+      SPX_InitDualPoids( Spx );  			
       SPX_DualPhase1Simplexe( Spx );
       if ( Spx->LaBaseEstDualeAdmissible == NON_SPX ) { 
-		  if (Spx->spx_params->VERBOSE_SPX) {
-			  printf("Pas de base duale admissible disponible\n");
-		  }
+        #if VERBOSE_SPX
+          printf("Pas de base duale admissible disponible\n");
+        #endif
         Spx->YaUneSolution = NON_SPX;
         break;
       }			
@@ -459,9 +464,9 @@ while ( 1 ) {
     /* Si on est dans un contexte de base reduite, il faut controler les variables basiques hors base reduite.
 		   Si elle sont toutes admissible, c'est gagne.
 			 Si certaines ne sont pas admissibles on les reintegre dans une base reduite et on recommence */
-	  if (Spx->spx_params->VERBOSE_SPX == 1) {
-		  printf("Plus de variable sortante  Spx->UtiliserLaBaseReduite %d\n", Spx->UtiliserLaBaseReduite);
-	  }
+		# if VERBOSE_SPX == 1
+		  printf("Plus de variable sortante  Spx->UtiliserLaBaseReduite %d\n",Spx->UtiliserLaBaseReduite);
+		# endif
     if ( Spx->UtiliserLaBaseReduite == OUI_SPX ) {
       SPX_TestPassageBaseReduiteBaseComplete( Spx );	
       goto Debut;									
@@ -476,12 +481,12 @@ while ( 1 ) {
     NbCyclesSansVerifDuale = 0;
 
     /* Au bout d'un certain nombre d'echecs, on repart de la base racine */
-		if ( NbControlesFinaux == Spx->spx_params->SEUIL_POUR_RECONSTRUCTION_BASE && BaseReconstruite == NON_SPX ) {
-			if (Spx->spx_params->VERBOSE_SPX) {
-				printf(" \n");
-				printf("------> On repart d'une BASE du noeud racine\n");
-				printf(" \n");
-			}
+		if ( NbControlesFinaux == SEUIL_POUR_RECONSTRUCTION_BASE && BaseReconstruite == NON_SPX ) {
+      #if VERBOSE_SPX
+        printf(" \n");
+        printf("------> On repart d'une BASE du noeud racine\n");
+        printf(" \n");
+      #endif			
       /* Attention il faut avoir resolu le noeud racine sans coupes */
 			SPX_DualReconstruireUneBase( Spx , &Echec );
 			if ( Echec == OUI_SPX ) {
@@ -500,24 +505,23 @@ while ( 1 ) {
       memcpy( (char *) Spx->C, (char *) Spx->Csv, Spx->NombreDeVariables * sizeof( double ) );
       Spx->LesCoutsOntEteModifies = NON_SPX;			
 			*/
-      for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = Spx->spx_params->NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;
+      for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;
 			
 			Spx->YaUneSolution = OUI_SPX; /* Car c'est positionne a NON_SPX en cas de probleme */
       SPX_FactoriserLaBase( Spx );
       if ( Spx->YaUneSolution == NON_SPX ) {
-		  if (Spx->spx_params->VERBOSE_SPX) {
-			  printf("Base non inversible ou probleme pour trouver une base duale admissible\n");
-		  }
+        #if VERBOSE_SPX
+			    printf("Base non inversible ou probleme pour trouver une base duale admissible\n");
+        #endif
         break;				
       }
 			Spx->YaUneSolution = NON_SPX;
-      SPX_InitDualPoids( Spx );
-	  printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
+      SPX_InitDualPoids( Spx );  			
       SPX_DualPhase1Simplexe( Spx );
       if ( Spx->LaBaseEstDualeAdmissible == NON_SPX ) { 
-		  if (Spx->spx_params->VERBOSE_SPX) {
-			  printf("Pas de base duale admissible disponible\n");
-		  }
+        #if VERBOSE_SPX
+          printf("Pas de base duale admissible disponible\n");
+        #endif
         Spx->YaUneSolution = NON_SPX;
         break;
       }			
@@ -540,9 +544,9 @@ while ( 1 ) {
     SPX_VerifierAdmissibiliteDuale( Spx , &AdmissibiliteRestauree );
     NbCyclesSansVerifDuale = 0;
     if ( AdmissibiliteRestauree == OUI_SPX ) {
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Controle d'admissibilite duale iteration %d : la base n'etait pas duale realisable\n", Spx->Iteration);
-		}
+			# if VERBOSE_SPX
+        printf( "Controle d'admissibilite duale iteration %d : la base n'etait pas duale realisable\n",Spx->Iteration); 
+      # endif
 			Spx->CalculerBBarre = OUI_SPX;
       Spx->CalculerCBarre = OUI_SPX; 
       goto Debut;
@@ -552,15 +556,15 @@ while ( 1 ) {
   SPX_DualVerifierErBMoinsUn( Spx );
   if ( Spx->FactoriserLaBase == OUI_SPX ) SPX_FactoriserLaBase( Spx );
 	if ( Spx->FaireChangementDeBase == NON_SPX ) {
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Iteration %d Pas de changement de base a cause de DualVerifierErBMoinsUn\n", Spx->Iteration);
-		}
+	  # if VERBOSE_SPX
+		  printf("Iteration %d Pas de changement de base a cause de DualVerifierErBMoinsUn\n",Spx->Iteration);
+		# endif		
 		goto Debut;
 	}	
   if ( Spx->NombreDeVariablesATester <= 0 ) {
-	  if ( Spx->SeuilDePivotDual > Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE ) {
-      Spx->SeuilDePivotDual /= Spx->spx_params->DIVISEUR_VALEUR_DE_PIVOT_ACCEPTABLE;		
-	    if ( Spx->SeuilDePivotDual < Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE ) Spx->SeuilDePivotDual = Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;
+	  if ( Spx->SeuilDePivotDual > VALEUR_DE_PIVOT_ACCEPTABLE ) {
+      Spx->SeuilDePivotDual /= DIVISEUR_VALEUR_DE_PIVOT_ACCEPTABLE;		
+	    if ( Spx->SeuilDePivotDual < VALEUR_DE_PIVOT_ACCEPTABLE ) Spx->SeuilDePivotDual = VALEUR_DE_PIVOT_ACCEPTABLE;
 			/* Apres avoir ajuste le seuil, on recherche a nouveau une variable entrante */			
       if ( Spx->ChoixDeVariableSortanteAuHasard == OUI_SPX ) goto RechercheVariableSortante;			
       goto RechercheVariableEntrante;		
@@ -575,17 +579,17 @@ while ( 1 ) {
     if ( ConfirmationDualNonBorneEnCours == OUI_SPX ) goto Debut;
 		
     if ( Spx->AdmissibilitePossible == OUI_SPX ) {  
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Spx->AdmissibilitePossible = OUI_SPX => on considere quand meme qu'il y a une solution admissible\n");
-		}
+      #if VERBOSE_SPX 
+        printf("Spx->AdmissibilitePossible = OUI_SPX => on considere quand meme qu'il y a une solution admissible\n");
+      #endif			
 		  /* Mieux vaut restaurer les couts et refaire un calcul */
       Spx->VariableSortante = -1;
       goto OptimaliteAtteinte;
     } 
     else { 
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("Spx->AdmissibilitePossible = NON_SPX\n");
-		}
+      #if VERBOSE_SPX 
+        printf("Spx->AdmissibilitePossible = NON_SPX\n");   
+      #endif
       Spx->YaUneSolution = NON_SPX;
       break;  
     }
@@ -611,7 +615,7 @@ while ( 1 ) {
     Spx->ModifCoutsAutorisee        = OUI_SPX;
     ConfirmationDualNonBorneEnCours = NON_SPX;
 		FoisVerifDualNonBorne++;		
-		for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = Spx->spx_params->NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT; 
+		for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT; 
 	}
 
   /* Choix de la variable entrante */
@@ -630,9 +634,9 @@ while ( 1 ) {
   /* La verification de ABarreS peut entrainer une demande de factorisation de la base */
 	SPX_VerifierABarreS( Spx );
   if ( Spx->FaireChangementDeBase == NON_SPX ) {
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("Iteration %d Pas de changement de base a cause de VerifierABarreS\n", Spx->Iteration);
-	  }
+	  # if VERBOSE_SPX
+		  printf("Iteration %d Pas de changement de base a cause de VerifierABarreS\n",Spx->Iteration);
+	  # endif
 		/* Attention a remettre les bound flip */
     if ( Spx->FactoriserLaBase == OUI_SPX ) SPX_FactoriserLaBase( Spx );
 		Spx->CalculerBBarre = OUI_SPX;
@@ -642,16 +646,16 @@ while ( 1 ) {
    
   SPX_DualComparerABarreSEtNBarreR( Spx );
 
-  if (Spx->spx_params->VERBOSE_SPX) {
-	  if (Spx->FaireChangementDeBase == NON_SPX) {
-		  printf(" changement de base refuse iteration %d \n", Spx->Iteration);
-	  }
-  }
+  #if VERBOSE_SPX
+    if ( Spx->FaireChangementDeBase == NON_SPX ) {
+      printf(" changement de base refuse iteration %d \n",Spx->Iteration);
+    }
+	#endif
   
   if ( Spx->FaireChangementDeBase == NON_SPX ) {
-	  if (Spx->spx_params->VERBOSE_SPX) {
-		  printf("Iteration %d Pas de changement de base a cause de DualComparerABarreSEtNBarreR\n", Spx->Iteration);
-	  }
+	  # if VERBOSE_SPX
+	    printf("Iteration %d Pas de changement de base a cause de DualComparerABarreSEtNBarreR\n",Spx->Iteration);
+	  #endif	 
     if ( Spx->FactoriserLaBase == OUI_SPX ) SPX_FactoriserLaBase( Spx );
 		Spx->CalculerBBarre = OUI_SPX;
 		Spx->CalculerCBarre = OUI_SPX;		
@@ -673,9 +677,9 @@ while ( 1 ) {
   SPX_FaireLeChangementDeBase( Spx );
 	
 	/* Apres chaque changement de base reussi on essaie de revenir au seuil de pivotage initial */
-	if ( Spx->SeuilDePivotDual > Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE ) {
-    Spx->SeuilDePivotDual /= Spx->spx_params->DIVISEUR_VALEUR_DE_PIVOT_ACCEPTABLE;		
-	  if ( Spx->SeuilDePivotDual < Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE ) Spx->SeuilDePivotDual = Spx->spx_params->VALEUR_DE_PIVOT_ACCEPTABLE;	
+	if ( Spx->SeuilDePivotDual > VALEUR_DE_PIVOT_ACCEPTABLE ) {
+    Spx->SeuilDePivotDual /= DIVISEUR_VALEUR_DE_PIVOT_ACCEPTABLE;		
+	  if ( Spx->SeuilDePivotDual < VALEUR_DE_PIVOT_ACCEPTABLE ) Spx->SeuilDePivotDual = VALEUR_DE_PIVOT_ACCEPTABLE;	
 	}
 	
 }
@@ -683,7 +687,7 @@ while ( 1 ) {
 OptimaliteRencontree = NON_SPX;		
 
 Spx->FaireDuRaffinementIteratif = 0;
-Spx->CycleDeRefactorisation = Spx->spx_params->CYCLE_DE_REFACTORISATION_DUAL;
+Spx->CycleDeRefactorisation = CYCLE_DE_REFACTORISATION_DUAL;
 
 if ( Spx->UtiliserLaBaseReduite == OUI_SPX && Spx->YaUneSolution == OUI_SPX ) {
 	Spx->YaUneSolution = OUI_SPX;
@@ -691,34 +695,34 @@ if ( Spx->UtiliserLaBaseReduite == OUI_SPX && Spx->YaUneSolution == OUI_SPX ) {
   goto Debut;									
 }
 
-#ifdef UTILISER_BORNES_AUXILIAIRES
+# ifdef UTILISER_BORNES_AUXILIAIRES
 
-	SPX_DualControlerLesBornesAuxiliaires(Spx, &Reoptimiser);
-	if (Reoptimiser == OUI_SPX) {
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("On relance une phase 2 apres DualControlerLesBornesAuxiliaires\n");
-		}
-		ControleSolutionFait = NON_SPX;
-		NbCyclesSansVerifDuale = 0;
-		ConfirmationDualNonBorneEnCours = NON_SPX;
-		NbControlesFinaux = 0;
-		NbIterDeFinition = 0;
-		Spx->CycleDeRefactorisation = Spx->spx_params->CYCLE_DE_REFACTORISATION_DUAL;
-		Spx->CalculerBBarre = OUI_SPX;
-		Spx->CalculerCBarre = OUI_SPX;
-		Spx->LesCoutsOntEteModifies = NON_SPX;
-		Spx->ModifCoutsAutorisee = NON_SPX /*OUI_SPX*/;
-		Spx->CoefficientPourLaValeurDePerturbationDeCoutAPosteriori = 1.;
-
+  SPX_DualControlerLesBornesAuxiliaires( Spx, &Reoptimiser );
+  if ( Reoptimiser == OUI_SPX ) {    
+	  # if VERBOSE_SPX
+      printf("On relance une phase 2 apres DualControlerLesBornesAuxiliaires\n");
+    # endif
+		ControleSolutionFait  = NON_SPX;
+    NbCyclesSansVerifDuale = 0;
+    ConfirmationDualNonBorneEnCours = NON_SPX;
+    NbControlesFinaux = 0;
+    NbIterDeFinition = 0;
+    Spx->CycleDeRefactorisation = CYCLE_DE_REFACTORISATION_DUAL;
+    Spx->CalculerBBarre = OUI_SPX; 
+    Spx->CalculerCBarre = OUI_SPX; 			
+    Spx->LesCoutsOntEteModifies = NON_SPX;		
+    Spx->ModifCoutsAutorisee = NON_SPX /*OUI_SPX*/;
+    Spx->CoefficientPourLaValeurDePerturbationDeCoutAPosteriori = 1.;
+		
 		Spx->ForcerUtilisationDeLaBaseComplete = 0;
-		Spx->InitBaseReduite = OUI_SPX;
-
+		Spx->InitBaseReduite = OUI_SPX; 
+		
 		FoisVerifDualNonBorne = 0;
-		for (Var = 0; Var < Spx->NombreDeVariables; Var++) Spx->CorrectionDuale[Var] = Spx->spx_params->NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;
-		goto Debut;
-	}
-
-#endif
+    for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) Spx->CorrectionDuale[Var] = NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT;		
+	  goto Debut;		
+  }
+		
+# endif
 
 if ( Spx->Contexte != SIMPLEXE_SEUL && Spx->YaUneSolution == OUI_SPX ) {
   SPX_DualEpurerLaBaseSimplexe( Spx, &NombreDeCyclagesApresOptimalite, &EpurerLaBase, &Echec );																

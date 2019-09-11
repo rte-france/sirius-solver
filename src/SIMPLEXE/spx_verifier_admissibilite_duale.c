@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: On positionne correctement les variables hors base compte 
@@ -25,7 +34,7 @@
 # include "spx_fonctions.h"
 # include "spx_define.h"
 
-//# define Spx->spx_params->VERBOSE_SPX 0   
+# define VERBOSE_SPX 0   
 
 # define SEUIL_ADMISSIBILITE_DUALE_TOLERE 1.e-10 /* S'il n'y a qu'un petit nombre de seuils violes */
 
@@ -82,7 +91,7 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
 	
 	if ( UtiliserLaBaseReduite == NON_SPX ) SeuilAdmDuale = SeuilDAmissibiliteDuale[Var];
 	else {
-	  if ( Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2 > SeuilDAmissibiliteDuale[Var] ) SeuilAdmDuale = Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2;
+	  if ( SEUIL_ADMISSIBILITE_DUALE_2 > SeuilDAmissibiliteDuale[Var] ) SeuilAdmDuale = SEUIL_ADMISSIBILITE_DUALE_2;
 	  else SeuilAdmDuale = SeuilDAmissibiliteDuale[Var];
 	}
 	
@@ -111,7 +120,7 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
 
 	if ( UtiliserLaBaseReduite == NON_SPX ) SeuilAdmDuale = SeuilDAmissibiliteDuale[Var];
 	else {
-	  if ( Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2 > SeuilDAmissibiliteDuale[Var] ) SeuilAdmDuale = Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2;
+	  if ( SEUIL_ADMISSIBILITE_DUALE_2 > SeuilDAmissibiliteDuale[Var] ) SeuilAdmDuale = SEUIL_ADMISSIBILITE_DUALE_2;
 	  else SeuilAdmDuale = SeuilDAmissibiliteDuale[Var];
 	}
 		
@@ -124,20 +133,20 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
 					continue;
 			  }
 				
-			  if (Spx->spx_params->VERBOSE_SPX) {
-				  printf("Iteration %d erreur variable bornee des 2 cotes %d cbarre %e Xmax %e HORS_BASE_SUR_BORNE_SUP SeuilDAmissibiliteDuale %e \n",
-					  Spx->Iteration, Var, Spx->CBarre[Var], Spx->Xmax[Var], SeuilAdmDuale);
-			  }
+				# if VERBOSE_SPX      
+          printf("Iteration %d erreur variable bornee des 2 cotes %d cbarre %e Xmax %e HORS_BASE_SUR_BORNE_SUP SeuilDAmissibiliteDuale %e \n",
+				          Spx->Iteration,Var,Spx->CBarre[Var],Spx->Xmax[Var],SeuilAdmDuale);
+				# endif
         							
         VolumeDeChangementDeBornes+= Xmax[Var];								 
-#ifdef UTILISER_BORNES_AUXILIAIRES
-			if (Spx->NombreDeBornesAuxiliairesUtilisees > 0) {
-				if (StatutBorneSupCourante[Var] == BORNE_AUXILIAIRE_DE_VARIABLE_BORNEE_INFERIEUREMENT) {
-					/* La variable est devenue duale admissible avec ses bornes natives */
-					SPX_SupprimerUneBorneAuxiliaire(Spx, Var);
-				}
-			}
-#endif
+        # ifdef UTILISER_BORNES_AUXILIAIRES
+		      if ( Spx->NombreDeBornesAuxiliairesUtilisees > 0 ) {						 				
+            if ( StatutBorneSupCourante[Var] == BORNE_AUXILIAIRE_DE_VARIABLE_BORNEE_INFERIEUREMENT ) {
+					    /* La variable est devenue duale admissible avec ses bornes natives */
+              SPX_SupprimerUneBorneAuxiliaire( Spx, Var );		
+            }					
+					}
+ 			  #endif
         NombreDeChangementDeBorne++;
         PositionDeLaVariable[Var] = HORS_BASE_SUR_BORNE_INF;								
         *AdmissibiliteRestauree   = OUI_SPX;
@@ -151,10 +160,10 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
 					continue;
 			  }					
 				
-			  if (Spx->spx_params->VERBOSE_SPX) {
-				  printf("Iteration %d erreur variable bornee des 2 cotes %d cbarre %e Xmax %e HORS_BASE_SUR_BORNE_INF SeuilDAmissibiliteDuale %e \n",
-					  Spx->Iteration, Var, Spx->CBarre[Var], Spx->Xmax[Var], SeuilAdmDuale);
-			  }
+				# if VERBOSE_SPX      
+          printf("Iteration %d erreur variable bornee des 2 cotes %d cbarre %e Xmax %e HORS_BASE_SUR_BORNE_INF SeuilDAmissibiliteDuale %e \n",
+				          Spx->Iteration,Var,Spx->CBarre[Var],Spx->Xmax[Var],SeuilAdmDuale); 
+        # endif
 				
         NombreDeChangementDeBorne++;
         PositionDeLaVariable[Var]  = HORS_BASE_SUR_BORNE_SUP;
@@ -185,38 +194,37 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
       /*exit(0);*/
     }
     /* La variable est duale realisable si son cout reduit est positif */
-	if (CBarre[Var] < -SeuilAdmDuale) {
-		if (NbInfDual <= SeuilNbInfDual && CBarre[Var] > -SEUIL_ADMISSIBILITE_DUALE_TOLERE) {
-			/* On considere que c'est quand-meme bon */
-			continue;
-		}
-
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("SPX_VerifierAdmissibiliteDuale Iteration %d erreur iteration %d var %d cbarre %e seuil %e BORNEE_INFERIEUREMENT\n",
-				Spx->Iteration, Spx->Iteration, Var, Spx->CBarre[Var], -SeuilAdmDuale);
-		}
-
-#ifndef UTILISER_BORNES_AUXILIAIRES
-		{
-			SommeDesInfaisabilites += CBarre[Var];
-			Spx->NbInfaisabilitesDuales++;
-			RestaurerAdmissibiliteDuale = OUI_SPX;
-#else
-		/* On cree une borne sup et on change la position de la variable */
-		PositionDeLaVariable[Var] = HORS_BASE_SUR_BORNE_SUP;
-		TypeDeVariable[Var] = BORNEE;
-		StatutBorneSupCourante[Var] = BORNE_AUXILIAIRE_DE_VARIABLE_BORNEE_INFERIEUREMENT;
-		Xmax[Var] = SPX_CalculerUneBorneAuxiliaire(Spx, Var);
-		if (Spx->spx_params->VERBOSE_SPX) {
-			printf("SPX_VerifierAdmissibiliteDuale Iteration %d erreur iteration %d var %d cbarre %e BORNEE_INFERIEUREMENT => On cree une borne auxiliaire valeur %e\n",
-				Spx->Iteration, Spx->Iteration, Var, Spx->CBarre[Var], Xmax[Var]);
-		}
-
-			Spx->NombreDeBornesAuxiliairesUtilisees++;
-			*AdmissibiliteRestauree = OUI_SPX;
-			NombreDeChangementDeBorne++;
-			VolumeDeChangementDeBornes += Xmax[Var];
-#endif
+    if ( CBarre[Var] < -SeuilAdmDuale ) {
+			if ( NbInfDual <= SeuilNbInfDual && CBarre[Var] > -SEUIL_ADMISSIBILITE_DUALE_TOLERE ) {
+			  /* On considere que c'est quand-meme bon */
+				continue;
+			}
+			
+      #if VERBOSE_SPX
+        printf("SPX_VerifierAdmissibiliteDuale Iteration %d erreur iteration %d var %d cbarre %e seuil %e BORNEE_INFERIEUREMENT\n",
+				        Spx->Iteration,Spx->Iteration,Var,Spx->CBarre[Var],-SeuilAdmDuale); 
+      #endif
+			
+      # ifndef UTILISER_BORNES_AUXILIAIRES
+        SommeDesInfaisabilites+= CBarre[Var];
+        Spx->NbInfaisabilitesDuales++;
+        RestaurerAdmissibiliteDuale = OUI_SPX;
+			#else
+        /* On cree une borne sup et on change la position de la variable */        							
+        PositionDeLaVariable  [Var] = HORS_BASE_SUR_BORNE_SUP; 
+		    TypeDeVariable        [Var] = BORNEE;
+        StatutBorneSupCourante[Var] = BORNE_AUXILIAIRE_DE_VARIABLE_BORNEE_INFERIEUREMENT;				
+			  Xmax                  [Var] = SPX_CalculerUneBorneAuxiliaire( Spx, Var );			        
+        # if VERBOSE_SPX
+          printf("SPX_VerifierAdmissibiliteDuale Iteration %d erreur iteration %d var %d cbarre %e BORNEE_INFERIEUREMENT => On cree une borne auxiliaire valeur %e\n",
+				          Spx->Iteration,Spx->Iteration,Var,Spx->CBarre[Var],Xmax[Var]); 		  		
+				# endif
+				
+        Spx->NombreDeBornesAuxiliairesUtilisees++;
+			  *AdmissibiliteRestauree = OUI_SPX;
+        NombreDeChangementDeBorne++;
+        VolumeDeChangementDeBornes+= Xmax[Var];
+			#endif
 			continue;
     }		
     continue;
@@ -244,45 +252,45 @@ for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
 				continue;
 			}
 			
-			if (Spx->spx_params->VERBOSE_SPX) {
-				printf("SPX_VerifierAdmissibiliteDuale Iteration %d erreur var %d cbarre %e hors base NON_BORNEE\n", Spx->Iteration, Var, Spx->CBarre[Var]);
-			}
+      #if VERBOSE_SPX
+        printf("SPX_VerifierAdmissibiliteDuale Iteration %d erreur var %d cbarre %e hors base NON_BORNEE\n",Spx->Iteration,Var,Spx->CBarre[Var]); 
+      #endif
 						
-#ifndef UTILISER_BORNES_AUXILIAIRES
-				SommeDesInfaisabilites += CBarre[Var];
-				Spx->NbInfaisabilitesDuales++;
-				RestaurerAdmissibiliteDuale = OUI_SPX;
-				/* On veut absolument faire des iterations de phase 1 plutot que modifier le cout */
-#else
-				/* On cree une borne sup et on change la position de la variable */
-
-				if (Spx->spx_params->VERBOSE_SPX) {
-					printf("Iteration %d erreur var %d cbarre %e hors base NON_BORNEE => On cree une borne auxiliaire\n", Spx->Iteration, Var, Spx->CBarre[Var]);
-				}
-
-				TypeDeVariable[Var] = BORNEE;
-				StatutBorneSupCourante[Var] = BORNE_AUXILIAIRE_DE_VARIABLE_NON_BORNEE;
-				Xmax[Var] = SPX_CalculerUneBorneAuxiliaire(Spx, Var);
-				Xmin[Var] = 0.;
-				Spx->NombreDeBornesAuxiliairesUtilisees++;
-				if (CBarre[Var] < -SeuilAdmDuale) PositionDeLaVariable[Var] = HORS_BASE_SUR_BORNE_SUP;
-				else PositionDeLaVariable[Var] = HORS_BASE_SUR_BORNE_INF;
-				*AdmissibiliteRestauree = OUI_SPX;
-				NombreDeChangementDeBorne++;
-				VolumeDeChangementDeBornes += Xmax[Var];
-#endif
+      # ifndef UTILISER_BORNES_AUXILIAIRES
+        SommeDesInfaisabilites+= CBarre[Var];
+        Spx->NbInfaisabilitesDuales++;
+        RestaurerAdmissibiliteDuale = OUI_SPX;
+        /* On veut absolument faire des iterations de phase 1 plutot que modifier le cout */
+			#else
+        /* On cree une borne sup et on change la position de la variable */
+				
+        #if VERBOSE_SPX
+          printf("Iteration %d erreur var %d cbarre %e hors base NON_BORNEE => On cree une borne auxiliaire\n",Spx->Iteration,Var,Spx->CBarre[Var]); 
+				# endif
+								
+			  TypeDeVariable        [Var] = BORNEE;
+        StatutBorneSupCourante[Var] = BORNE_AUXILIAIRE_DE_VARIABLE_NON_BORNEE;
+			  Xmax[Var] = SPX_CalculerUneBorneAuxiliaire( Spx, Var );							
+		 	  Xmin[Var] = 0.;
+        Spx->NombreDeBornesAuxiliairesUtilisees++;     							
+        if ( CBarre[Var] < -SeuilAdmDuale ) PositionDeLaVariable[Var] = HORS_BASE_SUR_BORNE_SUP;			
+        else PositionDeLaVariable[Var] = HORS_BASE_SUR_BORNE_INF;				
+        *AdmissibiliteRestauree = OUI_SPX;
+        NombreDeChangementDeBorne++;
+			  VolumeDeChangementDeBornes+= Xmax[Var];
+			#endif
       continue;
     }				
   }  
 
 }
 
-if (Spx->spx_params->VERBOSE_SPX) {
-	if (NombreDeChangementDeBorne > 0) {
-		printf("Controle d'admissibilite duale, nombre de variables bornees repositionnes %d VolumeDeChangementDeBornes %e\n",
-			NombreDeChangementDeBorne, VolumeDeChangementDeBornes);
+#if VERBOSE_SPX
+  if ( NombreDeChangementDeBorne > 0 ) {
+	  printf("Controle d'admissibilite duale, nombre de variables bornees repositionnes %d VolumeDeChangementDeBornes %e\n",
+		        NombreDeChangementDeBorne,VolumeDeChangementDeBornes);
 	}
-}
+#endif
 	
 /* Il faut le laisser car on peut repositionner des bornes sur des variables avec Xmin = Xmax = 0 */
 if ( VolumeDeChangementDeBornes < 1.e-8 ) *AdmissibiliteRestauree = NON_SPX;
@@ -305,13 +313,12 @@ if ( RestaurerAdmissibiliteDuale == OUI_SPX ) {
     Spx->NombreMaxDIterations = 1000;
 	# endif
   
-	if (Spx->spx_params->VERBOSE_SPX) {
-		printf("Restauration de l'admissibilite duale necessaire a l'iteration %d : ", Spx->Iteration);
-		printf("Nombre d'infaisabilites duales %5d Somme des infaisabilites duales %e \n", Spx->NbInfaisabilitesDuales, -SommeDesInfaisabilites);
-	}
+  #if VERBOSE_SPX
+    printf("Restauration de l'admissibilite duale necessaire a l'iteration %d : ",Spx->Iteration); 
+    printf("Nombre d'infaisabilites duales %5d Somme des infaisabilites duales %e \n",Spx->NbInfaisabilitesDuales,-SommeDesInfaisabilites); 
+  #endif
     
   SPX_FactoriserLaBase( Spx );
-  printf("SPX_DualPhase1Simplexe in %s, l. %d\n", __FILE__, __LINE__);
   SPX_DualPhase1Simplexe( Spx );
 
 	Spx->PhaseEnCours = PHASE_2;

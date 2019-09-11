@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Presolve
@@ -29,6 +38,10 @@
 # define AU_DEBUT  1
 # define A_LA_FIN  2
 # define AU_DEBUT_ET_A_LA_FIN  3
+# define AMELIORATION_DES_COEFF_BINAIRES  AU_DEBUT 
+# if UTILISER_LE_GRAPHE_DE_CONFLITS == NON_PNE
+  # define AMELIORATION_DES_COEFF_BINAIRES  AU_DEBUT_ET_A_LA_FIN 
+# endif
 
 # define TRACES 0
 
@@ -38,14 +51,14 @@
 
 void PRS_Presolve( void * PneE )
 {		      
-int NbModifications; int Relancer; int NombreDeVariables;
+int NbModifications; int Relancer; int VariableEntiereFixee; int NombreDeVariables;
 int BorneAmelioree; int VariableFixee; int NbCycles; int * ContrainteBornanteInferieurement;
 int * ContrainteBornanteSuperieurement; int NbCntInact; int Var; int Cnt; char * ContrainteInactive;
 int il; int ilMax; double A; double Amn; double Amx; int * TypeDeBornePourPresolve;
 int * TypeDeBorneTrav; int NbMetaCycles; double * UTrav; double * UminTrav; double * UmaxTrav;
 double * ValeurDeXPourPresolve; double * BorneInfPourPresolve; double * BorneSupPourPresolve;
-char * ConserverLaBorneSupDuPresolve; char * ConserverLaBorneInfDuPresolve;
-int AmeliorationDesCoeffBinaires;
+char * ConserverLaBorneSupDuPresolve; char * ConserverLaBorneInfDuPresolve;  int NbVarNb;
+char BorneInfPresolveDisponible; char BorneSupPresolveDisponible; char TypeBrn;
 double Marge; PRESOLVE * Presolve; PROBLEME_PNE * Pne;
 
 Pne = (PROBLEME_PNE *) PneE;
@@ -68,13 +81,6 @@ Pne = (PROBLEME_PNE *) PneE;
   Presolve->Tas = NULL;
 # endif
  
-if (Pne->pne_params->UTILISER_LE_GRAPHE_DE_CONFLITS == NON_PNE) {
-	AmeliorationDesCoeffBinaires = AU_DEBUT_ET_A_LA_FIN;
-}
-else {
-	AmeliorationDesCoeffBinaires = AU_DEBUT;
-}
-
 Pne->ProblemePrsDuSolveur = (void *) Presolve;  
 Presolve->ProblemePneDuPresolve = PneE;
 
@@ -82,7 +88,7 @@ for ( Pne->NombreDeVariablesEntieresTrav = 0 , Var = 0 ; Var < Pne->NombreDeVari
   if ( Pne->TypeDeVariableTrav[Var] == ENTIER ) Pne->NombreDeVariablesEntieresTrav++;
 }	
 
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
   printf("Starting computations ->");
   printf(" rows: %6d",Pne->NombreDeContraintesTrav);
   printf(" columns: %6d",Pne->NombreDeVariablesTrav);
@@ -122,18 +128,18 @@ for ( Cnt = 0 ; Cnt < Pne->NombreDeContraintesTrav ; Cnt++ ) {
 Pne->PlusGrandTerme = Amx;  
 Pne->PlusPetitTerme = Amn;
 
-if ( Pne->pne_params->FaireDuPresolve == NON_PNE ) goto FinDuPresolve;
+if ( Pne->FaireDuPresolve == NON_PNE ) goto FinDuPresolve;
 
 /***********************************************************************************/
 
 /* Attention: ne peut etre appele que sur les bornes natives des variables ou sur les
    bornes definitives. Donc pas pendant les iterations de presolve car les bornes
 	 du presolve ne sont pas toutes conservees. */
-if ( AmeliorationDesCoeffBinaires == AU_DEBUT || AmeliorationDesCoeffBinaires == AU_DEBUT_ET_A_LA_FIN ) {
-	PNE_AmeliorerLesCoefficientsDesVariablesBinaires(Pne, (void *)Presolve, MODE_PRESOLVE);
-}
+# if AMELIORATION_DES_COEFF_BINAIRES == AU_DEBUT || AMELIORATION_DES_COEFF_BINAIRES == AU_DEBUT_ET_A_LA_FIN 
+  PNE_AmeliorerLesCoefficientsDesVariablesBinaires( Pne, (void *) Presolve, MODE_PRESOLVE );	
+# endif
 
-//DebutDesCycles:
+DebutDesCycles:
 NbCycles = 0;
 NbMetaCycles++;
 Relancer = OUI_PNE;   /* C'est juste pour passer dans le while */
@@ -261,7 +267,7 @@ while ( Relancer == OUI_PNE && NbCycles < 5 /*5*/ && Pne->YaUneSolution != PROBL
 	  }
   }
 	else {	
-	  PRS_ColonnesColineaires( Presolve, &NbModifications );
+    PRS_ColonnesColineaires( Presolve, &NbModifications ); 
 	}
 	# if TRACES == 1
 	  if ( Pne->YaUneSolution != OUI_PNE ) printf("Probleme infaisable apres PRS_ColonnesColineaires\n");
@@ -321,11 +327,27 @@ ContrainteBornanteSuperieurement = Presolve->ContrainteBornanteSuperieurement;
 Marge = 1.e-5;  
 
 for ( Var = 0 ; Var < Pne->NombreDeVariablesTrav ; Var++ ) {																																					
-  if ( TypeDeBornePourPresolve[Var] == VARIABLE_FIXE ) { /* C'est entre autres toujours vrai si c'est dans les donnees de depart */		
+  if ( TypeDeBornePourPresolve[Var] == VARIABLE_FIXE ) { /* C'est entre autres toujours vrai si c'est dans les donnees de depart */
     UTrav[Var] = ValeurDeXPourPresolve[Var];
     UminTrav[Var] = BorneInfPourPresolve[Var];
     UmaxTrav[Var] = BorneSupPourPresolve[Var];		
-    TypeDeBorneTrav[Var] = TypeDeBornePourPresolve[Var];
+
+    if ( Pne->YaDesVariablesEntieres == NON_PNE ) {
+      /* Si on est en continu, on ne sait pas (pour l'instant) recalculer exactement les variables
+	       duales des contraintes quand on fait des substitutions de variables. Donc on prefere ne pas
+		     faire ce genre de presolve. Todo: stocker toutes les transfromations de la matrice pour
+		     recalculer exactement les variables duales. */
+			if ( TypeDeBorneTrav[Var] != VARIABLE_FIXE ) {
+        TypeDeBorneTrav[Var] = VARIABLE_BORNEE_DES_DEUX_COTES;
+			}
+		  else {
+        TypeDeBorneTrav[Var] = VARIABLE_FIXE;
+		  }					
+    }
+		else {
+      TypeDeBorneTrav[Var] = TypeDeBornePourPresolve[Var];
+		}
+		
 		continue;
 	}
 	else if ( ConserverLaBorneInfDuPresolve[Var] == OUI_PNE ) {			
@@ -363,15 +385,15 @@ for ( Var = 0 ; Var < Pne->NombreDeVariablesTrav ; Var++ ) {
 /* Attention: ne peut etre appele que sur les bornes natives des variables ou sur les
    bornes definitives. Donc pas pendant les iterations de presolve car les bornes
 	 du presolve ne sont pas toutes conservees. */
-if ( AmeliorationDesCoeffBinaires == A_LA_FIN || AmeliorationDesCoeffBinaires == AU_DEBUT_ET_A_LA_FIN ) {
-/* Ici on beneficie de la creation de bornes la ou il n'y en n'avait pas */
-	for ( Var = 0 ; Var < Pne->NombreDeVariablesTrav ; Var++ ) {
-		TypeDeBornePourPresolve[Var] = TypeDeBorneTrav[Var];
+# if AMELIORATION_DES_COEFF_BINAIRES == A_LA_FIN || AMELIORATION_DES_COEFF_BINAIRES == AU_DEBUT_ET_A_LA_FIN 
+  /* Ici on beneficie de la creation de bornes la ou il n'y en n'avait pas */
+  for ( Var = 0 ; Var < Pne->NombreDeVariablesTrav ; Var++ ) {
+    TypeDeBornePourPresolve[Var] = TypeDeBorneTrav[Var];
 		BorneInfPourPresolve[Var] = UminTrav[Var];
-		BorneSupPourPresolve[Var] = UmaxTrav[Var];
-	}
-	PNE_AmeliorerLesCoefficientsDesVariablesBinaires( Pne, (void *) Presolve, MODE_PRESOLVE );		
-}
+    BorneSupPourPresolve[Var] = UmaxTrav[Var];
+  }
+  PNE_AmeliorerLesCoefficientsDesVariablesBinaires( Pne, (void *) Presolve, MODE_PRESOLVE );		
+# endif
 
 FinDuPresolve:
 

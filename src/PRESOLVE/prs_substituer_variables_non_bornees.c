@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Substitution des variables non bornees. La routine n'est
@@ -140,7 +149,7 @@ for ( i = 0 ; i < NbTermesColonnePivot ; i++ ) {
 		Nn = Pne->MdebTrav[Cnt] + Pne->NbTermTrav[Cnt] + Nb - 1 ;
 	  if ( Nn > DernierIndexDispo[Cnt] ) {		
 		  /* Ca ne tient pas: on doit recopier la contrainte a la fin et reconstituer la marge */
-      Nn = Pne->PremierIndexLibre + Pne->NbTermTrav[Cnt] + Nb - 1 + Pne->pne_params->MARGE_EN_FIN_DE_CONTRAINTE;
+      Nn = Pne->PremierIndexLibre + Pne->NbTermTrav[Cnt] + Nb - 1 + MARGE_EN_FIN_DE_CONTRAINTE;			
 		  if ( Nn >= Pne->TailleAlloueePourLaMatriceDesContraintes - 10 /* Marge */) {
 			  /*printf("Redimensionnement\n");*/
 			  PNE_AugmenterLaTailleDeLaMatriceDesContraintes( Pne );
@@ -271,7 +280,7 @@ DernierIndexDispo = (int *) malloc( Pne->NombreDeContraintesTrav * sizeof( int )
 
 for ( Cnt = 0 ; Cnt < Pne->NombreDeContraintesTrav ; Cnt++ ) {
   ContrainteModifiee[Cnt] = NON_PNE;
-  DernierIndexDispo[Cnt] = Pne->MdebTrav[Cnt] + Pne->NbTermTrav[Cnt] + Pne->pne_params->MARGE_EN_FIN_DE_CONTRAINTE - 1;
+  DernierIndexDispo[Cnt] = Pne->MdebTrav[Cnt] + Pne->NbTermTrav[Cnt] + MARGE_EN_FIN_DE_CONTRAINTE - 1;
 }
 
 NumeroDesVariablesNonBornees = (int *) malloc( Pne->NombreDeVariablesTrav * sizeof( int ) );

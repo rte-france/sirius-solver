@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
    FONCTION: Modification du probleme dans un contexte de branch and 
              cut. On ajoute les coupes (ce sont des contraintes d'inegalite) 
@@ -180,17 +189,17 @@ for ( Cnt_E = 0 ; Cnt_E < NbContr_E ; Cnt_E++ ) {
   /* Creation de la variable d'ecart */
 
   XminEntree    [NombreDeVariables] = 0.;
-  XmaxEntree    [NombreDeVariables] = Spx->spx_params->LINFINI_POUR_X;
+  XmaxEntree    [NombreDeVariables] = LINFINI_POUR_X;
   X             [NombreDeVariables] = 0.;
   C             [NombreDeVariables] = 0.;
   Xmin          [NombreDeVariables] = 0.;
-  Xmax          [NombreDeVariables] = Spx->spx_params->LINFINI_POUR_X;
+  Xmax          [NombreDeVariables] = LINFINI_POUR_X;
   TypeDeVariable[NombreDeVariables] = BORNEE_INFERIEUREMENT;
 
-  SeuilDeViolationDeBorne[NombreDeVariables] = Spx->spx_params->SEUIL_DE_VIOLATION_DE_BORNE_VARIABLES_ECART_COUPES;
+  SeuilDeViolationDeBorne[NombreDeVariables] = SEUIL_DE_VIOLATION_DE_BORNE_VARIABLES_ECART_COUPES;
 
   Spx->SeuilDAmissibiliteDuale1[NombreDeVariables] = SEUIL_ADMISSIBILITE_DUALE_1;
-  Spx->SeuilDAmissibiliteDuale2[NombreDeVariables] = Spx->spx_params->SEUIL_ADMISSIBILITE_DUALE_2;	
+  Spx->SeuilDAmissibiliteDuale2[NombreDeVariables] = SEUIL_ADMISSIBILITE_DUALE_2;	
 	
   CorrespondanceVarSimplexeVarEntree[NombreDeVariables] = -1;
 

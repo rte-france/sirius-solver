@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Ecriture du jeu de donnees au format MPS
@@ -23,11 +32,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-void PNE_EcrireJeuDeDonneesMPS(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme) {
-	PNE_EcrireJeuDeDonneesMPS_avecNom(Pne, Probleme, "Donnees_Probleme_Solveur.mps");
-}
-
-void PNE_EcrireJeuDeDonneesMPS_avecNom(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme, const char * const nomFichier)
+void PNE_EcrireJeuDeDonneesMPS( PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme )       
 {
 FILE * Flot; 
 int Cnt; int Var; int il; int ilk; int ilMax; char * Nombre;
@@ -105,21 +110,21 @@ printf("*** Vous avez demande la creation d'un fichier contenant la description 
 printf("*** du probleme en cours de resolution. Le fichier de donnees se trouve ***\n");
 printf("*** dans le repertoire d'execution. Il s'appelle:                       ***\n");
 printf("***                                                                     ***\n");
-printf("***                 %s                        ***\n", nomFichier);
+printf("***                 Donnees_Probleme_Solveur.mps                        ***\n");
 printf("***                                                                     ***\n");
 printf("*** Si un fichier de ce nom existait deja, il sera ecrase par avec les  ***\n");
 printf("*** nouvelles donnees.                                                  ***\n");
 printf("***************************************************************************\n");
 
-Flot = fopen( nomFichier, "w" ); 
+Flot = fopen( "Donnees_Probleme_Solveur.mps", "w" ); 
 if( Flot == NULL ) {
   printf("Erreur ouverture du fichier pour l'ecriture du jeu de donnees \n");
   exit(0);
 }
 
 /* Ecrire du titre */
-fprintf(Flot,"* Nombre de variables:   %d\n",NombreDeVariables);
-fprintf(Flot,"* Nombre de contraintes: %d\n",NombreDeContraintes);
+fprintf(Flot,"* Number of variables:   %d\n",NombreDeVariables);
+fprintf(Flot,"* Number of constraints: %d\n",NombreDeContraintes);
 
 /*
  Les champs du format MPS

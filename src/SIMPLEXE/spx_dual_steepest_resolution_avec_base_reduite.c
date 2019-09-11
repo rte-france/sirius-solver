@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Resolution avec la base reduite.
@@ -167,7 +176,7 @@ if ( ResoudreLeSysteme == OUI_SPX ) {
   SecondMembreCreux = OUI_LU;
 	
   if ( ResolutionEnHyperCreux == OUI_SPX ) {
-	  if ( NbTermesNonNuls >= Spx->spx_params->TAUX_DE_REMPLISSAGE_POUR_VECTEUR_HYPER_CREUX * RangDeLaMatriceFactorisee ) {			
+	  if ( NbTermesNonNuls >= TAUX_DE_REMPLISSAGE_POUR_VECTEUR_HYPER_CREUX * RangDeLaMatriceFactorisee ) {			
 		  ResolutionEnHyperCreux = NON_SPX;
  	    *StockageDeTau = VECTEUR_SPX;
 	    TypeDeSortie = VECTEUR_LU;				
@@ -201,106 +210,103 @@ else {
   exit(0);
 }
 
-// ne compile pas en l'etat, descative par define avant l'api params
-/*
-if (Spx->spx_params->VERIFICATION_STEEPEST == OUI_SPX) {
-	printf("---------------- DualSteepestEdgeResolutionBaseReduite  Spx->NombreDeChangementsDeBase %d -------------\n", Spx->NombreDeChangementsDeBase);
-	if (TypeDEntree == VECTEUR_LU) printf("apres resolution TypeDEntree = VECTEUR_LU");
-	if (TypeDEntree == ADRESSAGE_INDIRECT_LU) printf("apres resolution TypeDEntree = ADRESSAGE_INDIRECT_LU");
-	if (TypeDeSortie == VECTEUR_LU) printf(" TypeDeSortie = VECTEUR_LU\n");
-	if (TypeDeSortie == ADRESSAGE_INDIRECT_LU) printf(" TypeDeSortie = ADRESSAGE_INDIRECT_LU\n");
-	{
-		double * Buff; int Var; int ic; int icMx; double * Sortie; char Arret; int rr;
-		Buff = (double *)malloc(RangDeLaMatriceFactorisee * sizeof(double));
-		Sortie = (double *)malloc(RangDeLaMatriceFactorisee * sizeof(double));
-		for (r = 0; r < RangDeLaMatriceFactorisee; r++) Sortie[r] = 0;
-		if (TypeDeSortie == ADRESSAGE_INDIRECT_LU) {
-			for (i = 0; i < NbTermesNonNuls; i++) {
-				Sortie[IndexTermesNonNulsDeTau[i]] = Tau[IndexTermesNonNulsDeTau[i]];
-			}
-		}
-		else if (TypeDeSortie == VECTEUR_LU) {
-			for (r = 0; r < RangDeLaMatriceFactorisee; r++) Sortie[r] = Tau[r];
-		}
-		else {
-			printf("Bug dans DualSteepestEdgeResolutionBaseReduite\n");
-			exit(0);
-		}
-
-		for (r = 0; r < RangDeLaMatriceFactorisee; r++) Buff[r] = 0;
-		if (Spx->TypeDeStockageDeNBarreR == ADRESSAGE_INDIRECT_SPX) {
-			NumVarNBarreRNonNul = Spx->NumVarNBarreRNonNul;
-			for (j = 0; j < Spx->NombreDeValeursNonNullesDeNBarreR; j++) {
-				Var = NumVarNBarreRNonNul[j];
-				if (InDualFramework[Var] == NON_SPX) continue;
-				X = NBarreR[Var];
-				il = Cdeb[Var];
-				ilMax = il + CNbTerm[Var];
-				while (il < ilMax) {
-					r = OrdreLigneDeLaBaseFactorisee[NumeroDeContrainte[il]];
-					if (r < RangDeLaMatriceFactorisee) {
-						Buff[r] += X * ACol[il];
-					}
-					il++;
-				}
-			}
-		}
-		else {
-			for (i = 0; i < Spx->NombreDeVariablesHorsBase; i++) {
-				Var = NumerosDesVariablesHorsBase[i];
-				if (InDualFramework[Var] == NON_SPX) continue;
-				X = NBarreR[Var];
-				il = Cdeb[Var];
-				ilMax = il + CNbTerm[Var];
-				while (il < ilMax) {
-					r = OrdreLigneDeLaBaseFactorisee[NumeroDeContrainte[il]];
-					if (r < RangDeLaMatriceFactorisee) {
-						Buff[r] += X * ACol[il];
-					}
-					il++;
-				}
-			}
-		}
-
-		for (r = 0; r < RangDeLaMatriceFactorisee; r++) {
-			if (Sortie[r] == 0) continue;
-			Var = Spx->VariableEnBaseDeLaContrainte[Spx->ColonneDeLaBaseFactorisee[r]];
-			ic = Spx->Cdeb[Var];
-			icMx = ic + Spx->CNbTerm[Var];
-			while (ic < icMx) {
-				rr = OrdreLigneDeLaBaseFactorisee[NumeroDeContrainte[ic]];
-				if (rr < RangDeLaMatriceFactorisee) {
-					Buff[rr] -= ACol[ic] * Sortie[r];
-				}
-				ic++;
-			}
-		}
-		Arret = NON_SPX;
-		for (r = 0; r < RangDeLaMatriceFactorisee; r++) {
-			if (fabs(Buff[r]) > 1.e-7) {
-				printf("r = %d   ecart %e\n", r, Buff[r]);
-				Var = Spx->VariableEnBaseDeLaContrainte[Spx->ColonneDeLaBaseFactorisee[r]];
-				if (Spx->OrigineDeLaVariable[Var] != NATIVE) printf(" variable non native\n");
-				else printf(" variable native\n");
-				Arret = OUI_SPX;
-			}
-		}
-		if (Arret == OUI_SPX) {
-			printf("Verif Tau  not OK\n");
-			exit(0);
-		}
-		printf("Fin verif Tau   OK\n");
-		free(Buff);
-		free(Sortie);
-
+# if VERIFICATION_STEEPEST == OUI_SPX
+printf("---------------- DualSteepestEdgeResolutionBaseReduite  Spx->NombreDeChangementsDeBase %d -------------\n",Spx->NombreDeChangementsDeBase);
+if ( TypeDEntree == VECTEUR_LU ) printf("apres resolution TypeDEntree = VECTEUR_LU");
+if ( TypeDEntree == ADRESSAGE_INDIRECT_LU ) printf("apres resolution TypeDEntree = ADRESSAGE_INDIRECT_LU");
+if ( TypeDeSortie == VECTEUR_LU ) printf(" TypeDeSortie = VECTEUR_LU\n");
+if ( TypeDeSortie == ADRESSAGE_INDIRECT_LU ) printf(" TypeDeSortie = ADRESSAGE_INDIRECT_LU\n");	
+{
+double * Buff; int Var; int ic; int icMx; double * Sortie; char Arret; int rr;
+Buff = (double *) malloc( RangDeLaMatriceFactorisee * sizeof( double ) );
+Sortie = (double *) malloc( RangDeLaMatriceFactorisee * sizeof( double ) );
+for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) Sortie[r]= 0;
+if ( TypeDeSortie == ADRESSAGE_INDIRECT_LU ) {
+  for ( i = 0 ; i < NbTermesNonNuls ; i++ ) {
+	  Sortie[IndexTermesNonNulsDeTau[i]] = Tau[IndexTermesNonNulsDeTau[i]];
 	}
+}
+else if ( TypeDeSortie == VECTEUR_LU ) {
+  for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) Sortie[r] = Tau[r];	
+}
+else {
+  printf("Bug dans DualSteepestEdgeResolutionBaseReduite\n");
+	exit(0);
+}
 
-	SPX_VerifierLesVecteursDeTravail(Spx);
+for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) Buff[r]= 0;
+if ( Spx->TypeDeStockageDeNBarreR == ADRESSAGE_INDIRECT_SPX ) {
+	NumVarNBarreRNonNul = Spx->NumVarNBarreRNonNul;
+  for ( j = 0 ; j < Spx->NombreDeValeursNonNullesDeNBarreR ; j++ ) {
+    Var = NumVarNBarreRNonNul[j];
+    if ( InDualFramework[Var] == NON_SPX ) continue;			
+    X = NBarreR[Var];
+    il    = Cdeb[Var];
+    ilMax = il + CNbTerm[Var];
+    while ( il < ilMax ) {
+		  r = OrdreLigneDeLaBaseFactorisee[NumeroDeContrainte[il]];
+		  if ( r < RangDeLaMatriceFactorisee ) {		
+        Buff[r] += X * ACol[il];
+			}
+	    il++;
+    }				  
+  }		
+}
+else {
+  for ( i = 0 ; i < Spx->NombreDeVariablesHorsBase ; i++ ) {
+    Var = NumerosDesVariablesHorsBase[i];
+    if ( InDualFramework[Var] == NON_SPX ) continue;	
+    X = NBarreR[Var];
+    il    = Cdeb[Var];
+    ilMax = il + CNbTerm[Var];
+    while ( il < ilMax ) {
+		  r = OrdreLigneDeLaBaseFactorisee[NumeroDeContrainte[il]];
+		  if ( r < RangDeLaMatriceFactorisee ) {			
+        Buff[r]+= X * ACol[il];
+			}
+      il++;
+    }
+  }	
+}     
 
-	printf("VerifierLesVecteursDeTravail    OK\n");
+for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) {
+  if ( Sortie[r] == 0 ) continue;
+  Var = Spx->VariableEnBaseDeLaContrainte[Spx->ColonneDeLaBaseFactorisee[r]];
+	ic = Spx->Cdeb[Var];
+	icMx = ic + Spx->CNbTerm[Var];
+	while ( ic < icMx ) {
+		rr = OrdreLigneDeLaBaseFactorisee[NumeroDeContrainte[ic]];
+		if ( rr < RangDeLaMatriceFactorisee ) {		
+	    Buff[rr] -= ACol[ic] * Sortie[r];
+		}
+	  ic++;
+	}
+}
+Arret = NON_SPX;
+for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) {
+	if ( fabs( Buff[r] ) > 1.e-7 ) {
+	  printf("r = %d   ecart %e\n",r,Buff[r]);
+    Var = Spx->VariableEnBaseDeLaContrainte[Spx->ColonneDeLaBaseFactorisee[r]];
+		if ( Spx->OrigineDeLaVariable[Var] != NATIVE ) printf(" variable non native\n");
+		else printf(" variable native\n");		
+		Arret = OUI_SPX;
+	}
+}
+if ( Arret == OUI_SPX ) {
+ printf("Verif Tau  not OK\n");
+ exit(0);
+}
+printf("Fin verif Tau   OK\n");
+free( Buff );
+free( Sortie );
 
 }
-*/
+
+SPX_VerifierLesVecteursDeTravail( Spx );
+
+printf("VerifierLesVecteursDeTravail    OK\n");
+
+# endif
 
 
 return;

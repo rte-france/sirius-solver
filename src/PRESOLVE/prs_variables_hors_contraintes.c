@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Cas lineaire pur: on regarde si une variable n'intervient 
@@ -95,8 +104,14 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
     else ValeurDeXPourPresolve[Var] = BorneSupPourPresolve[Var]; 
   }
   else {
-    /* Le cout de la variable est nul, on la met a 0 */
-    ValeurDeXPourPresolve[Var] = 0.; 
+     /* Le cout de la variable est nul, on la fixe a 0 (ou sur une borne si 0 est hors bornes) */
+	  if (BorneSupPourPresolve[Var] > 0) {
+		  BorneSupPourPresolve[Var] = 0;
+	  }  
+	  if (BorneInfPourPresolve[Var] > BorneSupPourPresolve[Var]) {
+		  BorneSupPourPresolve[Var] = BorneInfPourPresolve[Var];
+	  }
+	  ValeurDeXPourPresolve[Var] = BorneSupPourPresolve[Var]; 
   }
   TypeDeBornePourPresolve[Var] = VARIABLE_FIXE;
 

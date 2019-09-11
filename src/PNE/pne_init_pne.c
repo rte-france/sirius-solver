@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: 
@@ -37,7 +46,7 @@ int Var  ; char Gub     ; char OnInverse; char YaQueDesVarFixes;
 double Amax; int ic; double * SeuilDeFractionnalite; int * TypeDeVariableTrav;
 int * TypeDeBorneTrav; int * CdebTrav; int * CsuiTrav; double * ATrav;
 
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
   printf("Attention nouvelle version de INIT pne qui conserve les variables fixes d'entree\n");
 }
 
@@ -86,10 +95,10 @@ for ( j = 0 , i = 0 ; i < NombreDeVariablesE ; i++ ) {
 	
   Pne->TypeDeVariableTrav[j] = TypeDeVariableE[i];
   if ( Pne->TypeDeVariableTrav[j] == ENTIER ) {
-    if ( Pne->SolveurPourLeProblemeRelaxe == SIMPLEXE || Pne->pne_params->MPCC_DANS_PI == OUI_PNE ) Pne->YaDesVariablesEntieres = OUI_PNE;
+    if ( Pne->SolveurPourLeProblemeRelaxe == SIMPLEXE || MPCC_DANS_PI == OUI_PNE ) Pne->YaDesVariablesEntieres = OUI_PNE;
     else Pne->TypeDeVariableTrav[j] = REEL;
     if ( TypeDeBorneTravE[i] != VARIABLE_BORNEE_DES_DEUX_COTES && TypeDeBorneTravE[i] != VARIABLE_FIXE ) {
-		if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+		if ( Pne->AffichageDesTraces == OUI_PNE ) {
 		  printf("Erreur dans les donnees, la variable %d est entiere mais elle n'est pas bornee des 2 cotes\n",i);
 			printf("Arret du solveur car seules les variables entieres de type binaire sont acceptees\n");
 		}
@@ -97,7 +106,7 @@ for ( j = 0 , i = 0 ; i < NombreDeVariablesE ; i++ ) {
       longjmp( Pne->Env , Pne->AnomalieDetectee );       
     }
     if ( UmaxE[i] - UminE[i] != 1.0 && TypeDeBorneTravE[i] != VARIABLE_FIXE ) {
-		if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+		if ( Pne->AffichageDesTraces == OUI_PNE ) {
 		  printf("Erreur dans les donnees, la variable %d est entiere mais elle n'est pas de type binaire\n",i);
 		  printf("Min %e  Max %e Ecart %20.17f\n",UminE[i],UmaxE[i],UmaxE[i]-UminE[i]);
 			printf("Arret du solveur car seules les variables entieres de type binaire sont acceptees\n");
@@ -200,7 +209,7 @@ for ( ilTrav = -1 , i = 0 ; i < NombreDeContraintesE ; i++ ) {
   while ( ilE <= ilEmax ) {
     VarE = NuvarE[ilE];		
     if ( iPrec == VarE ) { 
-     if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) printf("Erreur, la contrainte %i contient 2 fois la variable %d\n",i,iPrec); 
+     if ( Pne->AffichageDesTraces == OUI_PNE ) printf("Erreur, la contrainte %i contient 2 fois la variable %d\n",i,iPrec); 
       Pne->AnomalieDetectee = OUI_PNE;
       longjmp( Pne->Env , Pne->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
     }
@@ -220,7 +229,7 @@ for ( ilTrav = -1 , i = 0 ; i < NombreDeContraintesE ; i++ ) {
 		
     j = Pne->CorrespondanceVarEntreeVarNouvelle[VarE];				
     if ( j >= 0 ) Pne->NuvarTrav[ilTrav] = j;
-		else if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) printf("BUG dans PNE_InitialiserLaPne, vecteur CorrespondanceVarEntreeVarNouvelle mal initialise\n");
+		else if ( Pne->AffichageDesTraces == OUI_PNE ) printf("BUG dans PNE_InitialiserLaPne, vecteur CorrespondanceVarEntreeVarNouvelle mal initialise\n");
          
     iPrec = NuvarE[ilE];
     ilE++;
@@ -232,12 +241,12 @@ for ( ilTrav = -1 , i = 0 ; i < NombreDeContraintesE ; i++ ) {
     ilTrav = ilTravSv;
     /* On controle la satisfaction de la contrainte */
     if ( SensE[i] == '=' ) {
-      if ( fabs( S - BE[i] ) > Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+      if ( fabs( S - BE[i] ) > SEUIL_DADMISSIBILITE ) {
         Pne->YaUneSolution = PROBLEME_INFAISABLE;
       }
     }
     else if ( SensE[i] == '<' ) {
-      if ( S > BE[i] + Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+      if ( S > BE[i] + SEUIL_DADMISSIBILITE ) {
         Pne->YaUneSolution = PROBLEME_INFAISABLE;
       }
     }
@@ -246,8 +255,8 @@ for ( ilTrav = -1 , i = 0 ; i < NombreDeContraintesE ; i++ ) {
 			/* Copier coller de la ligne ci-dessus malencontreux !!!!!!!!!!!!!!!!*/
       /* Comme on a change le signe des coefficients pour anticiper le changement de sens de l'inegalite,
 			   on doit faire pareil pour le second membre */
-      /*if ( S > BE[i] + Spx->spx_params->SEUIL_DADMISSIBILITE ) {*/
-      if ( S > -BE[i] + Pne->pne_params->SEUIL_DADMISSIBILITE ) {
+      /*if ( S > BE[i] + SEUIL_DADMISSIBILITE ) {*/
+      if ( S > -BE[i] + SEUIL_DADMISSIBILITE ) {
         Pne->YaUneSolution = PROBLEME_INFAISABLE;
       }
     }    
@@ -262,7 +271,7 @@ for ( ilTrav = -1 , i = 0 ; i < NombreDeContraintesE ; i++ ) {
     }				
     if ( Pne->SensContrainteTrav[Pne->NombreDeContraintesTrav - 1] != '=' ) NbContraintesIneg++;
 		/* On ajoute toujours de la marge utilisable pour le presolve */
-    ilTrav += Pne->pne_params->MARGE_EN_FIN_DE_CONTRAINTE;
+    ilTrav += MARGE_EN_FIN_DE_CONTRAINTE;
     if ( ilTrav >= Pne->TailleAlloueePourLaMatriceDesContraintes ) PNE_AugmenterLaTailleDeLaMatriceDesContraintes( Pne );    		
   }		       
 }
@@ -270,15 +279,15 @@ for ( ilTrav = -1 , i = 0 ; i < NombreDeContraintesE ; i++ ) {
 Pne->NombreDeContraintesDInegalite = NbContraintesIneg;
 Pne->PremierIndexLibre = ilTrav + 1;
 
-if (Pne->pne_params->PNE_ACTIVATION_SUPPRESSION_PETITS_TERMES == OUI_PNE) {
-	PNE_EnleverLesToutPetitsTermes(Pne->MdebTrav, Pne->NbTermTrav, Pne->NuvarTrav, Pne->ATrav,
-		Pne->UmaxTrav, Pne->UminTrav, Pne->NombreDeContraintesTrav,
-		Pne->pne_params->AffichageDesTraces);
-}
+# if PNE_ACTIVATION_SUPPRESSION_PETITS_TERMES == OUI_PNE
+  PNE_EnleverLesToutPetitsTermes( Pne->MdebTrav, Pne->NbTermTrav, Pne->NuvarTrav, Pne->ATrav,
+	                                Pne->UmaxTrav, Pne->UminTrav, Pne->NombreDeContraintesTrav,
+																	Pne->AffichageDesTraces );																			
+# endif
 
 /* Presolve */
 
-if ( Pne->pne_params->FaireDuPresolve == OUI_PNE ) PNE_AllocationsPourLePostSolve( Pne );
+if ( Pne->FaireDuPresolve == OUI_PNE ) PNE_AllocationsPourLePostSolve( Pne );
 
 PRS_Presolve( Pne );
 
@@ -295,38 +304,39 @@ if ( Pne->Controls != NULL ) {
 
 PNE_CompacterLaMatriceDesContraintes( Pne );
 
-if ( Pne->pne_params->UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE ) {
-	if ( Pne->pne_params->PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE ) {
-		if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {
-			PNE_VariableProbing(Pne);
-			if ( Pne->CoupesDeProbing != NULL ) {
-				if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
-					printf("%d probing cut(s) found\n", Pne->CoupesDeProbing->NombreDeCoupesDeProbing);
+# if UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE
+  # if PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE
+    if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {		
+      PNE_VariableProbing( Pne );			
+      if ( Pne->CoupesDeProbing != NULL ) {
+			  if ( Pne->AffichageDesTraces == OUI_PNE ) {
+			    printf("%d probing cut(s) found\n",Pne->CoupesDeProbing->NombreDeCoupesDeProbing);
 				}
-			}
-			if ( Pne->ProbingOuNodePresolve != NULL ) {
-				if ( Pne->ProbingOuNodePresolve->Faisabilite == NON_PNE ) Pne->YaUneSolution = NON_PNE;
-				else PNE_CliquesConflictGraph(Pne);
-			}
-			/* Le variable probing peut conduire aussi a des possibilites d'amelioration de coeffs
-					 de variables binaires */
-			PNE_AmeliorerLesCoefficientsDesVariablesBinaires(Pne, NULL, MODE_PNE);
-
+			}			
+	    if ( Pne->ProbingOuNodePresolve != NULL ) {			  
+	      if ( Pne->ProbingOuNodePresolve->Faisabilite == NON_PNE ) Pne->YaUneSolution = NON_PNE;
+			  else PNE_CliquesConflictGraph( Pne );			  
+      }			
+      /* Le variable probing peut conduire aussi a des possibilites d'amelioration de coeffs
+			   de variables binaires */				 
+      PNE_AmeliorerLesCoefficientsDesVariablesBinaires( Pne, NULL, MODE_PNE );
+			
 			/* Pour tenir compte des coupes de probing */
-			PNE_ProbingModifierLaMatriceDesContraintes(Pne, Pne->ProbingOuNodePresolve);
-			/* Il se peut que des contraintes soient devenues inactives ou fixing */
-			PNE_PostProbing(Pne);
-			/* Nouveau compactage au cas ou des variables entieres auraient ete fixees */
-			PNE_CompacterLaMatriceDesContraintes(Pne);
-		}
-	}
-}
+      PNE_ProbingModifierLaMatriceDesContraintes( Pne, Pne->ProbingOuNodePresolve );			
+      /* Il se peut que des contraintes soient devenues inactives ou fixing */			
+      PNE_PostProbing( Pne );
+      /* Nouveau compactage au cas ou des variables entieres auraient ete fixees */
+      PNE_CompacterLaMatriceDesContraintes( Pne );			
+    }	
+  # endif
+# endif
+
 /*
 PNE_EcrirePresolvedMPS( Pne );
 exit(0);
 */
 
-if ( Pne->pne_params->FaireDuPresolve == OUI_PNE ) PNE_CleanPostSolve( Pne );
+if ( Pne->FaireDuPresolve == OUI_PNE ) PNE_CleanPostSolve( Pne );
 
 PNE_TranslaterLesBornes( Pne );
 
@@ -342,7 +352,7 @@ if ( Pne->Controls != NULL &&  Pne->YaUneSolution == OUI_PNE && 0 ) {
 		}
 		PnePere = (PROBLEME_PNE * ) (Pne->Controls->Pne);
 			NbNonFix = Pne->NombreDeVariablesTrav-NbFix;
-	   if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) 
+	   if ( Pne->AffichageDesTraces == OUI_PNE ) 
 	   {
 			   printf("Init PNE NombreDeContraintesTrav %d NombreDeVariablesTrav %d  No non Fix %d  \n",Pne->NombreDeContraintesTrav,
 				  Pne->NombreDeVariablesTrav, NbNonFix);
@@ -356,7 +366,7 @@ if ( Pne->Controls != NULL &&  Pne->YaUneSolution == OUI_PNE && 0 ) {
 	   Seuil = 0.1;
 		if ( PnePere->YaUneSolutionEntiere == NON_PNE ) Seuil = 0.5;
 		if ( NbVarEnt > (int) (Seuil * PnePere->NombreDeVariablesEntieresNonFixes) && NbVarEnt > 50 ) {
-			if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+			if ( Pne->AffichageDesTraces == OUI_PNE ) {
 			  printf("Refus car trop de var ent  NbVarEnt  %d   Seuil * PnePere->NombreDeVariablesEntieresNonFixes %d\n",
 						NbVarEnt,(int) (Seuil * PnePere->NombreDeVariablesEntieresNonFixes) );
 			  printf("NombreDeVariablesEntieresNonFixes %d\n", PnePere->NombreDeVariablesEntieresNonFixes);
@@ -364,7 +374,7 @@ if ( Pne->Controls != NULL &&  Pne->YaUneSolution == OUI_PNE && 0 ) {
 		  Pne->YaUneSolution = NON_PNE;
 		}  
 		if ( NbNonFix > (int) (Seuil * PnePere->NombreDeVariablesNonFixes) && NbNonFix > 50 ) {  
-			if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) printf("Refus car trop de var\n");
+			if ( Pne->AffichageDesTraces == OUI_PNE ) printf("Refus car trop de var\n");
 			Pne->YaUneSolution = NON_PNE;
 		}
   }
@@ -419,11 +429,11 @@ ATrav = Pne->ATrav;
     if ( fabs( ATrav[ic] ) > Amax ) Amax = fabs( ATrav[ic] );
 		ic = CsuiTrav[ic];
   }	
-	SeuilDeFractionnalite[Var] = Pne->pne_params->VALEUR_DE_FRACTIONNALITE_NULLE;
+	SeuilDeFractionnalite[Var] = VALEUR_DE_FRACTIONNALITE_NULLE;
 	if ( Amax > 0 ) {
-	  SeuilDeFractionnalite[Var] = Pne->pne_params->SEUIL_DADMISSIBILITE / Amax;
-		if ( SeuilDeFractionnalite[Var] < 0.1 * Pne->pne_params->VALEUR_DE_FRACTIONNALITE_NULLE ) {
-		  SeuilDeFractionnalite[Var] = 0.1 * Pne->pne_params->VALEUR_DE_FRACTIONNALITE_NULLE;
+	  SeuilDeFractionnalite[Var] = SEUIL_DADMISSIBILITE / Amax;		
+		if ( SeuilDeFractionnalite[Var] < 0.1 * VALEUR_DE_FRACTIONNALITE_NULLE ) {  
+		  SeuilDeFractionnalite[Var] = 0.1 * VALEUR_DE_FRACTIONNALITE_NULLE;
 		}		
 	}
 }
@@ -469,7 +479,7 @@ if ( Pne->ChainageTransposeeExploitable == NON_PNE ) PNE_ConstruireLeChainageDeL
 if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {
   Pne->ContrainteActivable = (char *) malloc( Pne->NombreDeContraintesTrav * sizeof( char ) );
   if ( Pne->ContrainteActivable == NULL ) {
-	  if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) printf(" Solveur PNE , memoire insuffisante. Sous-programme: PNE_InitPne \n");
+	  if ( Pne->AffichageDesTraces == OUI_PNE ) printf(" Solveur PNE , memoire insuffisante. Sous-programme: PNE_InitPne \n");
     Pne->AnomalieDetectee = OUI_PNE;
     longjmp( Pne->Env , Pne->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
 	}
@@ -477,23 +487,23 @@ if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {
 
 	Pne->NombreDeK = 0;
   Pne->SommeViolationsK = 0;
-  Pne->SeuilDeViolationK = Pne->pne_params->SEUIL_VIOLATION_KNAPSACK;
+  Pne->SeuilDeViolationK = SEUIL_VIOLATION_KNAPSACK;
 
   Pne->NombreDeMIR_MARCHAND_WOLSEY = 0;
   Pne->SommeViolationsMIR_MARCHAND_WOLSEY = 0;
-  Pne-> SeuilDeViolationMIR_MARCHAND_WOLSEY = Pne->pne_params->SEUIL_VIOLATION_MIR_MARCHAND_WOLSEY;
+  Pne-> SeuilDeViolationMIR_MARCHAND_WOLSEY = SEUIL_VIOLATION_MIR_MARCHAND_WOLSEY;
 
 	Pne->NombreDeCliques = 0;
   Pne->SommeViolationsCliques = 0;
-  Pne->SeuilDeViolationCliques = Pne->pne_params->SEUIL_VIOLATION_CLIQUES;
+  Pne->SeuilDeViolationCliques = SEUIL_VIOLATION_CLIQUES;
 
 	Pne->NombreDImplications = 0;
   Pne->SommeViolationsImplications = 0;
-  Pne->SeuilDeViolationImplications = Pne->pne_params->SEUIL_VIOLATION_IMPLICATIONS;
+  Pne->SeuilDeViolationImplications = SEUIL_VIOLATION_IMPLICATIONS;
 
 	Pne->NombreDeBornesVariables = 0;
   Pne->SommeViolationsBornesVariables = 0;
-  Pne->SeuilDeViolationBornesVariables = Pne->pne_params->SEUIL_VIOLATION_BORNES_VARIABLES;
+  Pne->SeuilDeViolationBornesVariables = SEUIL_VIOLATION_BORNES_VARIABLES;	
 }
 
 return;
@@ -507,8 +517,11 @@ int Var; int Cnt; int il ; int ilMax; double S; int * TypeDeBorne; int NombreDeV
 double * CoutLineaire; double * Xmin; double * Xmax; char * VariableAInverser;
 int NombreDeContraintes; int * Mdeb; int * NbTerm; int * Nuvar; double * A;
 double * XminEntre; double * XmaxEntre; double * B;
+ 
+# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
 CONTRAITES_DE_BORNE_VARIABLE * ContraintesDeBorneVariable; int NombreDeContraintesDeBorne;
-int * First; int * Colonne; double * SecondMembre; double * Coefficient;
+int * First; int * Colonne; double * SecondMembre; double * Coefficient; 
+# endif
 
 NombreDeVariables = Pne->NombreDeVariablesTrav;
 NombreDeContraintes = Pne->NombreDeContraintesTrav;
@@ -551,25 +564,26 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   }
 }
 /* 2-b Variables bound constraintes ajoutees dans le variable probing */
-if (Pne->pne_params->UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE && Pne->pne_params->PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE && Pne->pne_params->CONSTRUIRE_BORNES_VARIABLES == OUI_PNE) {
-	ContraintesDeBorneVariable = Pne->ContraintesDeBorneVariable;
-	if (ContraintesDeBorneVariable != NULL) {
-		NombreDeContraintesDeBorne = ContraintesDeBorneVariable->NombreDeContraintesDeBorne;
-		First = ContraintesDeBorneVariable->First;
-		SecondMembre = ContraintesDeBorneVariable->SecondMembre;
-		Colonne = ContraintesDeBorneVariable->Colonne;
-		Coefficient = ContraintesDeBorneVariable->Coefficient;
-		for (Cnt = 0; Cnt < NombreDeContraintesDeBorne; Cnt++) {
-			if (First[Cnt] < 0) continue;
-			il = First[Cnt];
-			ilMax = il + 2;
-			while (il < ilMax) {
-				if (TypeDeBorne[Colonne[il]] == VARIABLE_BORNEE_SUPERIEUREMENT) Coefficient[il] = -Coefficient[il];
-				il++;
+# if UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE && PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE && CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+  ContraintesDeBorneVariable = Pne->ContraintesDeBorneVariable;
+  if ( ContraintesDeBorneVariable != NULL ) {
+    NombreDeContraintesDeBorne = ContraintesDeBorneVariable->NombreDeContraintesDeBorne;
+    First = ContraintesDeBorneVariable->First;
+    SecondMembre = ContraintesDeBorneVariable->SecondMembre;
+    Colonne = ContraintesDeBorneVariable->Colonne;
+    Coefficient = ContraintesDeBorneVariable->Coefficient;
+    for ( Cnt = 0 ; Cnt < NombreDeContraintesDeBorne ; Cnt++ ) {		
+      if ( First[Cnt] < 0 ) continue;	
+      il = First[Cnt];
+	    ilMax = il + 2;
+	    while ( il < ilMax ) {
+        if ( TypeDeBorne[Colonne[il]] == VARIABLE_BORNEE_SUPERIEUREMENT ) Coefficient[il] = -Coefficient[il];
+	    	il++;
 			}
-		}
-	}
-}
+		}		
+  }
+# endif
+
 /* 3- Changement de variable */
 for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
   if ( TypeDeBorne[Var] == VARIABLE_BORNEE_SUPERIEUREMENT ) TypeDeBorne[Var] = VARIABLE_BORNEE_INFERIEUREMENT;
@@ -602,29 +616,30 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++) {
 }
 
 /* Variables bound constraintes ajoutees dans le variable probing */
-if (Pne->pne_params->UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE && Pne->pne_params->PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE && Pne->pne_params->CONSTRUIRE_BORNES_VARIABLES == OUI_PNE) {
-	ContraintesDeBorneVariable = Pne->ContraintesDeBorneVariable;
-	if (ContraintesDeBorneVariable != NULL) {
-		NombreDeContraintesDeBorne = ContraintesDeBorneVariable->NombreDeContraintesDeBorne;
-		First = ContraintesDeBorneVariable->First;
-		SecondMembre = ContraintesDeBorneVariable->SecondMembre;
-		Colonne = ContraintesDeBorneVariable->Colonne;
-		Coefficient = ContraintesDeBorneVariable->Coefficient;
-		for (Cnt = 0; Cnt < NombreDeContraintesDeBorne; Cnt++) {
-			if (First[Cnt] < 0) continue;
-			S = 0.;
-			il = First[Cnt];
-			ilMax = il + 2;
-			while (il < ilMax) {
-				Var = Colonne[il];
-				if (TypeDeBorne[Var] == VARIABLE_BORNEE_DES_DEUX_COTES || TypeDeBorne[Var] == VARIABLE_BORNEE_INFERIEUREMENT) S += Coefficient[il] * XminEntre[Var];
-				il++;
+# if UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE && PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE && CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+  ContraintesDeBorneVariable = Pne->ContraintesDeBorneVariable;
+  if ( ContraintesDeBorneVariable != NULL ) {
+    NombreDeContraintesDeBorne = ContraintesDeBorneVariable->NombreDeContraintesDeBorne;
+    First = ContraintesDeBorneVariable->First;
+    SecondMembre = ContraintesDeBorneVariable->SecondMembre;
+    Colonne = ContraintesDeBorneVariable->Colonne;
+    Coefficient = ContraintesDeBorneVariable->Coefficient;
+    for ( Cnt = 0 ; Cnt < NombreDeContraintesDeBorne ; Cnt++ ) {		
+      if ( First[Cnt] < 0 ) continue;
+      S = 0.;			
+      il = First[Cnt];
+	    ilMax = il + 2;
+	    while ( il < ilMax ) {
+			  Var = Colonne[il];
+        if ( TypeDeBorne[Var] == VARIABLE_BORNEE_DES_DEUX_COTES || TypeDeBorne[Var] == VARIABLE_BORNEE_INFERIEUREMENT ) S += Coefficient[il] * XminEntre[Var];
+	    	il++;
 			}
-			SecondMembre[Cnt] -= S;
+		  SecondMembre[Cnt] -= S;
 		}
-	}
-}
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+  }
+# endif
+
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
   printf("Fixed cost is %e\n",Pne->Z0);
 	fflush( stdout );
 }

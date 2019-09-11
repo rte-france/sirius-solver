@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Calcul de A_BARRE_S = B-1 * AS
@@ -29,7 +38,7 @@ void SPX_CalculerABarreSAvecBaseReduite( PROBLEME_SPX * Spx, char * HyperCreuxIn
 																				 char * TypeDeSortie )
 {
 int il; int ilMax; char Save; char SecondMembreCreux; double * ABarreS; int * CdebProblemeReduit;
-int * CNbTermProblemeReduit; int * IndicesDeLigneDesTermesDuProblemeReduit; int i; int r;
+int * CNbTermProblemeReduit; int * IndicesDeLigneDesTermesDuProblemeReduit; int i; 
 double * ValeurDesTermesDesColonnesDuProblemeReduit; int NbTermesNonNuls; int * CntDeABarreSNonNuls;
 int RangDeLaMatriceFactorisee; 
 
@@ -47,7 +56,7 @@ RangDeLaMatriceFactorisee = Spx->RangDeLaMatriceFactorisee;
 *HyperCreuxInitial  = NON_SPX;
 if ( Spx->TypeDeCreuxDeLaBase == BASE_HYPER_CREUSE && Spx->CalculABarreSEnHyperCreux == OUI_SPX &&
      Spx->FaireDuRaffinementIteratif <= 0 ) {
-  if ( CNbTermProblemeReduit[Spx->VariableEntrante] < Spx->spx_params->TAUX_DE_REMPLISSAGE_POUR_VECTEUR_HYPER_CREUX * RangDeLaMatriceFactorisee ) {
+  if ( CNbTermProblemeReduit[Spx->VariableEntrante] < TAUX_DE_REMPLISSAGE_POUR_VECTEUR_HYPER_CREUX * RangDeLaMatriceFactorisee ) {
     *CalculEnHyperCreux = OUI_SPX;
     *HyperCreuxInitial  = OUI_SPX;		
   }
@@ -106,78 +115,77 @@ if ( Spx->UtiliserLaLuUpdate == NON_SPX ) {
 
 Spx->NbABarreSNonNuls = NbTermesNonNuls;
 
-// ne compile pas en l'etat, desactive par define avant api params
-/*if (Spx->spx_params->VERIFICATION_ABARRES == OUI_SPX) {
-	printf("---------------- CalculerABarreS  Spx->NombreDeChangementsDeBase %d -------------\n", Spx->NombreDeChangementsDeBase);
-	if (*TypeDEntree == VECTEUR_LU) printf("apres resolution TypeDEntree = VECTEUR_LU\n");
-	if (*TypeDEntree == COMPACT_LU) printf("apres resolution TypeDEntree = COMPACT_LU\n");
-	if (*TypeDeSortie == VECTEUR_LU) printf("apres resolution TypeDeSortie = VECTEUR_LU\n");
-	if (*TypeDeSortie == COMPACT_LU) printf("apres resolution TypeDeSortie = COMPACT_LU\n");
-	{
-		double * Buff; int i; int Var; int ic; int icMx; double * Sortie; char Arret;
-		int * VariableEnBaseDeLaContrainte; int rr;
-		VariableEnBaseDeLaContrainte = Spx->VariableEnBaseDeLaContrainte;
-		Buff = (double *)malloc(RangDeLaMatriceFactorisee * sizeof(double));
-		Sortie = (double *)malloc(RangDeLaMatriceFactorisee * sizeof(double));
-		for (r = 0; r < RangDeLaMatriceFactorisee; r++) Sortie[r] = 0;
-		if (*TypeDeSortie == COMPACT_LU) {
-			for (i = 0; i < NbTermesNonNuls; i++) {
-				Sortie[CntDeABarreSNonNuls[i]] = ABarreS[i];
-			}
-		}
-		else {
-			for (r = 0; r < RangDeLaMatriceFactorisee; r++) Sortie[r] = ABarreS[r];
-		}
-		for (r = 0; r < RangDeLaMatriceFactorisee; r++) Buff[r] = 0;
-		Var = Spx->VariableEntrante;
-		ic = Cdeb[Var];
-		icMx = ic + CNbTerm[Var];
-		while (ic < icMx) {
-			Cnt = NumeroDeContrainte[ic];
-			r = OrdreLigneDeLaBaseFactorisee[Cnt];
-			if (r < RangDeLaMatriceFactorisee) {
-				Buff[r] = ACol[ic];
-			}
-			ic++;
-		}
-
-		for (r = 0; r < RangDeLaMatriceFactorisee; r++) {
-			if (Sortie[r] == 0) continue;
-			Var = Spx->VariableEnBaseDeLaContrainte[Spx->ColonneDeLaBaseFactorisee[r]];
-			ic = Spx->Cdeb[Var];
-			icMx = ic + Spx->CNbTerm[Var];
-			while (ic < icMx) {
-				Cnt = NumeroDeContrainte[ic];
-				rr = OrdreLigneDeLaBaseFactorisee[Cnt];
-				if (rr < RangDeLaMatriceFactorisee) {
-					Buff[rr] -= ACol[ic] * Sortie[r];
-				}
-				ic++;
-			}
-		}
-		Arret = NON_SPX;
-		for (r = 0; r < RangDeLaMatriceFactorisee; r++) {
-			if (fabs(Buff[r]) > 1.e-7) {
-				printf("r = %d   ecart %e\n", r, Buff[r]);
-				Var = Spx->VariableEnBaseDeLaContrainte[Spx->ColonneDeLaBaseFactorisee[r]];
-				if (Spx->OrigineDeLaVariable[Var] != NATIVE) printf(" variable non native\n");
-				else printf(" variable native\n");
-				Arret = OUI_SPX;
-			}
-		}
-		if (Arret == OUI_SPX) {
-			printf("Verif ABarreS  not OK\n");
-			exit(0);
-		}
-		printf("Fin verif ABarreS  OK\n");
-		free(Buff);
-		free(Sortie);
-
+# if VERIFICATION_ABARRES == OUI_SPX
+printf("---------------- CalculerABarreS  Spx->NombreDeChangementsDeBase %d -------------\n",Spx->NombreDeChangementsDeBase);
+if ( *TypeDEntree == VECTEUR_LU ) printf("apres resolution TypeDEntree = VECTEUR_LU\n");
+if ( *TypeDEntree == COMPACT_LU ) printf("apres resolution TypeDEntree = COMPACT_LU\n");
+if ( *TypeDeSortie == VECTEUR_LU ) printf("apres resolution TypeDeSortie = VECTEUR_LU\n");
+if ( *TypeDeSortie == COMPACT_LU ) printf("apres resolution TypeDeSortie = COMPACT_LU\n");					
+{
+double * Buff; int i; int Var; int ic; int icMx; double * Sortie; char Arret;
+int * VariableEnBaseDeLaContrainte; int rr;
+VariableEnBaseDeLaContrainte = Spx->VariableEnBaseDeLaContrainte;
+Buff = (double *) malloc( RangDeLaMatriceFactorisee * sizeof( double ) );
+Sortie = (double *) malloc( RangDeLaMatriceFactorisee * sizeof( double ) );
+for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) Sortie[r]= 0;
+if ( *TypeDeSortie == COMPACT_LU ) {
+  for ( i = 0 ; i < NbTermesNonNuls ; i++ ) {
+	  Sortie[CntDeABarreSNonNuls[i]] = ABarreS[i];
 	}
+}
+else {
+  for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) Sortie[r] = ABarreS[r];	
+}
+for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) Buff[r]= 0;
+Var = Spx->VariableEntrante;
+ic = Cdeb[Var];
+icMx = ic + CNbTerm[Var];
+while ( ic < icMx ) {
+  Cnt = NumeroDeContrainte[ic];
+	r = OrdreLigneDeLaBaseFactorisee[Cnt];
+	if ( r < RangDeLaMatriceFactorisee ) {
+	  Buff[r] = ACol[ic];
+	}			
+  ic++;
+}
 
-	SPX_VerifierLesVecteursDeTravail(Spx);
+for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) {
+  if ( Sortie[r] == 0 ) continue;
+  Var = Spx->VariableEnBaseDeLaContrainte[Spx->ColonneDeLaBaseFactorisee[r]];
+	ic = Spx->Cdeb[Var];
+	icMx = ic + Spx->CNbTerm[Var];
+	while ( ic < icMx ) {
+    Cnt = NumeroDeContrainte[ic];
+	  rr = OrdreLigneDeLaBaseFactorisee[Cnt];
+	  if ( rr < RangDeLaMatriceFactorisee ) {	
+	    Buff[rr] -= ACol[ic] * Sortie[r];
+		}
+	  ic++;
+	}
+}
+Arret = NON_SPX;
+for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) {
+	if ( fabs( Buff[r] ) > 1.e-7 ) {
+	  printf("r = %d   ecart %e\n",r,Buff[r]);
+    Var = Spx->VariableEnBaseDeLaContrainte[Spx->ColonneDeLaBaseFactorisee[r]];
+		if ( Spx->OrigineDeLaVariable[Var] != NATIVE ) printf(" variable non native\n");
+		else printf(" variable native\n");		
+		Arret = OUI_SPX;
+	}
+}
+if ( Arret == OUI_SPX ) {
+ printf("Verif ABarreS  not OK\n");
+ exit(0);
+}
+printf("Fin verif ABarreS  OK\n");
+free( Buff );
+free( Sortie );
 
-}*/
+}
+
+SPX_VerifierLesVecteursDeTravail( Spx );
+
+# endif
 
 return;
 }

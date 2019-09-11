@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Lecture du jeu de donnees au format MPS
@@ -18,7 +27,7 @@
 # include "pne_fonctions.h"
 
 # include "mps_define.h"
-//# include "mps_global.h"
+# include "mps_global.h"
 
 int aHashCode = 31;
 int kHashCode = 0;
@@ -28,20 +37,12 @@ int kHashCode = 0;
 
 /*----------------------------------------------------------------------------*/
 
-void PNE_LireJeuDeDonneesMPS(PROBLEME_MPS * Mps, const char * nomFichier)
-{
-	PNE_LireJeuDeDonneesMPS_AvecNom(Mps, nomFichier);
+void PNE_LireJeuDeDonneesMPS() {
+	PNE_LireJeuDeDonneesMPS_AvecNom(&Mps, "A_JEU_DE_DONNEES");
 }
 
-
-void PNE_LireJeuDeDonneesMPS_AvecNom(PROBLEME_MPS * Mps , char const * file_name)
+void PNE_LireJeuDeDonneesMPS_AvecNom(PROBLEME_MPS * problemMps, const char * nomFichier)
 {
-	if (file_name != NULL) {
-		//printf("Lecture du fichier mps %s\n", file_name);
-	} else {
-		printf("Nom du fichier MPS mal renseigne : %s\n", file_name);
-		exit(-1);
-	}
 FILE * Flot; 
 int LgMax     ; int Count; int PositionDansLeFichier; int i         ; 
 int CntCourant; int Cnt  ; int ilk                  ; int NbChamps  ; 
@@ -62,17 +63,16 @@ char * ValeurLue               ; char * ValeurLueB                 ;
 char * ValeurLueC              ; char   TypeDeBorne[3]             ; 
 char * LabelDeLaBorneLue       ;
 
-
 /* SensOpt = 1 si minimisation et SensOpt = -1. si maximisation */
 SensOpt = 1.;
 
-Mps->CoeffHaschCodeContraintes = 6;
-Mps->SeuilHaschCodeContraintes = 8;
+problemMps->CoeffHaschCodeContraintes = 6;
+problemMps->SeuilHaschCodeContraintes = 8;
 
-Mps->CoeffHaschCodeVariables = 3;
-Mps->SeuilHaschCodeVariables = 8;
+problemMps->CoeffHaschCodeVariables = 3;
+problemMps->SeuilHaschCodeVariables = 8;
 
-Flot = fopen( file_name, "r" ); 
+Flot = fopen(nomFichier, "r" );
 if( Flot == NULL ) {
   printf("Erreur ouverture du fichier contenant le jeu de donnees \n");
   exit(0);
@@ -98,8 +98,8 @@ if ( LigneLue                == NULL || LabelDeLaContrainteLue      == NULL ||
   exit(0);
 }
 
-Mps->NbVar = -1;
-Mps->NbCnt = -1;
+problemMps->NbVar = -1;
+problemMps->NbCnt = -1;
 
 PlusLinfiniBis = 1.e+70 /*1.e+8*/; 
 
@@ -165,37 +165,32 @@ while ( 1 ) { /* Pour savoir combien de contraintes il faut allouer */
   Count++;
 }
 /* Allocations */
-Mps->Mdeb                = (int *) malloc( Count * sizeof( int ) );
-Mps->Mder                = (int *) malloc( Count * sizeof( int ) );
-Mps->NbTerm              = (int *) malloc( Count * sizeof( int ) );
-Mps->Rhs                   = (double *) malloc( Count * sizeof( double ) );
-Mps->SensDeLaContrainte  = (char *)   malloc( Count * sizeof( char   ) );
-Mps->BRange              = (double *) malloc( Count * sizeof( double ) );
-Mps->VariablesDualesDesContraintes = (double *) malloc( Count * sizeof( double ) );
-Mps->LabelDeLaContrainte = (char **)  malloc( Count * sizeof( void * ) );
-Mps->LabelDuSecondMembre = (char **)  malloc( Count * sizeof( void * ) );
-if ( Mps->Mdeb                == NULL || Mps->Mder   == NULL || 
-     Mps->NbTerm              == NULL || Mps->Rhs      == NULL ||
-     Mps->SensDeLaContrainte  == NULL || Mps->BRange == NULL ||
-		 Mps->VariablesDualesDesContraintes == NULL ||
-		 Mps->LabelDeLaContrainte == NULL           ||
-		 Mps->LabelDuSecondMembre == NULL ) {
+problemMps->Mdeb                = (int *) malloc( Count * sizeof( int ) );
+problemMps->Mder                = (int *) malloc( Count * sizeof( int ) );
+problemMps->NbTerm              = (int *) malloc( Count * sizeof( int ) );
+problemMps->Rhs                   = (double *) malloc( Count * sizeof( double ) );
+problemMps->SensDeLaContrainte  = (char *)   malloc( Count * sizeof( char   ) );
+problemMps->BRange              = (double *) malloc( Count * sizeof( double ) );
+problemMps->VariablesDualesDesContraintes = (double *) malloc( Count * sizeof( double ) );
+problemMps->LabelDeLaContrainte = (char **)  malloc( Count * sizeof( void * ) );
+problemMps->LabelDuSecondMembre = (char **)  malloc( Count * sizeof( void * ) );
+if ( problemMps->Mdeb                == NULL || problemMps->Mder   == NULL || 
+     problemMps->NbTerm              == NULL || problemMps->Rhs      == NULL ||
+     problemMps->SensDeLaContrainte  == NULL || problemMps->BRange == NULL ||
+		 problemMps->VariablesDualesDesContraintes == NULL ||
+		 problemMps->LabelDeLaContrainte == NULL           ||
+		 problemMps->LabelDuSecondMembre == NULL ) {
   printf("PNE memoire insuffisante dans le sous programme PNE_LireJeuDeDonneesMPS \n");
   exit(0);
 }
 
-for (int idxCount = 0; idxCount < Count; ++idxCount) {
-	Mps->LabelDeLaContrainte[idxCount] = NULL;
-	Mps->LabelDuSecondMembre[idxCount] = NULL;
-}
-
-Mps->NbCntRange = 0;
+problemMps->NbCntRange = 0;
 for ( i = 0; i < Count ; i++ ) {
-  Mps->Rhs[i]      = 0.0;
-	Mps->BRange[i] = 0.0;
+  problemMps->Rhs[i]      = 0.0;
+	problemMps->BRange[i] = 0.0;
 }
 
-Mps->LabelDeLObjectif = NULL;
+problemMps->LabelDeLObjectif = NULL;
 
 fseek( Flot , PositionDansLeFichier , SEEK_SET ); /* Repositionnement dans le fichier */
 while ( 1 ) {
@@ -207,42 +202,42 @@ while ( 1 ) {
   if ( NbChamps <= 0 ) continue;  
 
   if ( TypeDeContrainte[0] == 'N' )  {
-	  if ( Mps->LabelDeLObjectif == NULL ) {
+	  if ( problemMps->LabelDeLObjectif == NULL ) {
 	    /* Objectif */
-      Mps->LabelDeLObjectif = (char *) malloc( strlen( LabelDeLaContrainteLue ) + 1 );
-      strcpy( Mps->LabelDeLObjectif , LabelDeLaContrainteLue );
+      problemMps->LabelDeLObjectif = (char *) malloc( strlen( LabelDeLaContrainteLue ) + 1 );
+      strcpy( problemMps->LabelDeLObjectif , LabelDeLaContrainteLue );
       continue;
 		}
   }
 	
-  Mps->NbCnt++;
-  Mps->LabelDeLaContrainte[Mps->NbCnt] = (char *) malloc( strlen( LabelDeLaContrainteLue ) + 1 ); 
-  strcpy( Mps->LabelDeLaContrainte[Mps->NbCnt] , LabelDeLaContrainteLue );
-  /*printf("Contrainte lue : %s\n",Mps->LabelDeLaContrainte[Mps->NbCnt]);*/
-  Mps->Rhs[Mps->NbCnt] = 0.;
+  problemMps->NbCnt++;
+  problemMps->LabelDeLaContrainte[problemMps->NbCnt] = (char *) malloc( strlen( LabelDeLaContrainteLue ) + 1 ); 
+  strcpy( problemMps->LabelDeLaContrainte[problemMps->NbCnt] , LabelDeLaContrainteLue );
+  /*printf("Contrainte lue : %s\n",problemMps->LabelDeLaContrainte[problemMps->NbCnt]);*/
+  problemMps->Rhs[problemMps->NbCnt] = 0.;
   if ( TypeDeContrainte[0] == 'E' )  { /* Egalite */
-    Mps->SensDeLaContrainte[Mps->NbCnt] = '=';
+    problemMps->SensDeLaContrainte[problemMps->NbCnt] = '=';
     continue;
   }  
   if ( TypeDeContrainte[0] == 'L' )  { /* Inferieur ou egal */
-    Mps->SensDeLaContrainte[Mps->NbCnt] = '<';
+    problemMps->SensDeLaContrainte[problemMps->NbCnt] = '<';
     continue;
   }
   if ( TypeDeContrainte[0] == 'G' )  { /* Superieur ou egal */
-    Mps->SensDeLaContrainte[Mps->NbCnt] = '>';
+    problemMps->SensDeLaContrainte[problemMps->NbCnt] = '>';
     continue;
   }
   if ( TypeDeContrainte[0] == 'N' )  { /* Free */
-    Mps->SensDeLaContrainte[Mps->NbCnt] = 'N';
+    problemMps->SensDeLaContrainte[problemMps->NbCnt] = 'N';
     continue;
   }	
   printf(" Type de contrainte non reconnu: %s \n",TypeDeContrainte);
   exit(0);
 }
-Mps->NbCnt++; /* Important */
+problemMps->NbCnt++; /* Important */
 
 BaseCnt = 0;
-PNE_CreerHashCodeContrainteMPS( Mps/*&BaseCnt*/ );	    
+PNE_CreerHashCodeContrainteMPS( /*&BaseCnt*/ );	    
 
 /*     Lecture des colonnes   */
 /*
@@ -285,33 +280,33 @@ while ( 1 ) { /* Pour savoir combien de variables il faut allouer */
 }
 
 /* Allocations des tableaux */
-Mps->LabelDeLaVariable       = (char **)  malloc( CountVar * sizeof( void * ) );
-Mps->TypeDeVariable          = (int *)   malloc( CountVar * sizeof( int   ) );
-Mps->TypeDeBorneDeLaVariable = (int *)   malloc( CountVar * sizeof( int   ) );
-Mps->U                       = (double *) malloc( CountVar * sizeof( double ) );
-Mps->CoefsObjectif                       = (double *) malloc( CountVar * sizeof( double ) );
-Mps->Umin                    = (double *) malloc( CountVar * sizeof( double ) );
-Mps->Umax                    = (double *) malloc( CountVar * sizeof( double ) );
+problemMps->LabelDeLaVariable       = (char **)  malloc( CountVar * sizeof( void * ) );
+problemMps->TypeDeVariable          = (int *)   malloc( CountVar * sizeof( int   ) );
+problemMps->TypeDeBorneDeLaVariable = (int *)   malloc( CountVar * sizeof( int   ) );
+problemMps->U                       = (double *) malloc( CountVar * sizeof( double ) );
+problemMps->CoefsObjectif                       = (double *) malloc( CountVar * sizeof( double ) );
+problemMps->Umin                    = (double *) malloc( CountVar * sizeof( double ) );
+problemMps->Umax                    = (double *) malloc( CountVar * sizeof( double ) );
 
-Mps->A     = (double *) malloc( CountTrm * sizeof( double ) );
-Mps->Nuvar = (int *)   malloc( CountTrm * sizeof( int   ) );
-Mps->Msui  = (int *  ) malloc( CountTrm * sizeof( int   ) );
+problemMps->A     = (double *) malloc( CountTrm * sizeof( double ) );
+problemMps->Nuvar = (int *)   malloc( CountTrm * sizeof( int   ) );
+problemMps->Msui  = (int *  ) malloc( CountTrm * sizeof( int   ) );
 
-if ( Mps->LabelDeLaVariable    == NULL || Mps->TypeDeVariable == NULL || Mps->TypeDeBorneDeLaVariable == NULL || 
-     Mps->U                    == NULL || Mps->CoefsObjectif              == NULL || Mps->Umin                    == NULL ||
-     Mps->Umax                 == NULL || Mps->A              == NULL || Mps->Nuvar                   == NULL ||
-     Mps->Msui                 == NULL ) {
+if ( problemMps->LabelDeLaVariable    == NULL || problemMps->TypeDeVariable == NULL || problemMps->TypeDeBorneDeLaVariable == NULL || 
+     problemMps->U                    == NULL || problemMps->CoefsObjectif              == NULL || problemMps->Umin                    == NULL ||
+     problemMps->Umax                 == NULL || problemMps->A              == NULL || problemMps->Nuvar                   == NULL ||
+     problemMps->Msui                 == NULL ) {
   printf("PNE memoire insuffisante dans le sous programme PNE_LireJeuDeDonneesMPS \n");
   exit(0);
 }
 
-for ( i = 0 ; i < CountVar ; i++ ) Mps->CoefsObjectif[i] = 0.0;
+for ( i = 0 ; i < CountVar ; i++ ) problemMps->CoefsObjectif[i] = 0.0;
 
 /* Phase effective de lecture */
-memset( (char *) Mps->NbTerm , 0 , Mps->NbCnt * sizeof( int ) );
-for ( i = 0 ; i < Mps->NbCnt ; i++ ) { 
-  Mps->Mdeb[i] = -1; 
-  Mps->Mder[i] = -1; 
+memset( (char *) problemMps->NbTerm , 0 , problemMps->NbCnt * sizeof( int ) );
+for ( i = 0 ; i < problemMps->NbCnt ; i++ ) { 
+  problemMps->Mdeb[i] = -1; 
+  problemMps->Mder[i] = -1; 
 }
 
 CntCourant = 0;
@@ -352,50 +347,50 @@ while ( 1 ) {
   if ( NbChamps > 3 ) CoefficientMpsB = atof( ValeurLueB );
 
   if ( strcmp( LabelDeLaVariableLue , LabelDeLaVariablePrecedente ) != 0 ) { /* Nouvelle variable */
-    Mps->NbVar++;
-    Mps->LabelDeLaVariable[Mps->NbVar] = (char *) malloc( strlen( LabelDeLaVariableLue ) + 1 ); 
-    strcpy( Mps->LabelDeLaVariable[Mps->NbVar] , LabelDeLaVariableLue );
+    problemMps->NbVar++;
+    problemMps->LabelDeLaVariable[problemMps->NbVar] = (char *) malloc( strlen( LabelDeLaVariableLue ) + 1 ); 
+    strcpy( problemMps->LabelDeLaVariable[problemMps->NbVar] , LabelDeLaVariableLue );
 
-    Mps->CoefsObjectif[Mps->NbVar] = 0.; 
+    problemMps->CoefsObjectif[problemMps->NbVar] = 0.; 
 
-    Mps->Umin          [Mps->NbVar] = 0.;
-    Mps->Umax          [Mps->NbVar] = PlusLinfiniBis;
-    Mps->TypeDeVariable[Mps->NbVar] = REEL; 
+    problemMps->Umin          [problemMps->NbVar] = 0.;
+    problemMps->Umax          [problemMps->NbVar] = PlusLinfiniBis;
+    problemMps->TypeDeVariable[problemMps->NbVar] = REEL; 
 
-    Mps->TypeDeBorneDeLaVariable[Mps->NbVar] = VARIABLE_BORNEE_INFERIEUREMENT;					
+    problemMps->TypeDeBorneDeLaVariable[problemMps->NbVar] = VARIABLE_BORNEE_INFERIEUREMENT;					
 
     if ( VariablesBinairesEnCours == OUI_MPS ) {
-      Mps->Umin          [Mps->NbVar] = 0.;
-      Mps->Umax          [Mps->NbVar] = 1.;
-      Mps->TypeDeVariable[Mps->NbVar] = ENTIER;
+      problemMps->Umin          [problemMps->NbVar] = 0.;
+      problemMps->Umax          [problemMps->NbVar] = 1.;
+      problemMps->TypeDeVariable[problemMps->NbVar] = ENTIER;
     }  
   }
   strcpy( LabelDeLaVariablePrecedente , LabelDeLaVariableLue );
 
-  if( Mps->LabelDeLObjectif != NULL ) {
-    if ( strcmp( LabelDeLaContrainteLue , Mps->LabelDeLObjectif ) == 0 ) {
-      Mps->CoefsObjectif[Mps->NbVar] = CoefficientMps; 
+  if( problemMps->LabelDeLObjectif != NULL ) {
+    if ( strcmp( LabelDeLaContrainteLue , problemMps->LabelDeLObjectif ) == 0 ) {
+      problemMps->CoefsObjectif[problemMps->NbVar] = CoefficientMps; 
       if ( NbChamps <= 3 ) continue; /* Vers la fin du while */
       else goto DeuxiemeSerie;
     } 
   }
   /* Recherche de la contrainte */
-   PNE_RechercheDuNumeroDeContrainteMPS(Mps,/*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLue );
+   PNE_RechercheDuNumeroDeContrainteMPS( /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLue );
 
   /* Contrainte trouvee */
-  if ( Mps->Mdeb[Cnt] < 0 ) {
-    Mps->Mdeb[Cnt]    = il + 1;
-    Mps->Msui[il + 1] = -1;
-    Mps->Mder[Cnt]    = il + 1;
+  if ( problemMps->Mdeb[Cnt] < 0 ) {
+    problemMps->Mdeb[Cnt]    = il + 1;
+    problemMps->Msui[il + 1] = -1;
+    problemMps->Mder[Cnt]    = il + 1;
   }
-  Mps->NbTerm[Cnt]++;
+  problemMps->NbTerm[Cnt]++;
   il++;
-  ilk            = Mps->Mder[Cnt] ;
-  Mps->Msui [ilk] = il;
-  Mps->Msui [il]  = -1;
-  Mps->Mder [Cnt] = il;
-  Mps->A    [il]  = CoefficientMps;
-  Mps->Nuvar[il]  = Mps->NbVar;
+  ilk            = problemMps->Mder[Cnt] ;
+  problemMps->Msui [ilk] = il;
+  problemMps->Msui [il]  = -1;
+  problemMps->Mder [Cnt] = il;
+  problemMps->A    [il]  = CoefficientMps;
+  problemMps->Nuvar[il]  = problemMps->NbVar;
 
   CntCourant = Cnt;
 
@@ -404,45 +399,45 @@ while ( 1 ) {
 
   if ( NbChamps <= 3 ) continue; 
 
-  if( Mps->LabelDeLObjectif != NULL ) {
-    if ( strcmp( LabelDeLaContrainteLueB , Mps->LabelDeLObjectif ) == 0 ) {
-		  if ( Mps->CoefsObjectif[Mps->NbVar] != 0.0 ) {
-			  if ( Mps->CoefsObjectif[Mps->NbVar] != CoefficientMpsB ) {
+  if( problemMps->LabelDeLObjectif != NULL ) {
+    if ( strcmp( LabelDeLaContrainteLueB , problemMps->LabelDeLObjectif ) == 0 ) {
+		  if ( problemMps->CoefsObjectif[problemMps->NbVar] != 0.0 ) {
+			  if ( problemMps->CoefsObjectif[problemMps->NbVar] != CoefficientMpsB ) {
 				  printf("Erreur dans le fichier MPS: la variable %s est donnee avec plusieurs couts differents\n",LabelDeLaVariableLue);
 				  printf("                            seule la premiere valeur rencontree est utilisee\n");
 			  }
 			}		
-      if ( Mps->CoefsObjectif[Mps->NbVar] == 0.0 ) Mps->CoefsObjectif[Mps->NbVar] = CoefficientMpsB; 
+      if ( problemMps->CoefsObjectif[problemMps->NbVar] == 0.0 ) problemMps->CoefsObjectif[problemMps->NbVar] = CoefficientMpsB; 
       continue; /* Vers la fin du while */
     } 
   }
   
   /* Recherche de la 2eme contrainte qui se trouve sur la meme ligne */
-   PNE_RechercheDuNumeroDeContrainteMPS(Mps, /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLueB );
+   PNE_RechercheDuNumeroDeContrainteMPS( /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLueB );
   /* Contrainte trouvee */
-  if ( Mps->Mdeb[Cnt] < 0 ) {
-    Mps->Mdeb[Cnt]    = il + 1;
-    Mps->Msui[il + 1] = -1;
-    Mps->Mder[Cnt]    = il + 1;
+  if ( problemMps->Mdeb[Cnt] < 0 ) {
+    problemMps->Mdeb[Cnt]    = il + 1;
+    problemMps->Msui[il + 1] = -1;
+    problemMps->Mder[Cnt]    = il + 1;
   }
-  Mps->NbTerm[Cnt]++;
+  problemMps->NbTerm[Cnt]++;
   il++;
-  ilk            = Mps->Mder[Cnt] ;
-  Mps->Msui [ilk] = il;
-  Mps->Msui [il]  = -1;
-  Mps->Mder [Cnt] = il;
-  Mps->A    [il]  = CoefficientMpsB;
-  Mps->Nuvar[il]  = Mps->NbVar;
+  ilk            = problemMps->Mder[Cnt] ;
+  problemMps->Msui [ilk] = il;
+  problemMps->Msui [il]  = -1;
+  problemMps->Mder [Cnt] = il;
+  problemMps->A    [il]  = CoefficientMpsB;
+  problemMps->Nuvar[il]  = problemMps->NbVar;
 
   CntCourant = Cnt;
 
 }
-Mps->NbVar++; /* Important */
+problemMps->NbVar++; /* Important */
    
 BaseVar = 0;
-PNE_CreerHashCodeVariableMPS(Mps /*&BaseVar*/ );
+PNE_CreerHashCodeVariableMPS( /*&BaseVar*/ );
 /*
-printf("Fin de la lecture de COLUMNS, nombre de variables %d \n",Mps->NbVar); fflush(stdout);    
+printf("Fin de la lecture de COLUMNS, nombre de variables %d \n",problemMps->NbVar); fflush(stdout);    
 */
 /*           Lecture des valeurs de second membre            */
 /* The section is preceded by a card with RHS in columns 1-3 */
@@ -463,13 +458,13 @@ while ( 1 ) {
   CoefficientMps  = atof( ValeurLue );
   if ( NbChamps > 3 ) CoefficientMpsB = atof( ValeurLueB );
 
-  PNE_RechercheDuNumeroDeContrainteMPS(Mps, /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLue );
+  PNE_RechercheDuNumeroDeContrainteMPS( /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLue );	
 
   /* Contrainte trouvee */
   NbInit++;
-  Mps->LabelDuSecondMembre[Cnt] = (char *) malloc( strlen( LabelDuSecondMembreLu ) + 1 );
-  strcpy( Mps->LabelDuSecondMembre[Cnt] , LabelDuSecondMembreLu );
-  Mps->Rhs[Cnt] = CoefficientMps;
+  problemMps->LabelDuSecondMembre[Cnt] = (char *) malloc( strlen( LabelDuSecondMembreLu ) + 1 );
+  strcpy( problemMps->LabelDuSecondMembre[Cnt] , LabelDuSecondMembreLu );
+  problemMps->Rhs[Cnt] = CoefficientMps;
 
   CntCourant = Cnt;
 
@@ -478,13 +473,13 @@ while ( 1 ) {
 
   /* Recherche de la 2eme contrainte qui se trouve sur la meme ligne */
 
-    PNE_RechercheDuNumeroDeContrainteMPS(Mps, /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLueB );
+    PNE_RechercheDuNumeroDeContrainteMPS( /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLueB );
 
     /* Contrainte trouvee */
     NbInit++;
-    Mps->LabelDuSecondMembre[Cnt] = (char *) malloc( strlen( LabelDuSecondMembreLu ) + 1 );
-    strcpy( Mps->LabelDuSecondMembre[Cnt] , LabelDuSecondMembreLu ); /* A revoir a corriger car ca sert a rien */
-    Mps->Rhs[Cnt] = CoefficientMpsB;
+    problemMps->LabelDuSecondMembre[Cnt] = (char *) malloc( strlen( LabelDuSecondMembreLu ) + 1 );
+    strcpy( problemMps->LabelDuSecondMembre[Cnt] , LabelDuSecondMembreLu ); /* A revoir a corriger car ca sert a rien */
+    problemMps->Rhs[Cnt] = CoefficientMpsB;
 
     CntCourant = Cnt;
 
@@ -506,11 +501,11 @@ while ( 1 ) {
   CoefficientMps  = atof( ValeurLue );
   if ( NbChamps > 3 ) CoefficientMpsB = atof( ValeurLueB );
 
-  PNE_RechercheDuNumeroDeContrainteMPS(Mps, /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLue );
+  PNE_RechercheDuNumeroDeContrainteMPS( /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLue );	
 
   /* Contrainte trouvee */
-	Mps->NbCntRange+= 1;
-  Mps->BRange[Cnt] = CoefficientMps;
+	problemMps->NbCntRange+= 1;
+  problemMps->BRange[Cnt] = CoefficientMps;
 
   CntCourant = Cnt;
 
@@ -519,11 +514,11 @@ while ( 1 ) {
 
   /* Recherche de la 2eme contrainte qui se trouve sur la meme ligne */
 
-    PNE_RechercheDuNumeroDeContrainteMPS(Mps, /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLueB );
+    PNE_RechercheDuNumeroDeContrainteMPS( /*CntCourant, BaseCnt,*/ &Cnt, LabelDeLaContrainteLueB );
 
     /* Contrainte trouvee */
-		Mps->NbCntRange+= 1;
-    Mps->BRange[Cnt] = CoefficientMpsB;
+		problemMps->NbCntRange+= 1;
+    problemMps->BRange[Cnt] = CoefficientMpsB;
 
     CntCourant = Cnt;
 
@@ -570,105 +565,105 @@ while ( 1 ) {
   CoefficientMps  = atof( ValeurLue );
   /*CoefficientMpsB = atof( ValeurLueB );*/
 
-  PNE_RechercheDuNumeroDeVariableMPS(Mps, /*VarCourant, BaseVar,*/ &i, LabelDeLaVariableLue );
+  PNE_RechercheDuNumeroDeVariableMPS( /*VarCourant, BaseVar,*/ &i, LabelDeLaVariableLue );
 	
 	if ( i < 0 ) {
     /* Creation d'une variable avec un cout nul */
-		i = Mps->NbVar;
+		i = problemMps->NbVar;
 		printf("Creation de la variable num %d\n",i);
-		Mps->NbVar++;
-    Mps->LabelDeLaVariable       = (char **)  realloc( Mps->LabelDeLaVariable      , Mps->NbVar * sizeof( void * ) );
-    Mps->TypeDeVariable          = (int *)    realloc( Mps->TypeDeVariable         , Mps->NbVar * sizeof( int    ) );
-    Mps->TypeDeBorneDeLaVariable = (int *)    realloc( Mps->TypeDeBorneDeLaVariable, Mps->NbVar * sizeof( int    ) );
-    Mps->U                       = (double *) realloc( Mps->U                      , Mps->NbVar * sizeof( double ) );
-    Mps->CoefsObjectif                       = (double *) realloc( Mps->CoefsObjectif                      , Mps->NbVar * sizeof( double ) );
-    Mps->Umin                    = (double *) realloc( Mps->Umin                   , Mps->NbVar * sizeof( double ) );
-    Mps->Umax                    = (double *) realloc( Mps->Umax                   , Mps->NbVar * sizeof( double ) );
-    if ( Mps->LabelDeLaVariable    == NULL || Mps->TypeDeVariable == NULL || Mps->TypeDeBorneDeLaVariable == NULL || 
-         Mps->U                    == NULL || Mps->CoefsObjectif              == NULL || Mps->Umin                    == NULL ||
-         Mps->Umax                 == NULL ) {
+		problemMps->NbVar++;
+    problemMps->LabelDeLaVariable       = (char **)  realloc( problemMps->LabelDeLaVariable      , problemMps->NbVar * sizeof( void * ) );
+    problemMps->TypeDeVariable          = (int *)    realloc( problemMps->TypeDeVariable         , problemMps->NbVar * sizeof( int    ) );
+    problemMps->TypeDeBorneDeLaVariable = (int *)    realloc( problemMps->TypeDeBorneDeLaVariable, problemMps->NbVar * sizeof( int    ) );
+    problemMps->U                       = (double *) realloc( problemMps->U                      , problemMps->NbVar * sizeof( double ) );
+    problemMps->CoefsObjectif                       = (double *) realloc( problemMps->CoefsObjectif                      , problemMps->NbVar * sizeof( double ) );
+    problemMps->Umin                    = (double *) realloc( problemMps->Umin                   , problemMps->NbVar * sizeof( double ) );
+    problemMps->Umax                    = (double *) realloc( problemMps->Umax                   , problemMps->NbVar * sizeof( double ) );
+    if ( problemMps->LabelDeLaVariable    == NULL || problemMps->TypeDeVariable == NULL || problemMps->TypeDeBorneDeLaVariable == NULL || 
+         problemMps->U                    == NULL || problemMps->CoefsObjectif              == NULL || problemMps->Umin                    == NULL ||
+         problemMps->Umax                 == NULL ) {
       printf("PNE memoire insuffisante dans le sous programme PNE_LireJeuDeDonneesMPS \n");
       exit(0);
     }
 
-    Mps->LabelDeLaVariable[i] = (char *) malloc( strlen( LabelDeLaVariableLue ) + 1 ); 
-    strcpy( Mps->LabelDeLaVariable[i] , LabelDeLaVariableLue );
+    problemMps->LabelDeLaVariable[i] = (char *) malloc( strlen( LabelDeLaVariableLue ) + 1 ); 
+    strcpy( problemMps->LabelDeLaVariable[i] , LabelDeLaVariableLue );
 
-    Mps->CoefsObjectif[i] = 0.; 
+    problemMps->CoefsObjectif[i] = 0.; 
     /* Initialisations par defaut */
-    Mps->Umin          [i] = 0.;
-    Mps->Umax          [i] = PlusLinfiniBis;
-    Mps->TypeDeVariable[i] = REEL; 
-    Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_INFERIEUREMENT;					 
+    problemMps->Umin          [i] = 0.;
+    problemMps->Umax          [i] = PlusLinfiniBis;
+    problemMps->TypeDeVariable[i] = REEL; 
+    problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_INFERIEUREMENT;					 
     /* Pas de hashcode pour la variable */
 		
 	}
 	
   if ( strcmp( TypeDeBorne , "LO" ) == 0 ) {
     /* Borne inferieure */
-    Mps->Umin[i] = CoefficientMps;
+    problemMps->Umin[i] = CoefficientMps;
 
-    if ( Mps->Umin[i] > Mps->Umax[i] ) { printf("Erreur de donnees \n"); exit(0); }
+    if ( problemMps->Umin[i] > problemMps->Umax[i] ) { printf("Erreur de donnees \n"); exit(0); }
 
-    if ( Mps->TypeDeVariable[i] != ENTIER ) {	/* Si le type n'est pas deja defini par INTORG */
-      Mps->TypeDeVariable[i] = REEL;
+    if ( problemMps->TypeDeVariable[i] != ENTIER ) {	/* Si le type n'est pas deja defini par INTORG */
+      problemMps->TypeDeVariable[i] = REEL;
     }
-    if ( Mps->TypeDeBorneDeLaVariable[i] == NON_DEFINI ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_INFERIEUREMENT;
+    if ( problemMps->TypeDeBorneDeLaVariable[i] == NON_DEFINI ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_INFERIEUREMENT;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_NON_BORNEE ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_INFERIEUREMENT;
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_NON_BORNEE ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_INFERIEUREMENT;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {
       /* C'est une redefinition de la borne */
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_DES_DEUX_COTES ) {
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_DES_DEUX_COTES ) {
       /* C'est une redefinition de la borne */
     }
     else {
       printf("Lecture des donnees, impossible d'affecter un type de borne a la variable %d TypeDeBorne %s Type existant %d\n"
-             ,i,TypeDeBorne,Mps->TypeDeBorneDeLaVariable[i]);
+             ,i,TypeDeBorne,problemMps->TypeDeBorneDeLaVariable[i]);
       exit(0);
     }
     continue;  
   }
   if ( strcmp( TypeDeBorne , "UP" ) == 0 ) {        
-    Mps->Umax[i] = CoefficientMps;
-    if ( Mps->TypeDeVariable[i] != ENTIER ) { /* Si le type n'est pas deja defini par INTORG */
-      Mps->TypeDeVariable[i] = REEL;
+    problemMps->Umax[i] = CoefficientMps;
+    if ( problemMps->TypeDeVariable[i] != ENTIER ) { /* Si le type n'est pas deja defini par INTORG */
+      problemMps->TypeDeVariable[i] = REEL;
     }
-    if ( Mps->TypeDeBorneDeLaVariable[i] == NON_DEFINI ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_SUPERIEUREMENT;
+    if ( problemMps->TypeDeBorneDeLaVariable[i] == NON_DEFINI ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_SUPERIEUREMENT;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_NON_BORNEE ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_SUPERIEUREMENT;
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_NON_BORNEE ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_SUPERIEUREMENT;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
       /* C'est une redefinition de la borne */
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_DES_DEUX_COTES ) {
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_DES_DEUX_COTES ) {
       /* C'est une redefinition de la borne */
     }   
     else {    
       printf("Lecture des donnees, impossible d'affecter un type de borne a la variable %d TypeDeBorne %s TypeCourant %d\n",
-              i,TypeDeBorne,Mps->TypeDeBorneDeLaVariable[i]);
+              i,TypeDeBorne,problemMps->TypeDeBorneDeLaVariable[i]);
       exit(0);    
     }
     continue;  
   }
   if ( strcmp( TypeDeBorne , "MI" ) == 0 ) {
-    if ( Mps->TypeDeVariable[i] != ENTIER ) { /* Si le type n'est pas deja defini par INTORG */
-      Mps->Umin                   [i] = -PlusLinfiniBis;
-      Mps->Umax                   [i] = 0.;
-      Mps->U                      [i] = 0.;
-      Mps->TypeDeVariable         [i] = REEL;
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_SUPERIEUREMENT;	
+    if ( problemMps->TypeDeVariable[i] != ENTIER ) { /* Si le type n'est pas deja defini par INTORG */
+      problemMps->Umin                   [i] = -PlusLinfiniBis;
+      problemMps->Umax                   [i] = 0.;
+      problemMps->U                      [i] = 0.;
+      problemMps->TypeDeVariable         [i] = REEL;
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_SUPERIEUREMENT;	
       continue;  
     }
     else { 
@@ -677,25 +672,25 @@ while ( 1 ) {
     }
   }
   if ( strcmp( TypeDeBorne , "FR" ) == 0 ) {
-    Mps->Umin                   [i] = -PlusLinfiniBis;
-    Mps->Umax                   [i] =  PlusLinfiniBis;
-    Mps->TypeDeVariable         [i] = REEL;
-    Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_NON_BORNEE;
+    problemMps->Umin                   [i] = -PlusLinfiniBis;
+    problemMps->Umax                   [i] =  PlusLinfiniBis;
+    problemMps->TypeDeVariable         [i] = REEL;
+    problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_NON_BORNEE;
     continue;  
   }
   if ( strcmp( TypeDeBorne , "LI" ) == 0 ) {
-    Mps->Umin          [i] = CoefficientMps;
-    Mps->TypeDeVariable[i] = ENTIER;  
-    if ( Mps->TypeDeBorneDeLaVariable[i] == NON_DEFINI ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_INFERIEUREMENT;
+    problemMps->Umin          [i] = CoefficientMps;
+    problemMps->TypeDeVariable[i] = ENTIER;  
+    if ( problemMps->TypeDeBorneDeLaVariable[i] == NON_DEFINI ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_INFERIEUREMENT;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_NON_BORNEE ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_INFERIEUREMENT;
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_NON_BORNEE ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_INFERIEUREMENT;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {
       /* C'est une redefinition de la borne */
     }
     else {
@@ -705,18 +700,18 @@ while ( 1 ) {
     continue;  
   }
   if ( strcmp( TypeDeBorne , "UI" ) == 0 ) {
-    Mps->Umax          [i] = CoefficientMps;
-    Mps->TypeDeVariable[i] = ENTIER;
-    if ( Mps->TypeDeBorneDeLaVariable[i] == NON_DEFINI ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_SUPERIEUREMENT;
+    problemMps->Umax          [i] = CoefficientMps;
+    problemMps->TypeDeVariable[i] = ENTIER;
+    if ( problemMps->TypeDeBorneDeLaVariable[i] == NON_DEFINI ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_SUPERIEUREMENT;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_NON_BORNEE ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_SUPERIEUREMENT;
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_NON_BORNEE ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_SUPERIEUREMENT;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
     }
-    else if ( Mps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
+    else if ( problemMps->TypeDeBorneDeLaVariable[i] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
       /* C'est une redefinition de la borne */
     }
     else {
@@ -726,25 +721,25 @@ while ( 1 ) {
     continue;  
   }
   if ( strcmp( TypeDeBorne , "BV" ) == 0 ) {	
-    Mps->Umin                   [i] = 0.;    	     
-    Mps->Umax                   [i] = 1.;
-    Mps->TypeDeVariable         [i] = ENTIER;  
-    Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;	
+    problemMps->Umin                   [i] = 0.;    	     
+    problemMps->Umax                   [i] = 1.;
+    problemMps->TypeDeVariable         [i] = ENTIER;  
+    problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;	
     continue;  
   }
   if ( strcmp( TypeDeBorne , "SC" ) == 0 ) {
-    Mps->Umin                   [i] = 0.;
-    Mps->Umax                   [i] = 1.;
-    Mps->TypeDeVariable         [i] = ENTIER;
-    Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;	
+    problemMps->Umin                   [i] = 0.;
+    problemMps->Umax                   [i] = 1.;
+    problemMps->TypeDeVariable         [i] = ENTIER;
+    problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;	
     continue;  
   }
   if ( strcmp( TypeDeBorne , "FX" ) == 0 ) {
-    Mps->Umin                   [i] = CoefficientMps;
-    Mps->Umax                   [i] = CoefficientMps;
-    Mps->U                      [i] = CoefficientMps;
-    Mps->TypeDeVariable         [i] = REEL;
-    Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_FIXE;		
+    problemMps->Umin                   [i] = CoefficientMps;
+    problemMps->Umax                   [i] = CoefficientMps;
+    problemMps->U                      [i] = CoefficientMps;
+    problemMps->TypeDeVariable         [i] = REEL;
+    problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_FIXE;		
     continue;  
   }
   if ( strcmp( TypeDeBorne , "PL" ) == 0 ) {
@@ -761,28 +756,28 @@ printf("Fin de lecture de BOUNDS \n"); fflush(stdout);
 
 FinLecture:
 
-for ( i = 0 ; i < Mps->NbVar ; i++ ) {
-  if ( Mps->TypeDeVariable[i] == ENTIER ) {
-    if ( fabs( Mps->Umax[i] - Mps->Umin[i] ) < PlusLinfiniBis ) {
-      Mps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;					      
+for ( i = 0 ; i < problemMps->NbVar ; i++ ) {
+  if ( problemMps->TypeDeVariable[i] == ENTIER ) {
+    if ( fabs( problemMps->Umax[i] - problemMps->Umin[i] ) < PlusLinfiniBis ) {
+      problemMps->TypeDeBorneDeLaVariable[i] = VARIABLE_BORNEE_DES_DEUX_COTES;					      
     }  
   }
 }
 
 /* On enleve les contraintes de type Free */
 /* Algorithme naif ou l'on espere qu'il n'y a pas beaucoup de contraintes Free */
-for ( i = 0 ; i < Mps->NbCnt ; i++ ) {
-  if ( Mps->SensDeLaContrainte[i] == 'N' ) {
+for ( i = 0 ; i < problemMps->NbCnt ; i++ ) {
+  if ( problemMps->SensDeLaContrainte[i] == 'N' ) {
     /* Contrainte libre: on peut suprimer */
-    for ( j = i ; j < Mps->NbCnt-1 ; j++ ) {		  
-      Mps->Mdeb[j] = Mps->Mdeb[j+1];
-      Mps->NbTerm[j] = Mps->NbTerm[j+1];
-			Mps->SensDeLaContrainte[j] = Mps->SensDeLaContrainte[j+1];
-			Mps->Rhs[j] = Mps->Rhs[j+1];
-			Mps->BRange[j] = Mps->BRange[j+1];
-			Mps->LabelDeLaContrainte[j] = Mps->LabelDeLaContrainte[j+1];
+    for ( j = i ; j < problemMps->NbCnt-1 ; j++ ) {		  
+      problemMps->Mdeb[j] = problemMps->Mdeb[j+1];
+      problemMps->NbTerm[j] = problemMps->NbTerm[j+1];
+			problemMps->SensDeLaContrainte[j] = problemMps->SensDeLaContrainte[j+1];
+			problemMps->Rhs[j] = problemMps->Rhs[j+1];
+			problemMps->BRange[j] = problemMps->BRange[j+1];
+			problemMps->LabelDeLaContrainte[j] = problemMps->LabelDeLaContrainte[j+1];
 		}
-		Mps->NbCnt--;
+		problemMps->NbCnt--;
 		i--;
 	}
 }
@@ -792,50 +787,50 @@ for ( i = 0 ; i < Mps->NbCnt ; i++ ) {
 
 A      = (double *) malloc( CountTrm   * sizeof( double ) );
 Nuvar  = (int *)   malloc( CountTrm   * sizeof( int   ) );
-Mdeb   = (int *)   malloc( Mps->NbCnt  * sizeof( int   ) );
-NbTerm = (int *)   malloc( Mps->NbCnt  * sizeof( int   ) );
+Mdeb   = (int *)   malloc( problemMps->NbCnt  * sizeof( int   ) );
+NbTerm = (int *)   malloc( problemMps->NbCnt  * sizeof( int   ) );
 if ( A == NULL || Nuvar == NULL || Mdeb == NULL || NbTerm == NULL ) {
   printf("PNE memoire insuffisante dans le sous programme PNE_LireJeuDeDonneesMPS \n");
   exit(0);
 }
 
 il = -1;
-for ( i = 0 ; i < Mps->NbCnt ; i++ ) {
+for ( i = 0 ; i < problemMps->NbCnt ; i++ ) {
   Mdeb  [i] = il + 1;
-  NbTerm[i] = Mps->NbTerm[i];
-  ilMps     = Mps->Mdeb[i];
+  NbTerm[i] = problemMps->NbTerm[i];
+  ilMps     = problemMps->Mdeb[i];
   while ( ilMps >= 0 ) {
-    il++;		
-    A    [il] = Mps->A    [ilMps];		
-    Nuvar[il] = Mps->Nuvar[ilMps];				
-    ilMps = Mps->Msui[ilMps];
+    il++;
+    A    [il] = problemMps->A    [ilMps];
+    Nuvar[il] = problemMps->Nuvar[ilMps];   
+    ilMps = problemMps->Msui[ilMps];
   }
 }
 
-memcpy( (char *) Mps->A      , (char *) A      , CountTrm   * sizeof( double ) );
-memcpy( (char *) Mps->Nuvar  , (char *) Nuvar  , CountTrm   * sizeof( int   ) );
-memcpy( (char *) Mps->Mdeb   , (char *) Mdeb   , Mps->NbCnt  * sizeof( int   ) );
-memcpy( (char *) Mps->NbTerm , (char *) NbTerm , Mps->NbCnt  * sizeof( int   ) );
+memcpy( (char *) problemMps->A      , (char *) A      , CountTrm   * sizeof( double ) );
+memcpy( (char *) problemMps->Nuvar  , (char *) Nuvar  , CountTrm   * sizeof( int   ) );
+memcpy( (char *) problemMps->Mdeb   , (char *) Mdeb   , problemMps->NbCnt  * sizeof( int   ) );
+memcpy( (char *) problemMps->NbTerm , (char *) NbTerm , problemMps->NbCnt  * sizeof( int   ) );
 
 free( A ); free( Nuvar ) ; free( Mdeb ) ; free( NbTerm );
 
 /* Classement des variables dans les contraintes */
-PNE_ClasserVariablesDansContraintesMPS(Mps);
+PNE_ClasserVariablesDansContraintesMPS();
 
 /* Ajustement des couts pour tenir compte du sens de l'optimisation */
 
-if (SensOpt == 1.0);// printf("Minimization\n");
-else if (SensOpt == -1.0);// printf("Maximization\n");
+if ( SensOpt == 1.0 ) printf("Minimization\n");
+else if ( SensOpt == -1.0 ) printf("Maximization\n");
 else {
   printf("Sens de l'optimisation Minimisation ou Maximisation non defini\n");
 	exit(0);
 }
 
-for ( i = 0 ; i < Mps->NbVar ; i++ ) {
-  Mps->CoefsObjectif[i] *= SensOpt;
+for ( i = 0 ; i < problemMps->NbVar ; i++ ) {
+  problemMps->CoefsObjectif[i] *= SensOpt;
 }
 
-//printf("Reading MPS file -> rows: %d   columns: %d \n",Mps->NbCnt,Mps->NbVar);
+printf("Reading MPS file -> rows: %d   columns: %d \n",problemMps->NbCnt,problemMps->NbVar);
 
 free( LigneLue );
 free( LabelDeLaContrainteLue );	  
@@ -851,14 +846,14 @@ free( ValeurLueC );
 /* On libere le flot et le buffer */
 fclose( Flot );
 
-free( Mps->FirstNomCnt );
-free( Mps->NomCntSuivant );
-free( Mps->FirstNomVar );
-free( Mps->NomVarSuivant );
+free( problemMps->FirstNomCnt );
+free( problemMps->NomCntSuivant );
+free( problemMps->FirstNomVar );
+free( problemMps->NomVarSuivant );
 
-if ( Mps->NbCntRange > 0 ) {
-  printf("  Nombre de Ranges %d  !!!!!\n",Mps->NbCntRange);
-  PNE_PrendreEnCompteLesContraintesRangeMPS(Mps);
+if ( problemMps->NbCntRange > 0 ) {
+  printf("  Nombre de Ranges %d  !!!!!\n",problemMps->NbCntRange);
+  PNE_PrendreEnCompteLesContraintesRangeMPS();
 }
 
 return;	  
@@ -871,7 +866,7 @@ return;
       de leur numero 
 */
 
-void PNE_ClasserVariablesDansContraintesMPS(PROBLEME_MPS * Mps)
+void PNE_ClasserVariablesDansContraintesMPS()
 {
 int i ; int j; int iX; int Prem; int PremSv; int Lp; int Lz;
 
@@ -880,19 +875,19 @@ double * TabSv; int * Suiv;
 /* Inutile car c'est fait dans PNE Solveur */
 return;
 
-TabSv  = (double *)   malloc( Mps->NbVar * sizeof( double  ) );
-Suiv   = (int *)     malloc( Mps->NbVar * sizeof( int   ) );
+TabSv  = (double *)   malloc( Mps.NbVar * sizeof( double  ) );
+Suiv   = (int *)     malloc( Mps.NbVar * sizeof( int   ) );
 if ( TabSv == NULL || Suiv == NULL ) {
   printf("PNE memoire insuffisante dans le sous programme PNE_LireJeuDeDonneesMPS \n");
   exit(0);
 }
 
-for ( j = 0 ; j < Mps->NbCnt ; j++ ) {
+for ( j = 0 ; j < Mps.NbCnt ; j++ ) {
 
   Prem = -1;
-  for ( i = Mps->Mdeb[j] ; i <= Mps->Mdeb[j] + Mps->NbTerm[j] - 1 ; i++ ) {
-    iX        = Mps->Nuvar[i];
-    TabSv[iX] = Mps->A[i];
+  for ( i = Mps.Mdeb[j] ; i <= Mps.Mdeb[j] + Mps.NbTerm[j] - 1 ; i++ ) {
+    iX        = Mps.Nuvar[i];
+    TabSv[iX] = Mps.A[i];
     Lp = -1;
     Lz = Prem;
     while ( 1 ) {
@@ -915,11 +910,11 @@ for ( j = 0 ; j < Mps->NbCnt ; j++ ) {
   }
 
   /* Reclassement dans l ordre */
-  i  = Mps->Mdeb[j];
+  i  = Mps.Mdeb[j];
   Lz = Prem;
   while ( Lz >= 0 ) {
-    Mps->Nuvar[i] = Lz;
-    Mps->A    [i] = TabSv[Lz];
+    Mps.Nuvar[i] = Lz;
+    Mps.A    [i] = TabSv[Lz];
     i++;
     Lz = Suiv[Lz];
   }
@@ -934,7 +929,7 @@ return;
 
 /*----------------------------------------------------------------------------------------*/
 
-void PNE_RechercheDuNumeroDeContrainteMPS(PROBLEME_MPS * Mps,/*int   CntCourant,*/
+void PNE_RechercheDuNumeroDeContrainteMPS( /*int   CntCourant,*/
                                            /*int   BaseCnt,*/ 
                                            int * CntTrouv,
                                            char * LabelDeLaContrainteLue )
@@ -946,15 +941,15 @@ int Cnt; char * pt1; int k;
 pt1 = LabelDeLaContrainteLue;
 
 /* Hashcode du Nom */
-k = PNE_HashCode(pt1 , Mps->NentreesCnt );
+k = PNE_HashCode( pt1 , Mps.NentreesCnt );
 
-Cnt = Mps->FirstNomCnt[k];
+Cnt = Mps.FirstNomCnt[k];
 while ( Cnt >= 0 ) {
-  if ( strcmp( Mps->LabelDeLaContrainte[Cnt] , LabelDeLaContrainteLue ) == 0 ) {
+  if ( strcmp( Mps.LabelDeLaContrainte[Cnt] , LabelDeLaContrainteLue ) == 0 ) {
     *CntTrouv = Cnt;
     return;
   }
-  Cnt = Mps->NomCntSuivant[Cnt];
+  Cnt = Mps.NomCntSuivant[Cnt];
 }
 
 printf(" Contrainte inconnue -%s- HashCode %d \n",LabelDeLaContrainteLue,k);
@@ -965,7 +960,7 @@ return;
 
 /*----------------------------------------------------------------------------------------*/
 
-void PNE_RechercheDuNumeroDeVariableMPS(PROBLEME_MPS * Mps,  /*int   VarCourant,
+void PNE_RechercheDuNumeroDeVariableMPS( /*int   VarCourant, 
                                          int   BaseVar,*/ 
                                          int * VarTrouv,
                                          char * LabelDeLaVariableLue )
@@ -977,15 +972,15 @@ int Var; char * pt1; int k;
 pt1 = LabelDeLaVariableLue;
 
 /* Hashcode du Nom */
-k = PNE_HashCode(pt1 , Mps->NentreesVar );  
+k = PNE_HashCode( pt1 , Mps.NentreesVar );  
 
-Var = Mps->FirstNomVar[k];
+Var = Mps.FirstNomVar[k];
 while ( Var >= 0 ) {
-  if ( strcmp( Mps->LabelDeLaVariable[Var] , LabelDeLaVariableLue ) == 0 ) {
+  if ( strcmp( Mps.LabelDeLaVariable[Var] , LabelDeLaVariableLue ) == 0 ) {
     *VarTrouv = Var;
     return;
   }
-  Var = Mps->NomVarSuivant[Var];
+  Var = Mps.NomVarSuivant[Var];
 }
 
  printf(" Variable inconnue %s , on la cree avec un cout nul\n",LabelDeLaVariableLue);
@@ -996,90 +991,86 @@ return;
 
 /*----------------------------------------------------------------------------------------*/
 
-void PNE_CreerHashCodeContrainteMPS(PROBLEME_MPS * Mps/*int * BaseCnt*/ )
+void PNE_CreerHashCodeContrainteMPS( /*int * BaseCnt*/ )
 {
 int Cnt; int Prem; char * pt1; int k; 
 
-//ERD FIXME comment gerer celui la ?
-//if (Pne->pne_params->VERBOSE_PNE) {
-//	printf("Debut creation haschcode cnt\n"); fflush(stdout);
-//}
+#if VERBOSE_PNE
+  printf("Debut creation haschcode cnt\n"); fflush(stdout);
+#endif
 
-Mps->NentreesCnt = (int) pow( 2 , 20 );
+Mps.NentreesCnt = (int) pow( 2 , 20 );
  
-Mps->FirstNomCnt   = (int *) malloc( Mps->NentreesCnt * sizeof( int ) );
-Mps->NomCntSuivant = (int *) malloc( Mps->NbCnt       * sizeof( int ) );
-if ( Mps->FirstNomCnt == NULL || Mps->NomCntSuivant == NULL ) {
+Mps.FirstNomCnt   = (int *) malloc( Mps.NentreesCnt * sizeof( int ) );
+Mps.NomCntSuivant = (int *) malloc( Mps.NbCnt       * sizeof( int ) );
+if ( Mps.FirstNomCnt == NULL || Mps.NomCntSuivant == NULL ) {
   printf("PNE memoire insuffisante dans le sous programme PNE_CreerHashCodeContrainteMPS \n");
   exit(0);
 }
    
-for ( k = 0 ; k < Mps->NentreesCnt ; k++ ) Mps->FirstNomCnt[k] = -1;
+for ( k = 0 ; k < Mps.NentreesCnt ; k++ ) Mps.FirstNomCnt[k] = -1;
 
-for ( Cnt = 0 ; Cnt < Mps->NbCnt ; Cnt++ ) {
-  pt1 = Mps->LabelDeLaContrainte[Cnt];
+for ( Cnt = 0 ; Cnt < Mps.NbCnt ; Cnt++ ) {
+  pt1 = Mps.LabelDeLaContrainte[Cnt];
   /* Hashcode du Nom */
-  k = PNE_HashCode(pt1 , Mps->NentreesCnt );
+  k = PNE_HashCode( pt1 , Mps.NentreesCnt );
 
-  Prem = Mps->FirstNomCnt[k];
-  Mps->FirstNomCnt  [k] = Cnt;
-  Mps->NomCntSuivant[Cnt] = Prem;
+  Prem = Mps.FirstNomCnt[k];
+  Mps.FirstNomCnt  [k] = Cnt;
+  Mps.NomCntSuivant[Cnt] = Prem;
 }
 
-//ERD FIXME comment gerer celui la ?
-//if (Pne->pne_params->VERBOSE_PNE) {
-//	printf("Fin creation haschcode cnt\n"); fflush(stdout);
-//}
+#if VERBOSE_PNE
+  printf("Fin creation haschcode cnt\n"); fflush(stdout);	   
+#endif
 
 return;
 }
 
 /*----------------------------------------------------------------------------------------*/
 
-void PNE_CreerHashCodeVariableMPS(PROBLEME_MPS * Mps /*int * BaseVar*/ )
+void PNE_CreerHashCodeVariableMPS( /*int * BaseVar*/ )
 {
 int Var; int Prem; char * pt1; int k; 
 
-//ERD FIXME comment gerer celui la ?
-//if (Pne->pne_params->VERBOSE_PNE) {
-//	printf("Debut creation haschcode var\n"); fflush(stdout);
-//}
+#if VERBOSE_PNE
+  printf("Debut creation haschcode var\n"); fflush(stdout);
+#endif
 
 /*
-Mps->NentreesVar = (int) ( 5 * Mps->NbVar ) + 1;
+Mps.NentreesVar = (int) ( 5 * Mps.NbVar ) + 1;
 */
-Mps->NentreesVar = (int) pow( 2 , 20 );
+Mps.NentreesVar = (int) pow( 2 , 20 );
  
-Mps->FirstNomVar   = (int *) malloc( Mps->NentreesVar * sizeof( int ) );
-Mps->NomVarSuivant = (int *) malloc( Mps->NbVar       * sizeof( int ) );
-if ( Mps->FirstNomVar == NULL || Mps->NomVarSuivant == NULL ) {
+Mps.FirstNomVar   = (int *) malloc( Mps.NentreesVar * sizeof( int ) );
+Mps.NomVarSuivant = (int *) malloc( Mps.NbVar       * sizeof( int ) );
+if ( Mps.FirstNomVar == NULL || Mps.NomVarSuivant == NULL ) {
   printf("PNE memoire insuffisante dans le sous programme PNE_CreerHashCodeVariableMPS \n");
   exit(0);
 }
 
-for ( k = 0 ; k < Mps->NentreesVar ; k++ ) Mps->FirstNomVar[k] = -1;
+for ( k = 0 ; k < Mps.NentreesVar ; k++ ) Mps.FirstNomVar[k] = -1;
 
-for ( Var = 0 ; Var < Mps->NbVar ; Var++ ) {
-  pt1 = Mps->LabelDeLaVariable[Var];
+for ( Var = 0 ; Var < Mps.NbVar ; Var++ ) {
+  pt1 = Mps.LabelDeLaVariable[Var];
   /* Hashcode du Nom */
-  k = PNE_HashCode(pt1 , Mps->NentreesVar );
+  k = PNE_HashCode( pt1 , Mps.NentreesVar );
 
-  Prem = Mps->FirstNomVar[k];
-  Mps->FirstNomVar  [k]   = Var;
-  Mps->NomVarSuivant[Var] = Prem;
+  Prem = Mps.FirstNomVar[k];
+  Mps.FirstNomVar  [k]   = Var;
+  Mps.NomVarSuivant[Var] = Prem;
 }
 
-//ERD FIXME comment gerer celui la ?
-//if (Pne->pne_params->VERBOSE_PNE) {
-//	printf("Fin creation haschcode var\n"); fflush(stdout);
-//}
+#if VERBOSE_PNE
+  printf("Fin creation haschcode var\n"); fflush(stdout);
+#endif
 
 return;
 }
 
 /*----------------------------------------------------------------------------------------*/
 
-int PNE_HashCode(char * pt1 , int Nentrees )
+int PNE_HashCode( char * pt1 , int Nentrees )
 {
 int Int; char Car; int k;
 
@@ -1096,7 +1087,7 @@ return( k );
 
 /***************************************************************************/
 
-void PNE_PrendreEnCompteLesContraintesRangeMPS(PROBLEME_MPS * Mps)
+void PNE_PrendreEnCompteLesContraintesRangeMPS()
 {
 int Cnt; int NewNbCnt; int NbTermesEnPlus; int NewNbTermes; int NbVarNew;
 int CntCourant; int il; int ilMax; int ilCourant; double Uinf; double Usup;
@@ -1107,75 +1098,75 @@ MethodeAvecVariableSupplementaire = OUI_MPS;
 
 if ( MethodeAvecVariableSupplementaire == OUI_MPS ) goto METHODE_AVEC_VARIABLE_SUPPLEMENTAIRE;
 
-NewNbCnt = Mps->NbCnt + Mps->NbCntRange;
+NewNbCnt = Mps.NbCnt + Mps.NbCntRange;
 
 /* On compte le nombre de termes supplementaires a mettre dans la matrice des contraintes */
 NbTermesEnPlus = 0;
-for ( Cnt = 0 ; Cnt < Mps->NbCnt ; Cnt++ ) {
-  if ( Mps->BRange[Cnt] != 0.0 ) NbTermesEnPlus+= Mps->NbTerm[Cnt];
+for ( Cnt = 0 ; Cnt < Mps.NbCnt ; Cnt++ ) {
+  if ( Mps.BRange[Cnt] != 0.0 ) NbTermesEnPlus+= Mps.NbTerm[Cnt];
 }
 
-NewNbTermes = Mps->Mdeb[Mps->NbCnt - 1] + Mps->NbTerm[Mps->NbCnt - 1] + NbTermesEnPlus;
+NewNbTermes = Mps.Mdeb[Mps.NbCnt - 1] + Mps.NbTerm[Mps.NbCnt - 1] + NbTermesEnPlus;
 
 /* Reallocations */
-Mps->Mdeb                = (int *) realloc( Mps->Mdeb,   NewNbCnt * sizeof( int ) );
-Mps->NbTerm              = (int *) realloc( Mps->NbTerm, NewNbCnt * sizeof( int ) );
-Mps->Rhs                   = (double *) realloc( Mps->Rhs                 , NewNbCnt * sizeof( double ) );
-Mps->SensDeLaContrainte  = (char *)   realloc( Mps->SensDeLaContrainte, NewNbCnt * sizeof( char   ) );
+Mps.Mdeb                = (int *) realloc( Mps.Mdeb,   NewNbCnt * sizeof( int ) );
+Mps.NbTerm              = (int *) realloc( Mps.NbTerm, NewNbCnt * sizeof( int ) );
+Mps.Rhs                   = (double *) realloc( Mps.Rhs                 , NewNbCnt * sizeof( double ) );
+Mps.SensDeLaContrainte  = (char *)   realloc( Mps.SensDeLaContrainte, NewNbCnt * sizeof( char   ) );
 
-Mps->VariablesDualesDesContraintes = (double *) realloc( Mps->VariablesDualesDesContraintes, NewNbCnt * sizeof( double ) );
-Mps->LabelDeLaContrainte           = (char **)  realloc( Mps->LabelDeLaContrainte          , NewNbCnt  * sizeof( void * ) );
+Mps.VariablesDualesDesContraintes = (double *) realloc( Mps.VariablesDualesDesContraintes, NewNbCnt * sizeof( double ) );
+Mps.LabelDeLaContrainte           = (char **)  realloc( Mps.LabelDeLaContrainte          , NewNbCnt  * sizeof( void * ) );
 
-if ( Mps->Mdeb                          == NULL || Mps->NbTerm              == NULL ||
-     Mps->Rhs                             == NULL || Mps->SensDeLaContrainte  == NULL ||
-		 Mps->VariablesDualesDesContraintes == NULL || Mps->LabelDeLaContrainte == NULL ) {
+if ( Mps.Mdeb                          == NULL || Mps.NbTerm              == NULL ||
+     Mps.Rhs                             == NULL || Mps.SensDeLaContrainte  == NULL ||
+		 Mps.VariablesDualesDesContraintes == NULL || Mps.LabelDeLaContrainte == NULL ) {
   printf("PNE memoire insuffisante dans le sous programme PNE_PrendreEnCompteLesContraintesRangeMPS \n");
   exit(0);
 }
 
-Mps->A     = (double *) realloc( Mps->A    , NewNbTermes * sizeof( double ) );
-Mps->Nuvar = (int *)   realloc( Mps->Nuvar, NewNbTermes * sizeof( int   ) );
+Mps.A     = (double *) realloc( Mps.A    , NewNbTermes * sizeof( double ) );
+Mps.Nuvar = (int *)   realloc( Mps.Nuvar, NewNbTermes * sizeof( int   ) );
 
-CntCourant = Mps->NbCnt;
-ilCourant  = Mps->Mdeb[Mps->NbCnt - 1] + Mps->NbTerm[Mps->NbCnt - 1];
-for ( Cnt = 0 ; Cnt < Mps->NbCnt ; Cnt++ ) {
-  if ( Mps->BRange[Cnt] == 0.0 ) continue;
-  il    = Mps->Mdeb[Cnt];
-	ilMax = il + Mps->NbTerm[Cnt];
-	Mps->Mdeb[CntCourant] = ilCourant;
+CntCourant = Mps.NbCnt;
+ilCourant  = Mps.Mdeb[Mps.NbCnt - 1] + Mps.NbTerm[Mps.NbCnt - 1];
+for ( Cnt = 0 ; Cnt < Mps.NbCnt ; Cnt++ ) {
+  if ( Mps.BRange[Cnt] == 0.0 ) continue;
+  il    = Mps.Mdeb[Cnt];
+	ilMax = il + Mps.NbTerm[Cnt];
+	Mps.Mdeb[CntCourant] = ilCourant;
 	while ( il < ilMax ) {
-	  Mps->A[ilCourant] = Mps->A[il];
-	  Mps->Nuvar[ilCourant] = Mps->Nuvar[il];
+	  Mps.A[ilCourant] = Mps.A[il];
+	  Mps.Nuvar[ilCourant] = Mps.Nuvar[il];
     ilCourant++;
 	  il++;
 	}
-	Mps->NbTerm[CntCourant] = ilCourant - Mps->Mdeb[CntCourant];
-	if ( Mps->SensDeLaContrainte[Cnt] == '<' ) {
-	  Mps->Rhs[CntCourant] = Mps->Rhs[Cnt] - fabs( Mps->BRange[Cnt] );
-		Mps->SensDeLaContrainte[CntCourant] = '>';
+	Mps.NbTerm[CntCourant] = ilCourant - Mps.Mdeb[CntCourant];
+	if ( Mps.SensDeLaContrainte[Cnt] == '<' ) {
+	  Mps.Rhs[CntCourant] = Mps.Rhs[Cnt] - fabs( Mps.BRange[Cnt] );
+		Mps.SensDeLaContrainte[CntCourant] = '>';
 	}
-	else if ( Mps->SensDeLaContrainte[Cnt] == '>' ) {
-	  Mps->Rhs[CntCourant] = Mps->Rhs[Cnt] + fabs( Mps->BRange[Cnt] );
-		Mps->SensDeLaContrainte[CntCourant] = '<';
+	else if ( Mps.SensDeLaContrainte[Cnt] == '>' ) {
+	  Mps.Rhs[CntCourant] = Mps.Rhs[Cnt] + fabs( Mps.BRange[Cnt] );
+		Mps.SensDeLaContrainte[CntCourant] = '<';
 	}
 	else {
-    if ( Mps->BRange[Cnt] > 0.0 ) {
-      Mps->SensDeLaContrainte[Cnt] = '>';
-	    Mps->Rhs[CntCourant] = Mps->Rhs[Cnt] + fabs( Mps->BRange[Cnt] );
-		  Mps->SensDeLaContrainte[CntCourant] = '<';
+    if ( Mps.BRange[Cnt] > 0.0 ) {
+      Mps.SensDeLaContrainte[Cnt] = '>';
+	    Mps.Rhs[CntCourant] = Mps.Rhs[Cnt] + fabs( Mps.BRange[Cnt] );
+		  Mps.SensDeLaContrainte[CntCourant] = '<';
 		}
 		else {
-      Mps->SensDeLaContrainte[Cnt] = '<';
-	    Mps->Rhs[CntCourant] = Mps->Rhs[Cnt] - fabs( Mps->BRange[Cnt] );
-	  	Mps->SensDeLaContrainte[CntCourant] = '>';
+      Mps.SensDeLaContrainte[Cnt] = '<';
+	    Mps.Rhs[CntCourant] = Mps.Rhs[Cnt] - fabs( Mps.BRange[Cnt] );
+	  	Mps.SensDeLaContrainte[CntCourant] = '>';
 		}		
 	}
   CntCourant++;	
 }
 
-Mps->NbCnt = NewNbCnt;
+Mps.NbCnt = NewNbCnt;
 
-free( Mps->BRange );
+free( Mps.BRange );
 
 return;
 
@@ -1183,31 +1174,31 @@ METHODE_AVEC_VARIABLE_SUPPLEMENTAIRE:
 
 /* Methode 2 on cree une contrainte d'egalite avec une variable bornee */
 
-NbVarNew = Mps->NbVar + Mps->NbCntRange;
+NbVarNew = Mps.NbVar + Mps.NbCntRange;
 
-Mps->LabelDeLaVariable       = (char **)  realloc( Mps->LabelDeLaVariable      , NbVarNew * sizeof( void * ) );
-Mps->TypeDeVariable          = (int *)   realloc( Mps->TypeDeVariable         , NbVarNew * sizeof( int          ) );
-Mps->TypeDeBorneDeLaVariable = (int *)   realloc( Mps->TypeDeBorneDeLaVariable, NbVarNew * sizeof( int          ) );
-Mps->U                       = (double *) realloc( Mps->U                      , NbVarNew * sizeof( double        ) );
-Mps->CoefsObjectif                       = (double *) realloc( Mps->CoefsObjectif                      , NbVarNew * sizeof( double        ) );
-Mps->Umin                    = (double *) realloc( Mps->Umin                   , NbVarNew * sizeof( double        ) );
-Mps->Umax                    = (double *) realloc( Mps->Umax                   , NbVarNew * sizeof( double        ) );
-if ( Mps->LabelDeLaVariable == NULL || Mps->TypeDeVariable == NULL || Mps->TypeDeBorneDeLaVariable == NULL ||
-     Mps->U                 == NULL || Mps->CoefsObjectif              == NULL || Mps->Umin                    == NULL ||
-		 Mps->Umax              == NULL ) {
+Mps.LabelDeLaVariable       = (char **)  realloc( Mps.LabelDeLaVariable      , NbVarNew * sizeof( void * ) );
+Mps.TypeDeVariable          = (int *)   realloc( Mps.TypeDeVariable         , NbVarNew * sizeof( int          ) );
+Mps.TypeDeBorneDeLaVariable = (int *)   realloc( Mps.TypeDeBorneDeLaVariable, NbVarNew * sizeof( int          ) );
+Mps.U                       = (double *) realloc( Mps.U                      , NbVarNew * sizeof( double        ) );
+Mps.CoefsObjectif                       = (double *) realloc( Mps.CoefsObjectif                      , NbVarNew * sizeof( double        ) );
+Mps.Umin                    = (double *) realloc( Mps.Umin                   , NbVarNew * sizeof( double        ) );
+Mps.Umax                    = (double *) realloc( Mps.Umax                   , NbVarNew * sizeof( double        ) );
+if ( Mps.LabelDeLaVariable == NULL || Mps.TypeDeVariable == NULL || Mps.TypeDeBorneDeLaVariable == NULL ||
+     Mps.U                 == NULL || Mps.CoefsObjectif              == NULL || Mps.Umin                    == NULL ||
+		 Mps.Umax              == NULL ) {
   printf("PNE memoire insuffisante dans le sous programme PNE_PrendreEnCompteLesContraintesRangeMPS \n");
   exit(0);
 }
 
-Mdeb_New   = (int *) malloc( Mps->NbCnt * sizeof( int ) );
-NbTerm_New = (int *) malloc( Mps->NbCnt * sizeof( int ) );
+Mdeb_New   = (int *) malloc( Mps.NbCnt * sizeof( int ) );
+NbTerm_New = (int *) malloc( Mps.NbCnt * sizeof( int ) );
 if ( Mdeb_New == NULL || NbTerm_New == NULL ) {
   printf("PNE memoire insuffisante dans le sous programme PNE_PrendreEnCompteLesContraintesRangeMPS \n");
   exit(0);
 }
 
-NbTermesEnPlus = Mps->NbCntRange;
-NewNbTermes = Mps->Mdeb[Mps->NbCnt - 1] + Mps->NbTerm[Mps->NbCnt - 1] + NbTermesEnPlus;
+NbTermesEnPlus = Mps.NbCntRange;
+NewNbTermes = Mps.Mdeb[Mps.NbCnt - 1] + Mps.NbTerm[Mps.NbCnt - 1] + NbTermesEnPlus;
 A_New     = (double *) malloc( NewNbTermes * sizeof( double ) );
 Nuvar_New = (int *)   malloc( NewNbTermes * sizeof( int   ) );
 if ( A_New == NULL || Nuvar_New == NULL ) {
@@ -1216,111 +1207,76 @@ if ( A_New == NULL || Nuvar_New == NULL ) {
 }
 
 ilCourant = 0;
-for ( Cnt = 0 ; Cnt < Mps->NbCnt ; Cnt++ ) {
+for ( Cnt = 0 ; Cnt < Mps.NbCnt ; Cnt++ ) {
 	/* On recopie la contrainte */
-  il    = Mps->Mdeb[Cnt];
-	ilMax = il + Mps->NbTerm[Cnt];	
+  il    = Mps.Mdeb[Cnt];
+	ilMax = il + Mps.NbTerm[Cnt];	
 	Mdeb_New[Cnt] = ilCourant;
-	NbTerm_New[Cnt] = Mps->NbTerm[Cnt];
+	NbTerm_New[Cnt] = Mps.NbTerm[Cnt];
 	while ( il < ilMax ) {
-	  A_New[ilCourant]     = Mps->A[il];
-	  Nuvar_New[ilCourant] = Mps->Nuvar[il];
+	  A_New[ilCourant]     = Mps.A[il];
+	  Nuvar_New[ilCourant] = Mps.Nuvar[il];
     ilCourant++;
 	  il++;
 	}		
-  if ( Mps->BRange[Cnt] == 0.0 ) continue;	
+  if ( Mps.BRange[Cnt] == 0.0 ) continue;	
 	/* On ajoute un terme a la contrainte */
 	A_New[ilCourant]     = -1.0;
-	Nuvar_New[ilCourant] = Mps->NbVar;
+	Nuvar_New[ilCourant] = Mps.NbVar;
   ilCourant++;
 	NbTerm_New[Cnt]++;
 	/* On transforme la contrainte en contrainte d'egalite */
-	if ( Mps->SensDeLaContrainte[Cnt] == '<' ) {
-	  Usup = Mps->Rhs[Cnt];
-		Uinf = Usup - fabs( Mps->BRange[Cnt] );
+	if ( Mps.SensDeLaContrainte[Cnt] == '<' ) {
+	  Usup = Mps.Rhs[Cnt];
+		Uinf = Usup - fabs( Mps.BRange[Cnt] );
 	}
-	else if ( Mps->SensDeLaContrainte[Cnt] == '>' ) {
-	  Uinf = Mps->Rhs[Cnt];
-    Usup = Uinf + fabs( Mps->BRange[Cnt] );
+	else if ( Mps.SensDeLaContrainte[Cnt] == '>' ) {
+	  Uinf = Mps.Rhs[Cnt];
+    Usup = Uinf + fabs( Mps.BRange[Cnt] );
 	}
 	else {
-		if ( Mps->BRange[Cnt] > 0.0 ) {
-	    Uinf = Mps->Rhs[Cnt];
-      Usup = Uinf + fabs( Mps->BRange[Cnt] );
+		if ( Mps.BRange[Cnt] > 0.0 ) {
+	    Uinf = Mps.Rhs[Cnt];
+      Usup = Uinf + fabs( Mps.BRange[Cnt] );
 		}
 		else {
-	    Usup = Mps->Rhs[Cnt];
-		  Uinf = Usup - fabs( Mps->BRange[Cnt] );
+	    Usup = Mps.Rhs[Cnt];
+		  Uinf = Usup - fabs( Mps.BRange[Cnt] );
 		}		
 	}
-  Mps->Rhs[Cnt] = 0.0;
-	Mps->SensDeLaContrainte[Cnt] = '=';	
+  Mps.Rhs[Cnt] = 0.0;
+	Mps.SensDeLaContrainte[Cnt] = '=';	
 	/* On cree la variable */
-	Mps->TypeDeVariable         [Mps->NbVar] = REEL;
-	Mps->TypeDeBorneDeLaVariable[Mps->NbVar] = VARIABLE_BORNEE_DES_DEUX_COTES;					      
-  Mps->U   [Mps->NbVar] = Uinf;
-  Mps->CoefsObjectif   [Mps->NbVar] = 0.0;
-  Mps->Umin[Mps->NbVar] = Uinf;
-  Mps->Umax[Mps->NbVar] = Usup;
-	if ( Mps->NbVar > 1000000000 ) {
+	Mps.TypeDeVariable         [Mps.NbVar] = REEL;
+	Mps.TypeDeBorneDeLaVariable[Mps.NbVar] = VARIABLE_BORNEE_DES_DEUX_COTES;					      
+  Mps.U   [Mps.NbVar] = Uinf;
+  Mps.CoefsObjectif   [Mps.NbVar] = 0.0;
+  Mps.Umin[Mps.NbVar] = Uinf;
+  Mps.Umax[Mps.NbVar] = Usup;
+	if ( Mps.NbVar > 1000000000 ) {
 	  printf("Trop de variable a optimiser, limite 1000000000\n");
 		exit(0);
 	}
-  Mps->LabelDeLaVariable[Mps->NbVar] = (char *) malloc( 12 );
-  if ( Mps->LabelDeLaVariable[Mps->NbVar] == NULL ) {
+  Mps.LabelDeLaVariable[Mps.NbVar] = (char *) malloc( 12 );
+  if ( Mps.LabelDeLaVariable[Mps.NbVar] == NULL ) {
     printf("PNE memoire insuffisante dans le sous programme PNE_PrendreEnCompteLesContraintesRangeMPS \n");
     exit(0);
   }	
-  sprintf( Mps->LabelDeLaVariable[Mps->NbVar], "%d", Mps->NbVar);
-	Mps->NbVar++;
+  sprintf( Mps.LabelDeLaVariable[Mps.NbVar], "%d", Mps.NbVar);
+	Mps.NbVar++;
 }
 
-free( Mps->Mdeb );
-free( Mps->NbTerm );
-free( Mps->A );
-free( Mps->Nuvar );
+free( Mps.Mdeb );
+free( Mps.NbTerm );
+free( Mps.A );
+free( Mps.Nuvar );
 
-Mps->Mdeb   = Mdeb_New;
-Mps->NbTerm = NbTerm_New ;
-Mps->A      = A_New ;
-Mps->Nuvar  = Nuvar_New;
+Mps.Mdeb   = Mdeb_New;
+Mps.NbTerm = NbTerm_New ;
+Mps.A      = A_New ;
+Mps.Nuvar  = Nuvar_New;
 
-free( Mps->BRange );
+free( Mps.BRange );
 
 return;
-}
-
-
-
-void PNE_copy_problem(PROBLEME_MPS * Mps, PROBLEME_A_RESOUDRE * Probleme, int ToleranceDOptimaliteExterne, double ToleranceExterne) {
-	Probleme->NombreDeVariables = Mps->NbVar;
-	Probleme->TypeDeVariable = Mps->TypeDeVariable;
-	Probleme->TypeDeBorneDeLaVariable = Mps->TypeDeBorneDeLaVariable;
-	Probleme->X = Mps->U;
-	Probleme->Xmax = Mps->Umax;
-	Probleme->Xmin = Mps->Umin;
-	Probleme->CoutLineaire = Mps->CoefsObjectif;
-	Probleme->NombreDeContraintes = Mps->NbCnt;
-	Probleme->SecondMembre = Mps->Rhs;
-	Probleme->Sens = Mps->SensDeLaContrainte;
-	Probleme->IndicesDebutDeLigne = Mps->Mdeb;
-	Probleme->NombreDeTermesDesLignes = Mps->NbTerm;
-	Probleme->CoefficientsDeLaMatriceDesContraintes = Mps->A;
-	Probleme->IndicesColonnes = Mps->Nuvar;
-	Probleme->VariablesDualesDesContraintes = Mps->VariablesDualesDesContraintes;
-	Probleme->SortirLesDonneesDuProbleme = NON_PNE;
-	Probleme->AlgorithmeDeResolution = SIMPLEXE; /* SIMPLEXE ou POINT_INTERIEUR */
-	Probleme->CoupesLiftAndProject = NON_PNE;
-	Probleme->AffichageDesTraces = OUI_PNE;
-	Probleme->FaireDuPresolve = OUI_PNE /* OUI_PNE */;
-	if (Probleme->FaireDuPresolve == NON_PNE) printf("!!!!!!!!!!!!!!  Attention pas de presolve   !!!!!!!!!\n");
-
-	Probleme->TempsDExecutionMaximum = 0;
-	Probleme->NombreMaxDeSolutionsEntieres = -1;
-	Probleme->ToleranceDOptimalite = 1.e-4; /* C'est en % donc 1.e-4 ca fait 1.e-6 */
-
-	if (ToleranceDOptimaliteExterne == 1) {
-		Probleme->ToleranceDOptimalite = ToleranceExterne;
-		printf("gap for optimality was given by the user: %f (must be postive or zero)\n", ToleranceExterne);
-	}
 }

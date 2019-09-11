@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Recherche de couverture de sac a dos
@@ -139,8 +148,7 @@ void PNE_RechercherUneCouvertureMinimale( int NombreDeVariables, double * Valeur
 																					char * Z , double * CsurA, int * OrdreVar ,
 		                              			  double * SecondMembreDeLaKnapsak, int * NombreDeVariablesDeLaKnapsak,
 					                                double * CoefficientsDeLaKnapsack, int * VariableBooleenneDeLaKnapsack,
-																					double * A1, int * NumVar, char LesCoeffSontEntiers,
-													int ProgDynamique, int SeuilProgDynamique )
+																					double * A1, int * NumVar, char LesCoeffSontEntiers )
 {
 double Bmax; int i; int Var; double NouvelleValeurDeB; double VB;  int j ;
 char TypeTri; char OnEnleve; int Nb; double B0; double B;  int SecondMembreCouverture;
@@ -400,7 +408,7 @@ for ( j = 0 ; j < NombreDeVariables ; j++ ) {
 		  continue;
 		# endif
   }
-  Xi = PNE_MajorantKnapsack( Nb, C, A1, B, LesCoeffSontEntiers, ProgDynamique, SeuilProgDynamique );																		
+  Xi = PNE_MajorantKnapsack( Nb, C, A1, B, LesCoeffSontEntiers );																		
   Co = SecondMembreCouverture - Xi;  
 	if ( Co > 0 ) {
     PNE_ReclasserCsurA( Var, Z, &Nb, CsurA, Co, C, A1, A, NumVar );
@@ -425,7 +433,7 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
   if ( Z[Var] != 2 ) continue;	
 	/* La variable est dans C2 */
   B = B0;
-	Xi = PNE_MajorantKnapsack( Nb, C, A1, B, LesCoeffSontEntiers, ProgDynamique, SeuilProgDynamique);
+	Xi = PNE_MajorantKnapsack( Nb, C, A1, B, LesCoeffSontEntiers );
 	Co = Xi - SecondMembreCouverture;
 
   # if VALEUR_CONTRAINTE_MOINS_A_DE_VARIABLE_A_1 == OUI_PNE
@@ -457,7 +465,7 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
 		  continue;
 		# endif
 	}
-  Xi = PNE_MajorantKnapsack( Nb, C, A1, B, LesCoeffSontEntiers, ProgDynamique, SeuilProgDynamique );
+  Xi = PNE_MajorantKnapsack( Nb, C, A1, B, LesCoeffSontEntiers );																		
   Co = SecondMembreCouverture - Xi;		
 	if ( Co > 0 ) {
 	  /*printf("Uplift de %d dans R\n",Var);*/
@@ -593,7 +601,6 @@ int * TypeDeVariableTrav; double S; double * A1; int * NumVar; double ValB;
 char * TasPourKnapsack; char * pt; int LallocTas; char LesCoeffSontEntiers;
 double CoeffDeLaVariableContinue; double FacteurMultiplicatifSurPGCD;
 double Seuil;
-int ProgDynamique; int SeuilProgDynamique;
 
 *CouvertureTrouvee = NON_PNE;
 
@@ -692,23 +699,19 @@ if ( B < 0 ) goto FinGreedy;
 /* Rendre les coefficients entiers n'est pas toujours benefique */
 LesCoeffSontEntiers = NON_PNE;
 FacteurMultiplicatifSurPGCD = 1.;
-if (Pne->pne_params->COEFFS_ENTIERS_DANS_KNAPSACK == OUI_PNE) {
-	if (RendreLesCoeffsEntiers == OUI_PNE && NbBooleens >= 2) {
-		PNE_KnapsackCoeffEntiers(NbBooleens, Coefficients, &B, &FacteurMultiplicatifSurPGCD);
+# if COEFFS_ENTIERS_DANS_KNAPSACK == OUI_PNE
+  if ( RendreLesCoeffsEntiers == OUI_PNE && NbBooleens >= 2 ) {
+	  PNE_KnapsackCoeffEntiers( NbBooleens, Coefficients, &B, &FacteurMultiplicatifSurPGCD );
 		LesCoeffSontEntiers = OUI_PNE;
 	}
-}
-else {
-	RendreLesCoeffsEntiers = NON_PNE; /* Pour ne pas avoir de warning a la compilation */
-}
+# else
+  RendreLesCoeffsEntiers = NON_PNE; /* Pour ne pas avoir de warning a la compilation */
+# endif
 
-/* Transmettre les parametres relatifs a l'utilisation de programmation dynamique */
-ProgDynamique = Pne->pne_params->UTILISER_AUSSI_LA_PROGRAMMATION_DYNAMIQUE;
-SeuilProgDynamique = Pne->pne_params->SEUIL_POUR_PROGRAMMATION_DYNAMIQUE;
 PNE_RechercherUneCouvertureMinimale( NbBooleens, ValeurDeX, Coefficients, C, CouvertureTrouvee, B, Z,
                                      CsurA, OrdreVar, &SecondMembreCouverture, &NombreDeVariablesCouverture,
 				                             CoefficientCouverture, VariableBooleenneCouverture,
-																		 A1, NumVar, LesCoeffSontEntiers, ProgDynamique, SeuilProgDynamique );
+																		 A1, NumVar, LesCoeffSontEntiers );
 
 if ( *CouvertureTrouvee == NON_PNE ) goto FinGreedy;
 if ( NombreDeVariablesCouverture <= 0 ) goto FinGreedy;

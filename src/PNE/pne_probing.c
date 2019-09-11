@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Variable probing
@@ -399,7 +408,7 @@ if ( Pne->Controls != NULL ) {
 	}
 }
 
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
   printf("Probing on binaries and computing the conflict graph\n");
 }
 
@@ -431,9 +440,9 @@ ProbingOuNodePresolve = Pne->ProbingOuNodePresolve;
 
 ProbingOuNodePresolve->NbParcours = 0;
 
-if ( Pne->pne_params->CONSTRUIRE_BORNES_VARIABLES == OUI_PNE ) {
-	PNE_ProbingInitDetectionDesBornesVariables(Pne);
-}
+# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+  PNE_ProbingInitDetectionDesBornesVariables( Pne );
+# endif
 
 ProbingOuNodePresolve->VariableInstanciee = -1;
 
@@ -446,13 +455,12 @@ BorneSupConnue = ProbingOuNodePresolve->BorneSupConnue;
 NumeroDeCoupeDeProbing = ProbingOuNodePresolve->NumeroDeCoupeDeProbing;
 NumVarAInstancier = ProbingOuNodePresolve->NumVarAInstancier;
 
-if ( Pne->pne_params->PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE ) {
-	PNE_ProbingInitVariablesAInstancierApresLePresolve(Pne, ProbingOuNodePresolve);
-}
-else {
-	PNE_ProbingInitVariablesAInstancier(Pne, ProbingOuNodePresolve);
-}
-PNE_ProbingMajVariablesAInstancier(Pne, ProbingOuNodePresolve);
+# if PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE 
+  PNE_ProbingInitVariablesAInstancierApresLePresolve( Pne, ProbingOuNodePresolve );
+# else
+  PNE_ProbingInitVariablesAInstancier( Pne, ProbingOuNodePresolve );
+# endif
+PNE_ProbingMajVariablesAInstancier( Pne, ProbingOuNodePresolve );
 
 NbTermesMatrice = 0;
 for ( Cnt = 0 ; Cnt < NombreDeContraintesTrav ; Cnt++ ) {
@@ -493,7 +501,7 @@ PNE_VariableProbingSauvegardesDonnees( Pne );
 /* Liste des variables a tester */
 
 NbVarAInstancier = ProbingOuNodePresolve->NbVarAInstancier;
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE /*&& 0*/ ) {
+if ( Pne->AffichageDesTraces == OUI_PNE && 0 ) {
   printf("Probing on %d variable(s)\n",ProbingOuNodePresolve->NbVarAInstancier);
 }
 for ( i = 0 ; i < NbVarAInstancier && FaireProbing == OUI_PNE ; i++ ) {
@@ -506,7 +514,7 @@ for ( i = 0 ; i < NbVarAInstancier && FaireProbing == OUI_PNE ; i++ ) {
     Pne->TempsEcoule = difftime( Pne->HeureDeCalendrierCourantCliquesEtProbing, Pne->HeureDeCalendrierDebutCliquesEtProbing );
 	  if ( Pne->TempsEcoule > DureeDuProbing ) {
 		  Pne->ArreterCliquesEtProbing = OUI_PNE;
-			if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+			if ( Pne->AffichageDesTraces == OUI_PNE ) {
 			  printf("Probing was stopped. Timeout is %e elapsed is %e\n",DureeDuProbing,Pne->TempsEcoule);
 			}
 		}
@@ -572,9 +580,9 @@ for ( i = 0 ; i < NbVarAInstancier && FaireProbing == OUI_PNE ; i++ ) {
         PNE_ProbingMajFlagVariablesAInstancier( Pne, Var, ValeurDeVar );			
 			}
 	  }
-	  if ( Pne->pne_params->CONSTRUIRE_BORNES_VARIABLES == OUI_PNE ) {
-		  if (Iteration == 1) PNE_ProbingConstruireContraintesDeBornes(Pne, ProbingOuNodePresolve, Umin0, Umax0);
-	  }
+    # if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+      if ( Iteration == 1 ) PNE_ProbingConstruireContraintesDeBornes( Pne, ProbingOuNodePresolve, Umin0, Umax0 );
+    # endif		
 	}
 	
 	/* Instanciation a 0 */			
@@ -627,9 +635,9 @@ for ( i = 0 ; i < NbVarAInstancier && FaireProbing == OUI_PNE ; i++ ) {
         PNE_ProbingMajFlagVariablesAInstancier( Pne, Var, ValeurDeVar );			
 			}
 	  }
-	  if ( Pne->pne_params->CONSTRUIRE_BORNES_VARIABLES == OUI_PNE ) {
-		  if (Iteration == 1) PNE_ProbingConstruireContraintesDeBornes(Pne, ProbingOuNodePresolve, Umin0, Umax0);
-	  }
+    # if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+      if ( Iteration == 1 ) PNE_ProbingConstruireContraintesDeBornes( Pne, ProbingOuNodePresolve, Umin0, Umax0 );
+    # endif				
 	}
 
 	/* Si la variable doit etre fixee on tient aussi compte du graphe de conflit */
@@ -671,7 +679,7 @@ if ( Pne->ConflictGraph != NULL ) {
 	
 }
 
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
   if ( Pne->ConflictGraph != NULL ) {
     if ( Pne->ConflictGraph->NbEdges > 0 ) printf("Conflict graph has %d edges\n",Pne->ConflictGraph->NbEdges);
 		else printf("Conflict graph is empty\n");
@@ -681,9 +689,9 @@ if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
 
 ProbingOuNodePresolve->Faisabilite = OUI_PNE;				
 
-if ( Pne->pne_params->CONSTRUIRE_BORNES_VARIABLES == OUI_PNE ) {
-	PNE_ProbingCloseDetectionDesBornesVariables(Pne);
-}
+# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+  PNE_ProbingCloseDetectionDesBornesVariables( Pne );
+# endif
 
 /* Mettre a jour les Umin max sv */
 
@@ -695,28 +703,27 @@ for ( Var = 0 ; Var < Pne->NombreDeVariablesTrav ; Var++ ) {
   if ( Umin0[Var] == Umax0[Var] ) continue;
 	if ( UminTrav[Var] == UmaxTrav[Var] ) {
 	  NbFix++;
-	  if ( Pne->pne_params->PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE ) {
-		  Pne->TypeDeBorneTrav[Var] = VARIABLE_FIXE;
-		  Pne->TypeDeVariableTrav[Var] = REEL;
+    # if PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE		  
+			Pne->TypeDeBorneTrav[Var] = VARIABLE_FIXE;
+		  Pne->TypeDeVariableTrav[Var] = REEL;			
 		  UTrav[Var] = UminTrav[Var];
-		  UminTrav[Var] = Umin0[Var];
-		  UmaxTrav[Var] = Umax0[Var];
-	  }
-	  else {
-		  UminTravSv[Var] = UminTrav[Var];
-		  UmaxTravSv[Var] = UminTrav[Var];
-	  }
+			UminTrav[Var] = Umin0[Var];
+			UmaxTrav[Var] = Umax0[Var];
+		# else
+	    UminTravSv[Var] = UminTrav[Var];
+	    UmaxTravSv[Var] = UminTrav[Var];		
+    # endif		
 	}
 }
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
-	if ( NbFix > 0 ) printf("%d variable(s) fixed using probing techniques\n",NbFix);
-	if ( Pne->pne_params->CONSTRUIRE_BORNES_VARIABLES == OUI_PNE ) {
-		if ( Pne->ContraintesDeBorneVariable != NULL ) {
-			if ( Pne->ContraintesDeBorneVariable->NombreDeContraintesDeBorne > 0 ) {
-		printf("Adding %d implicit variable bound constraint(s)\n",Pne->ContraintesDeBorneVariable->NombreDeContraintesDeBorne);
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
+  if ( NbFix > 0 ) printf("%d variable(s) fixed using probing techniques\n",NbFix);
+  # if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+	  if ( Pne->ContraintesDeBorneVariable != NULL ) {
+		  if ( Pne->ContraintesDeBorneVariable->NombreDeContraintesDeBorne > 0 ) {
+        printf("Adding %d implicit variable bound constraint(s)\n",Pne->ContraintesDeBorneVariable->NombreDeContraintesDeBorne);
 			}
 		}
-	}
+  # endif		
 }
 
 ProbingOuNodePresolve->NombreDeVariablesFixeesDansLeProbing = NbFix;
@@ -725,21 +732,22 @@ ProbingOuNodePresolve->VariableInstanciee = -1;
 
 /* En mode Probing apres le premier simplexe, il faut recalculer BmiSv BmasSv avec UminTravSv UmaxTravSv */
 
-if ( Pne->pne_params->PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE ) {
-	if ( NbFix > 0 && 0 ) {
-		/* En mode probing juste apres le presolve le recalcul est inutile */
-		  /* En mode probing apres les simplexes du noeud racine le recalcul est inutile car:
-			  - on met a jour UminSv et UmaxSv en fonction de Umin et Umax
-				- le node presolve au noeud racine se calcule a chaque fois un Bmin Bmax fonction de Umin Umax
-				  qui sont toujours egaux au Umin Umax au noeud racine
-			*/
-		PNE_InitBorneInfBorneSupDesVariables(Pne);
-		PNE_CalculMinEtMaxDesContraintes(Pne, &(ProbingOuNodePresolve->Faisabilite));
-		/* Et on sauvegarde le resultat comme point de depart pour les noeuds suibvants */
-		memcpy((char *)ProbingOuNodePresolve->BminSv, (char *)ProbingOuNodePresolve->Bmin, Pne->NombreDeContraintesTrav * sizeof(double));
-		memcpy((char *)ProbingOuNodePresolve->BmaxSv, (char *)ProbingOuNodePresolve->Bmax, Pne->NombreDeContraintesTrav * sizeof(double));
-	}
-}
+# if PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE 
+  if ( NbFix > 0 && 0 ) {
+    /* En mode probing juste apres le presolve le recalcul est inutile */
+	  /* En mode probing apres les simplexes du noeud racine le recalcul est inutile car:
+		  - on met a jour UminSv et UmaxSv en fonction de Umin et Umax
+			- le node presolve au noeud racine se calcule a chaque fois un Bmin Bmax fonction de Umin Umax
+			  qui sont toujours egaux au Umin Umax au noeud racine
+		*/
+    PNE_InitBorneInfBorneSupDesVariables( Pne );
+    PNE_CalculMinEtMaxDesContraintes( Pne, &(ProbingOuNodePresolve->Faisabilite) );
+    /* Et on sauvegarde le resultat comme point de depart pour les noeuds suibvants */
+    memcpy( (char *) ProbingOuNodePresolve->BminSv, (char *) ProbingOuNodePresolve->Bmin, Pne->NombreDeContraintesTrav * sizeof( double ) );
+    memcpy( (char *) ProbingOuNodePresolve->BmaxSv, (char *) ProbingOuNodePresolve->Bmax, Pne->NombreDeContraintesTrav * sizeof( double ) );
+  }
+# endif
+
 Fin:
 
 free( Umin0 );

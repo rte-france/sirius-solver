@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Solveur de PLNE 
@@ -22,13 +31,6 @@
 # include "bb_fonctions.h"
 
 # include "prs_define.h"
-# include "prs_fonctions.h"
-
-# define PNE_PARAM_OVERWRITE(prm_name, prob_prm_name, type)\
-	if(Pne->pne_params->prm_name != Probleme->prob_prm_name) {\
-		printf("Warning: For parameter " #prm_name ", previous value %" #type " will be replaced by %" #type "\n", Pne->pne_params->prm_name, Probleme->prob_prm_name); \
-	}\
-	Pne->pne_params->prm_name = Probleme->prob_prm_name;
 
 /*----------------------------------------------------------------------------*/
 
@@ -73,8 +75,8 @@ if ( Pne->SolveurPourLeProblemeRelaxe == POINT_INTERIEUR ) {
   printf("Attention, algorithme choisi: point interieur => toutes les variables sont considerees comme etant continue\n");
 }
 
-PNE_PARAM_OVERWRITE(AffichageDesTraces, AffichageDesTraces, d);
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE && Pne->Controls == NULL ) {
+Pne->AffichageDesTraces = Probleme->AffichageDesTraces;
+if ( Pne->AffichageDesTraces == OUI_PNE && Pne->Controls == NULL ) {
   printf("\n");
   printf(" ----------------------------------------------------------\n");
   printf("|                                                          |\n");
@@ -83,10 +85,10 @@ if ( Pne->pne_params->AffichageDesTraces == OUI_PNE && Pne->Controls == NULL ) {
   printf(" ---------------------------------------------------------- \n");
   printf("\n");
 }
-PNE_PARAM_OVERWRITE(FaireDuPresolve, FaireDuPresolve, d);
-PNE_PARAM_OVERWRITE(TempsDExecutionMaximum, TempsDExecutionMaximum, d);
-PNE_PARAM_OVERWRITE(NombreMaxDeSolutionsEntieres, NombreMaxDeSolutionsEntieres, d);
-PNE_PARAM_OVERWRITE(ToleranceDOptimalite, ToleranceDOptimalite, .2e);
+Pne->FaireDuPresolve              = Probleme->FaireDuPresolve;
+Pne->TempsDExecutionMaximum       = Probleme->TempsDExecutionMaximum;
+Pne->NombreMaxDeSolutionsEntieres = Probleme->NombreMaxDeSolutionsEntieres;
+Pne->ToleranceDOptimalite         = Probleme->ToleranceDOptimalite;
 
 /* Allocations du probleme */
 PNE_AllocProbleme( Pne,
@@ -177,8 +179,8 @@ if ( Pne->NombreDeContraintesTrav <= 0 ) {
 
 if ( Pne->YaUneSolution != OUI_PNE ) goto FinDuBranchAndBound;
 	
-if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
-  if ( Pne->pne_params->FaireDuPresolve == OUI_PNE ) {
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
+  if ( Pne->FaireDuPresolve == OUI_PNE ) {
     printf("End of presolve       ->");
     printf(" rows: %6d",Pne->NombreDeContraintesTrav);
     printf(" columns(unknowns): %6d",NbVarLibres);
@@ -201,24 +203,16 @@ if ( Pne->pne_params->AffichageDesTraces == OUI_PNE ) {
 
 if ( NbVarLibres > 0 && Pne->NombreDeContraintesTrav > 0 ) { 
   Pne->YaUneSolution = BB_BranchAndBound( Pne,
-                                          Pne->pne_params->TempsDExecutionMaximum,
-                                          Pne->pne_params->NombreMaxDeSolutionsEntieres,
-				  	                      Pne->pne_params->ToleranceDOptimalite,
+                                          Pne->TempsDExecutionMaximum,
+                                          Pne->NombreMaxDeSolutionsEntieres,
+				  	                              Pne->ToleranceDOptimalite, 
                                           Pne->NombreDeVariablesTrav, 
                                           Pne->NombreDeContraintesTrav, 
                                           Pne->NombreDeVariablesEntieresTrav, 
-                                          Pne->pne_params->AffichageDesTraces,
-                                          Pne->NumerosDesVariablesEntieresTrav );
-  Probleme->SommeDuNombreDIterations = Pne->SommeDuNombreDIterations;
-  Probleme->ValeurDuMeilleurMinorant = Pne->ValeurDuMeilleurMinorant;
-  Probleme->NombreDeProblemesResolus = Pne->NombreDeProblemesResolus;
+                                          Pne->AffichageDesTraces,
+                                          Pne->NumerosDesVariablesEntieresTrav ); 
 }
-else {
-	Pne->YaUneSolution = OUI;
-	Probleme->SommeDuNombreDIterations = 0;
-	Probleme->ValeurDuMeilleurMinorant = 0.;
-	Probleme->NombreDeProblemesResolus = 0;
-}
+else Pne->YaUneSolution = OUI;
 
 if ( Pne->YaUneSolution == OUI ) {
   Pne->YaUneSolution = SOLUTION_OPTIMALE_TROUVEE;
@@ -237,15 +231,15 @@ FinDuBranchAndBound:
 
 if ( Pne->YaUneSolution == SOLUTION_OPTIMALE_TROUVEE || 
      Pne->YaUneSolution == ARRET_PAR_LIMITE_DE_TEMPS_AVEC_SOLUTION_ADMISSIBLE_DISPONIBLE ) { 
-	if (Pne->pne_params->VERBOSE_PNE) {
-		printf(" ******************************************** \n");
-		if (Pne->YaUneSolution == OUI) {
-			printf(" OPTIMUM ATTEINT \n");
-		}
-		else if (Pne->YaUneSolution == ARRET_CAR_TEMPS_MAXIMUM_ATTEINT) {
-			printf(" SOLUTION ADMISSIBLE TROUVEE  \n");
-		}
-	}
+  #if VERBOSE_PNE	
+    printf(" ******************************************** \n");   
+    if ( Pne->YaUneSolution == OUI ) {		       
+      printf(" OPTIMUM ATTEINT \n"); 
+    }
+    else if ( Pne->YaUneSolution == ARRET_CAR_TEMPS_MAXIMUM_ATTEINT ) {
+      printf(" SOLUTION ADMISSIBLE TROUVEE  \n"); 
+    }
+  #endif
 	
   PNE_RecupererLaSolutionEtCalculerLeCritere( Pne, Probleme );
 

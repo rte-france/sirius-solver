@@ -1,10 +1,19 @@
-// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
-// See AUTHORS.txt
-// This Source Code Form is subject to the terms of the Apache License, version 2.0.
-// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
-// SPDX-License-Identifier: Apache-2.0
-// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
-
+/*
+** Copyright 2007-2018 RTE
+** Author: Robert Gonzalez
+**
+** This file is part of Sirius_Solver.
+** This program and the accompanying materials are made available under the
+** terms of the Eclipse Public License 2.0 which is available at
+** http://www.eclipse.org/legal/epl-2.0.
+**
+** This Source Code may also be made available under the following Secondary
+** Licenses when the conditions for such availability set forth in the Eclipse
+** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
+** or later, which is available at <http://www.gnu.org/licenses/>.
+**
+** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
+*/
 /***********************************************************************
 
    FONCTION: Calcul des coupes d'intersection (necessite d'avoir
@@ -32,11 +41,11 @@ double RapportMaxDesCoeffs; double ZeroPourCoeffVariablesDEcart; double ZeroPour
 double RelaxRhsAbs; double RelaxRhsRel; int * IndiceDeLaVariable; double * Coefficient;
 double * UTrav;
 
-RapportMaxDesCoeffs = Pne->pne_params->RAPPORT_MAX_COEFF_COUPE_INTERSECTION;
-ZeroPourCoeffVariablesDEcart = Pne->pne_params->ZERO_POUR_COEFF_VARIABLE_DECART_DANS_COUPE_GOMORY_OU_INTERSECTION;
-ZeroPourCoeffVariablesNative = Pne->pne_params->ZERO_POUR_COEFF_VARIABLE_NATIVE_DANS_COUPE_GOMORY_OU_INTERSECTION;
-RelaxRhsAbs = Pne->pne_params->RELAX_RHS_INTERSECTION_ABS;
-RelaxRhsRel = Pne->pne_params->RELAX_RHS_INTERSECTION_REL;
+RapportMaxDesCoeffs = RAPPORT_MAX_COEFF_COUPE_INTERSECTION;
+ZeroPourCoeffVariablesDEcart = ZERO_POUR_COEFF_VARIABLE_DECART_DANS_COUPE_GOMORY_OU_INTERSECTION;
+ZeroPourCoeffVariablesNative = ZERO_POUR_COEFF_VARIABLE_NATIVE_DANS_COUPE_GOMORY_OU_INTERSECTION;
+RelaxRhsAbs = RELAX_RHS_INTERSECTION_ABS;
+RelaxRhsRel = RELAX_RHS_INTERSECTION_REL;
 
 IndiceDeLaVariable = Pne->IndiceDeLaVariable_CG;
 Coefficient = Pne->Coefficient_CG;
@@ -50,10 +59,10 @@ NbPotentielDeCoupes = SPX_NombrePotentielDeCoupesDIntersection( (PROBLEME_SPX *)
 
 /* NbPotentielDeCoupes ne joue pas sur le temps car SPX_CalculerUneCoupeDIntersection est tres rapide */
 
-if (Pne->pne_params->CALCULER_COUPES_DINTERSECTION == NON_PNE) {
-	SPX_TerminerLeCalculDesCoupesDIntersection((PROBLEME_SPX *)Pne->ProblemeSpxDuSolveur);
-	return;
-}
+# if CALCULER_COUPES_DINTERSECTION == NON_PNE
+  SPX_TerminerLeCalculDesCoupesDIntersection( (PROBLEME_SPX *) Pne->ProblemeSpxDuSolveur );
+  return;	
+# endif
 
 for ( i = 0 ; i < NbPotentielDeCoupes ; i++ ) {
   SPX_CalculerUneCoupeDIntersection(
@@ -86,7 +95,7 @@ for ( i = 0 ; i < NbPotentielDeCoupes ; i++ ) {
 	
   if ( S > SecondMembre ) {  
     X = fabs( SecondMembre - S );	 
-    if ( X > Pne->pne_params->SEUIL_VIOLATION_COUPE_DINTERSECTION ) {
+    if ( X > SEUIL_VIOLATION_COUPE_DINTERSECTION ) {
 		
 		  /*
       printf("Coupe d'Intersection Violation %e NombreDeTermes %d (max.: %d)\n",X,NombreDeTermes,Pne->NombreDeVariablesTrav);   
@@ -97,22 +106,20 @@ for ( i = 0 ; i < NbPotentielDeCoupes ; i++ ) {
 		  fflush( stdout );			
 			*/
 			
-		if ( Pne->pne_params->NORMALISER_LES_COUPES_SUR_LES_G_ET_I == OUI_PNE && PlusGrandCoeff >= Pne->pne_params->SEUIL_POUR_NORMALISER_LES_COUPES_SUR_LES_G_ET_I ) {
-			PNE_NormaliserUnCoupe(Pne->Coefficient_CG, &SecondMembre, NombreDeTermes, PlusGrandCoeff);
-		}
+      PNE_NormaliserUnCoupe( Pne->Coefficient_CG, &SecondMembre, NombreDeTermes, PlusGrandCoeff );
 			
 			PNE_EnrichirLeProblemeCourantAvecUneCoupe( Pne, 'I', NombreDeTermes, SecondMembre, X,
                                                  Coefficient, IndiceDeLaVariable );
 
-			if ( Pne->pne_params->KNAPSACK_SUR_COUPE_DINTERSECTION == OUI_PNE ) {
+		  # if KNAPSACK_SUR_COUPE_DINTERSECTION == OUI_SPX
 				/* Il faut le faire apres le stockage de la coupe car la recherche des knapsack modifie
-				 Pne->Coefficient_CG et Pne->IndiceDeLaVariable_CG */
-				 /* On regarde si on peut faire une K sur la coupe */
-				if ( X > Pne->pne_params->VIOLATION_MIN_POUR_K_SUR_COUPE && OnAEcrete != OUI_SPX ) {
-					PNE_CalculerUneKnapsackSurGomoryOuIntersection(Pne, Coefficient, IndiceDeLaVariable,
-						SecondMembre, NombreDeTermes, PlusGrandCoeff);
-				}
-			}
+			     Pne->Coefficient_CG et Pne->IndiceDeLaVariable_CG */
+        /* On regarde si on peut faire une K sur la coupe */
+			  if ( X > VIOLATION_MIN_POUR_K_SUR_COUPE && OnAEcrete != OUI_SPX ) {
+          PNE_CalculerUneKnapsackSurGomoryOuIntersection( Pne, Coefficient, IndiceDeLaVariable,
+																										      SecondMembre, NombreDeTermes, PlusGrandCoeff );		
+		    }
+			# endif
 																								 
     }
   }
