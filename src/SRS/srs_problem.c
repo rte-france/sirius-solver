@@ -1,3 +1,10 @@
+// Copyright (c) 20xx-2019, RTE (https://www.rte-france.com)
+// See AUTHORS.txt
+// This Source Code Form is subject to the terms of the Apache License, version 2.0.
+// If a copy of the Apache License, version 2.0 was not distributed with this file, you can obtain one at http://www.apache.org/licenses/LICENSE-2.0.
+// SPDX-License-Identifier: Apache-2.0
+// This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -5,7 +12,10 @@
 #include "pne_constantes_externes.h"
 #include "pne_fonctions.h"
 #include "spx_fonctions.h"
+
+#ifndef difftimens
 #define difftimens(ts2, ts1) (double)ts2.tv_sec - (double)ts1.tv_sec + ((double)ts2.tv_nsec - (double)ts1.tv_nsec)/1.e9
+#endif
 
 # ifdef __cplusplus
 extern "C"
@@ -97,18 +107,18 @@ int mallocAndCopyStringArray(size_t arraySize, char const *const * sourceArray, 
 }
 
 int computeColBoundType(double lb, double ub) {
-	//if (lb != -SRS_infinite) {
-	//	if (ub != SRS_infinite) {
-	//		//if (lb == ub) {
-	//		//	return VARIABLE_FIXE;
-	//		//}
-	//		return VARIABLE_BORNEE_DES_DEUX_COTES;
-	//	}
-	//	return VARIABLE_BORNEE_INFERIEUREMENT;
-	//}
-	//else if (ub != SRS_infinite) {
-	//	return VARIABLE_BORNEE_SUPERIEUREMENT;
-	//}
+	if (lb > -SRS_infinite) {
+		if (ub < SRS_infinite) {
+			//if (lb == ub) {
+			//	return VARIABLE_FIXE;
+			//}
+			return VARIABLE_BORNEE_DES_DEUX_COTES;
+		}
+		return VARIABLE_BORNEE_INFERIEUREMENT;
+	}
+	else if (ub < SRS_infinite) {
+		return VARIABLE_BORNEE_SUPERIEUREMENT;
+	}
 	return VARIABLE_NON_BORNEE;
 }
 // *** Enf of Utility functions ***
@@ -382,6 +392,13 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs) {
 		{
 			SPX_ModifierLeVecteurCouts(problem_spx, problem_mps->CoefsObjectif, problem_mps->NbVar);
 			SPX_ModifierLeVecteurSecondMembre(problem_spx, problem_mps->Rhs, problem_mps->SensDeLaContrainte, problem_mps->NbCnt);
+			
+			size_t arraySizeInBytes = problem_mps->NbVar * sizeof(double);
+			memcpy(problem_spx->Xmin, problem_mps->Umin, arraySizeInBytes);
+			memcpy(problem_spx->Xmax, problem_mps->Umax, arraySizeInBytes);
+
+			memcpy(problem_simplexe->Xmin, problem_mps->Umin, arraySizeInBytes);
+			memcpy(problem_simplexe->Xmax, problem_mps->Umax, arraySizeInBytes);
 
 			problem_simplexe->Contexte = BRANCH_AND_BOUND_OU_CUT_NOEUD;
 			problem_simplexe->BaseDeDepartFournie = UTILISER_LA_BASE_DU_PROBLEME_SPX;
@@ -407,12 +424,17 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs) {
 		}
 		problem_simplexe->AffichageDesTraces = problem_srs->verboseSpx;
 		problem_simplexe->FaireDuScaling = problem_srs->scaling;
+
+		problem_simplexe->CoutMax = 0;
+		problem_simplexe->NbVarDeBaseComplementaires = 0;
 	}
 
 	return 0;
 }
 
+
 int SRSoptimize(SRS_PROBLEM * problem_srs) {
+	
 	int nbCols = problem_srs->problem_mps->NbVar;
 	if (problem_srs->maximize) {
 		for (int idxCol = 0; idxCol < nbCols; ++idxCol) {
@@ -502,12 +524,33 @@ int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simp
 	problem_simplexe->ChoixDeLAlgorithme = SPX_DUAL;
 
 	problem_simplexe->LibererMemoireALaFin = NON_SPX;
-	problem_simplexe->AffichageDesTraces = OUI_SPX;
+	problem_simplexe->AffichageDesTraces = NON_SPX;
 	problem_simplexe->CoutMax = -1;
 	problem_simplexe->UtiliserCoutMax = NON_SPX;
 
 	problem_simplexe->Contexte = SIMPLEXE_SEUL;
 	problem_simplexe->BaseDeDepartFournie = NON_SPX;
+
+	return 0;
+}
+
+SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * problem_simplexe)
+{
+	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
+	problem_mps->CoefsObjectif = problem_simplexe->CoutLineaire;
+	problem_mps->U = problem_simplexe->X;
+	problem_mps->Umin = problem_simplexe->Xmin;
+	problem_mps->Umax = problem_simplexe->Xmax;
+	problem_mps->NbVar = problem_simplexe->NombreDeVariables;
+	problem_mps->TypeDeBorneDeLaVariable = problem_simplexe->TypeDeVariable;
+	problem_mps->NbCnt = problem_simplexe->NombreDeContraintes;
+	problem_mps->Mdeb = problem_simplexe->IndicesDebutDeLigne;
+	problem_mps->NbTerm = problem_simplexe->NombreDeTermesDesLignes;
+	problem_mps->Nuvar = problem_simplexe->IndicesColonnes;
+	problem_mps->A = problem_simplexe->CoefficientsDeLaMatriceDesContraintes;
+	problem_mps->SensDeLaContrainte = problem_simplexe->Sens;
+	problem_mps->Rhs = problem_simplexe->SecondMembre;
+	problem_mps->VariablesDualesDesContraintes = problem_simplexe->CoutsMarginauxDesContraintes;
 
 	return 0;
 }
@@ -694,7 +737,7 @@ int SRSgetbestbound(SRS_PROBLEM * problem_srs, double * bestBoundVal) {
 		int status = SRSgetproblemstatus(problem_srs);
 		if (status == SRS_STATUS_OPTIMAL || status == SRS_STATUS_TIMEOUT_WITH_SOL)
 		{
-			//FIXEM (*bestBoundVal) = problem_srs->problem_mip->ValeurDuMeilleurMinorant;
+			//FIXME (*bestBoundVal) = problem_srs->problem_mip->ValeurDuMeilleurMinorant;
 			return 0;
 		}
 		fprintf(stderr, "(ERROR) no solution found, can't get a best bound\n");
