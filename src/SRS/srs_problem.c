@@ -638,7 +638,10 @@ int SRSgetdualvalues(SRS_PROBLEM * problem_srs, double ** dualValues) {
 	int nbRow = problem_srs->problem_mps->NbCnt;
 	if (dualValues != NULL && (*dualValues != NULL)) {
 		for (int idxRow = 0; idxRow < nbRow; ++idxRow) {
-			(*dualValues)[idxRow] = problem_srs->problem_simplexe->CoutsMarginauxDesContraintes[idxRow];
+			if (problem_srs->is_mip)
+				(*dualValues)[idxRow] = problem_srs->problem_mip->VariablesDualesDesContraintes[idxRow];
+			else
+				(*dualValues)[idxRow] = problem_srs->problem_simplexe->CoutsMarginauxDesContraintes[idxRow];
 		}
 	}
 	return 0;
@@ -685,6 +688,10 @@ int SRSsetintparams(SRS_PROBLEM * problem_srs, const char * paramId, int paramVa
 	}
 	else if (strcmp(SRS_PARAM_SCALING, paramId) == 0) {
 		problem_srs->scaling = paramValue;
+		return 0;
+	}
+	if (strcmp(SRS_FORCE_PNE, paramId) == 0) {
+		problem_srs->is_mip = true;
 		return 0;
 	}
 
