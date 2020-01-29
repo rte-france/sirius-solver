@@ -91,7 +91,7 @@ PROBLEME_MPS * readAndOpt(char * mpsName, PROBLEME_MPS * Mps, FILE * FlotDeSorti
 	// Appel du simplexe
 	struct timespec debut;
 	timespec_get(&debut, TIME_UTC);
-	(*Spx) = SPX_Simplexe(&probleme, (*Spx), NULL);
+	(*Spx) = SPX_Simplexe(&probleme, (*Spx));
 	struct timespec fin;
 	timespec_get(&fin, TIME_UTC);
 	double TempsEcoule = difftimens(fin, debut);
@@ -166,8 +166,12 @@ int idxHotFile = 0;
 for (int idxArg = firstHotstartIndex; idxArg < argc; ++idxArg)
 	hotstartFiles[idxHotFile++]=argv[idxArg];
 int nbHotstartFiles = idxHotFile;
-
+#ifdef __unix__
+ FlotDeSortie = fopen("RESULTAT.csv", "w" );
+#else
  fopen_s(&FlotDeSortie, "RESULTAT.csv", "w" );
+#endif
+
 if( FlotDeSortie == NULL ) {
   printf("Erreur ouverture du fichier de resultats \n");
   exit(0);
