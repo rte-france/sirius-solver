@@ -63,6 +63,7 @@ int SRSgetreducedcosts(SRS_PROBLEM * problem_srs, double ** reducedCostValues);
 int SRSgetdualvalues(SRS_PROBLEM * problem_srs, double ** dualValues); //getpi PROBLEME_SIMPLEXE CoutsMarginauxDesContraintes / PROBLEME_MIP VariablesDualesDesContraintes ?
 int SRSgetcolbasisstatus(SRS_PROBLEM * problem_srs, char ** colStatuses);
 int SRSgetbestbound(SRS_PROBLEM * problem_srs, double * bestBoundVal);
+int SRSgetrowbasisstatus(SRS_PROBLEM * problem_srs, char ** rowStatuses);
 
 // *** Utils ***
 int SRSreadmpsprob(SRS_PROBLEM * problem_srs, const char * fileName);

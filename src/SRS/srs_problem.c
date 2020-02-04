@@ -739,6 +739,26 @@ int SRSgetcolbasisstatus(SRS_PROBLEM * problem_srs, char ** colStatuses) {
 	return 0;
 }
 
+int SRSgetrowbasisstatus(SRS_PROBLEM * problem_srs, char ** rowStatuses) {
+	if (problem_srs->problem_spx == NULL) {
+		return -1;
+	}
+
+	int nbRow = problem_srs->problem_mps->NbCnt;
+	(*rowStatuses) = malloc(nbRow * sizeof(char));
+
+	for (int idx = 0; idx < nbRow; ++idx) {
+		(*rowStatuses)[idx] = EN_BASE_LIBRE;
+	}
+
+	for (int idx = 0; idx < problem_srs->problem_simplexe->NbVarDeBaseComplementaires; ++idx)
+	{
+		(*rowStatuses)[problem_srs->problem_simplexe->ComplementDeLaBase[idx]] = EN_BASE;
+	}
+
+	return 0;
+}
+
 int SRSgetbestbound(SRS_PROBLEM * problem_srs, double * bestBoundVal) {
 	if (problem_srs->is_mip) {
 		int status = SRSgetproblemstatus(problem_srs);
