@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Resolution d'un branch and bound reduit pour les heuristiques.				 
@@ -37,7 +21,7 @@
   # include "pne_memoire.h"
 # endif
 
-# define TRACES 0
+# define TRACES 1
 
 /*----------------------------------------------------------------------------*/
 
@@ -138,9 +122,9 @@ Probleme.AffichageDesTraces = OUI_PNE;
 
 Probleme.FaireDuPresolve = NON_PNE /* OUI_PNE */;        
 
-Probleme.TempsDExecutionMaximum = 10;  
+Probleme.TempsDExecutionMaximum = 60;  
 
-NbMaxSol = -1 /*1*/;
+NbMaxSol = /*-1*/ 1;
   
 Probleme.NombreMaxDeSolutionsEntieres = NbMaxSol;
 
@@ -148,7 +132,7 @@ Probleme.ToleranceDOptimalite = 1.e-0; /* C'est en % donc 1.e-4 ca fait 1.e-6 */
 
 Controls.Pne = Pne;
 Controls.PneFils = NULL;
-/*Controls.PresolveFils = NULL;*/
+Controls.Presolve = NULL;   
 Controls.PresolveUniquement = NON_PNE;
 Controls.FaireDuVariableProbing = OUI_PNE;
 Controls.RechercherLesCliques = OUI_PNE;
@@ -175,8 +159,8 @@ if ( OK == OUI_PNE ) {
   if ( Critere >= Pne->CoutOpt + 1.e-4 && Pne->YaUneSolutionEntiere == OUI_PNE ) {
 		/* Solution plus chere */
 		OK = NON_PNE;
-		/*printf("!!!! Warning dans l'Heuristique Critere %e  Pne->CoutOpt %e --------------------\n",
-                 Critere,Pne->CoutOpt);*/
+		printf("!!!! Warning dans l'Heuristique Critere %e  Pne->CoutOpt %e --------------------\n",
+                 Critere,Pne->CoutOpt);
 		/*exit(0);*/
   }
 }
@@ -188,13 +172,13 @@ if ( OK == NON_PNE ) goto Termine;
 for ( Var = 0 ; Var < Pne->NombreDeVariablesTrav ; Var++ ) {
   if ( Pne->TypeDeBorneTrav[Var] == VARIABLE_FIXE ) continue;
   if ( Pne->UTrav[Var] > Pne->UmaxTrav[Var] + 1.e-6 ) {
-	  /*printf("!!!!!!! Var %d UTrav %e UmaxTrav %e\n",Var,Pne->UTrav[Var],Pne->UmaxTrav[Var]);*/
+	  printf("!!!!!!! Var %d UTrav %e UmaxTrav %e\n",Var,Pne->UTrav[Var],Pne->UmaxTrav[Var]);
 		/*exit(0);*/
 		OK = NON_PNE;
 		break;  
 	}
   if ( Pne->UTrav[Var] < Pne->UminTrav[Var] - 1.e-6 ) {
-	  /*printf("!!!!!!! Var %d UTrav %e UminTrav %e\n",Var,Pne->UTrav[Var],Pne->UminTrav[Var]);*/
+	  printf("!!!!!!! Var %d UTrav %e UminTrav %e\n",Var,Pne->UTrav[Var],Pne->UminTrav[Var]);
 		/*exit(0);*/
 		OK = NON_PNE;
 		break;
@@ -210,7 +194,7 @@ for ( Cnt = 0 ; Cnt < Pne->NombreDeContraintesTrav ; Cnt++ ) {
       S += Pne->ATrav[il] * Pne->UTrav[Pne->NuvarTrav[il]];
       il++;
   }
-	ToleranceViolation = 1.e-6;
+	ToleranceViolation = 1.e-3;
   if ( Pne->SensContrainteTrav[Cnt] == '=' ) {
     if ( fabs( S - Pne->BTrav[Cnt] ) > ToleranceViolation ) {
       /*printf("!!!!!!!!! Contrainte d'egalite %d violee: valeur calculee %e second membre %e violation %e\n",Cnt,S,
@@ -222,8 +206,8 @@ for ( Cnt = 0 ; Cnt < Pne->NombreDeContraintesTrav ; Cnt++ ) {
   }
   else if ( Pne->SensContrainteTrav[Cnt] == '<' ) {
     if ( S > Pne->BTrav[Cnt] + ToleranceViolation ) {
-      /*printf("!!!!!!!!!!!!!!! Contrainte %d de type < ou = violee: valeur calculee %e second membre %e violation %e\n",Cnt,S,
-					    Pne->BTrav[Cnt],fabs( S - Pne->BTrav[Cnt] ));*/
+      printf("!!!!!!!!!!!!!!! Contrainte %d de type < ou = violee: valeur calculee %e second membre %e violation %e\n",Cnt,S,
+					    Pne->BTrav[Cnt],fabs( S - Pne->BTrav[Cnt] ));
 		  /*exit(0);*/
 		  OK = NON_PNE;
 		  break;							
@@ -231,8 +215,8 @@ for ( Cnt = 0 ; Cnt < Pne->NombreDeContraintesTrav ; Cnt++ ) {
   }
   else if ( Pne->SensContrainteTrav[Cnt] == '>' ) {
     if ( S < Pne->BTrav[Cnt] - ToleranceViolation ) {
-      /*printf("Contrainte %d de type > ou = violee: valeur calculee %e second membre %e violation %e\n",Cnt,S,
-					    Pne->BTrav[Cnt],fabs( S - Pne->BTrav[Cnt] ));*/
+      printf("Contrainte %d de type > ou = violee: valeur calculee %e second membre %e violation %e\n",Cnt,S,
+					    Pne->BTrav[Cnt],fabs( S - Pne->BTrav[Cnt] ));
 		  /*exit(0);*/
 		  OK = NON_PNE;
 		  break;								

@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Calcul d'une borne sur le sac a dos
@@ -30,6 +14,7 @@
 # include "pne_define.h"
 
 int PNE_KnapsackProgrammationDynamique( int , int * , double * , double );
+void PNE_MajorantKnapsackParEnumeration( int , int * , int * , double * , double , double , int , int );
 
 /*------------------------------------------------------------------------*/
 /* Resolution du probleme de separation pour les couvertures de sac a dos.
@@ -213,15 +198,76 @@ return( Z );
 
 /*-----------------------------------------------------------------------*/
 
+void PNE_MajorantKnapsackParEnumeration( int Z, int * MeilleurZ, int * C, double * A, double B0, double B, int VarInstanciee, int ValeurVarInstanciee )  
+{
+
+if ( ValeurVarInstanciee != 0 ) {
+	
+  Z = Z + C[VarInstanciee];
+  B = B + A[VarInstanciee];
+
+  if ( B > B0 ) {
+    /* On remonte */
+	  return;
+  }
+	else {
+	  if ( Z >= *MeilleurZ ) {
+		  *MeilleurZ = Z;  
+		}
+	}
+
+  if ( VarInstanciee == 0 ) {
+    /* On est arrive a une feuille de l'arbre */
+    return;
+  }
+	
+}
+else {
+  if ( VarInstanciee == 0 ) {
+    /* On est arrive a une feuille de l'arbre */
+	  if ( Z >= *MeilleurZ ) {
+		  *MeilleurZ = Z;
+		}
+    return;
+  }
+}
+
+VarInstanciee = VarInstanciee - 1;
+PNE_MajorantKnapsackParEnumeration( Z, MeilleurZ, C, A, B0, B, VarInstanciee, 0 );
+PNE_MajorantKnapsackParEnumeration( Z, MeilleurZ, C, A, B0, B, VarInstanciee, 1 );
+
+return;
+}
+
+/*-----------------------------------------------------------------------*/
+
 int PNE_MajorantKnapsack( int NombreDeVariables, int * C, double * A, double B0,
                           char LesCoeffSontEntiers )  
 {
 int Var; double X; int Z; int U_Dantzig; int U0; int U1; char U0_Valide; char U1_Valide;
 char SolEntiere; int sigma0_s; int sigma1_s; double Marge; double B; int s;
-int U; char U_Valide; int Zdyn;
+int U; char U_Valide; int Zdyn; int MeilleurZ; 
+
+
 # if UTILISER_AUSSI_LA_PROGRAMMATION_DYNAMIQUE == OUI_PNE
   char ProgDyn;
 # endif
+
+if ( B0 <= 0.0 ) return( 0 );
+
+B0 += 1.e-12;
+
+if ( NombreDeVariables <= 8 ) {
+
+	MeilleurZ = 0;
+  Z = 0;
+	B = 0;
+	PNE_MajorantKnapsackParEnumeration( Z, &MeilleurZ, C, A, B0, B, NombreDeVariables-1, 0 );	
+	PNE_MajorantKnapsackParEnumeration( Z, &MeilleurZ, C, A, B0, B, NombreDeVariables-1, 1 );			
+	return( MeilleurZ );
+	
+}
+	
 
 Zdyn = -1;
 # if UTILISER_AUSSI_LA_PROGRAMMATION_DYNAMIQUE == OUI_PNE
@@ -232,7 +278,7 @@ Zdyn = -1;
       /*printf("Programmation dynamique B0 %e\n",B0);*/
       Z = PNE_KnapsackProgrammationDynamique( NombreDeVariables, C, A, B0 );
 		  Zdyn = Z;
-		  /*return( Z);*/
+		  return( Z);
 	  }
   }
 # endif
@@ -263,13 +309,11 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
 		else if ( fabs( 1. - X ) < Marge ) {
 			Z += C[s];
 			SolEntiere = OUI_PNE;
-		}			
+		}
+		break; /* Il faut sortir */
 	}	
 }
 if ( SolEntiere == OUI_PNE ) {
-  if ( Zdyn >= 0 && /*Zdyn < Z*/ Zdyn != Z ) {
-	  printf("SolEntiere prog dyn Zdyn %d Z %d\n",Zdyn,Z);
-	}
   return( Z );
 }
 
@@ -296,6 +340,7 @@ for ( Var = s + 1 ; Var < NombreDeVariables ; Var++ ) {
 		if ( fabs(X) < Marge ) U0 = Z;
 		else if ( fabs( 1. - X ) < Marge ) U0 = Z + C[sigma0_s];
 		else U0 = Z + (int) floor( C[sigma0_s] * X );
+		break; /* Il faut sortir */
 	}
 }
 
@@ -317,7 +362,8 @@ if ( B > 0.0 ) {
 		  U1_Valide = OUI_PNE;
 		  if ( fabs(X) < Marge ) U1 = Z;
 		  else if ( fabs( 1. - X ) < Marge ) U1 = Z + C[sigma1_s];
-		  else U1 = Z + (int) floor( C[sigma1_s] * X );			
+		  else U1 = Z + (int) floor( C[sigma1_s] * X );
+			break; /* Il faut sortir */
 	  }
   }
 }
@@ -331,22 +377,11 @@ if ( U0_Valide == OUI_PNE && U1_Valide == OUI_PNE ) {
 
 Z = U_Dantzig ;
 if ( U_Valide == OUI_PNE ) {
-  if ( U <= Z ) {
-	  /*printf("Borne de Dantzig rejetee U %d U_Dantzig %d\n",U,U_Dantzig);*/
+  if ( U < Z ) {
+		/*printf("Borne de Dantzig rejetee U %d U_Dantzig %d\n",U,U_Dantzig);*/		
 	  Z = U;
 	}
-	/*
-	else {
-	  if ( U_Valide == OUI_PNE ) printf("Borne de Dantzig pas rejetee U %d U_Dantzig %d  U0_Valide %d U1_Valide %d s %d\n",U,U_Dantzig,U0_Valide,U1_Valide,s);
-	}
-	*/
 }
-
-/*
-if ( Zdyn >= 0 && Zdyn != Z ) {
-	printf(" prog dyn Zdyn %d Z %d\n",Zdyn,Z);
-}
-*/
 
 return( Z );
 

@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: On modifie la matrice des contraintes dans le cas ou le
@@ -32,6 +16,9 @@
   
 # include "bb_define.h"
 
+# include "prs_define.h"
+# include "prs_fonctions.h"
+
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "pne_memoire.h"
 # endif
@@ -42,15 +29,19 @@ void PNE_ProbingModifierLaMatriceDesContraintes( PROBLEME_PNE * Pne, PROBING_OU_
 {
 int il; int Cnt; int NumCoupe; int il0; int il0Max; int NombreDeContraintes; int Nb;
 int * Mdeb0; int * NbTerm0; int * Nuvar0; int * Mdeb; int * NbTerm; int * Nuvar; int * First;
-int * NbElements; int * Colonne; int * NumeroDeCoupeDeProbing; double Amn; double Amx; int ilMax;
-double * B0; double * A0; double * B; double * A; double * SecondMembre; double * Coefficient;
-char * Sens0; char * SensContrainte; COUPES_DE_PROBING * CoupesDeProbing; double a;
-int NbCmod;
+int * NbElements; int * Colonne; int * NumeroDeCoupeDeProbing;  double * B0; double * A0;
+double * B; double * A; double * SecondMembre; double * Coefficient; char * Sens0;
+char * SensContrainte; COUPES_DE_PROBING * CoupesDeProbing; int NbCmod;	double S; int Var;
+double * X; double * Xmin; double * Xmax;
 
 CoupesDeProbing = Pne->CoupesDeProbing;
 if ( CoupesDeProbing == NULL ) return;
 if ( CoupesDeProbing->NombreDeCoupesDeProbing <= 0 ) return;
- 
+
+X = Pne->UTrav;
+Xmin = Pne->UminTrav;
+Xmax = Pne->UmaxTrav;
+
 NombreDeContraintes = Pne->NombreDeContraintesTrav;
 Mdeb0 = Pne->MdebTrav;
 NbTerm0 = Pne->NbTermTrav;
@@ -58,8 +49,6 @@ B0 = Pne->BTrav;
 Sens0 = Pne->SensContrainteTrav;
 Nuvar0 = Pne->NuvarTrav;
 A0 = Pne->ATrav;
-
-if ( CoupesDeProbing->NombreDeCoupesDeProbing <= 0 ) return;
 
 First = CoupesDeProbing->First;
 NbElements = CoupesDeProbing->NbElements;
@@ -101,7 +90,9 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   Mdeb[Cnt] = il;
 	SensContrainte[Cnt] = Sens0[Cnt]; 
 	Nb = 0;
-	if ( NumeroDeCoupeDeProbing[Cnt] < 0 ) {
+  NumCoupe = NumeroDeCoupeDeProbing[Cnt];	
+	if ( NumCoupe < 0 ) {
+	  ConserverLaContrainte:
 	  B[Cnt] = B0[Cnt];
     il0    = Mdeb0[Cnt];
     il0Max = il0 + NbTerm0[Cnt];				
@@ -116,34 +107,46 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
     }
 	}
 	else {
-    /* On remplace la contrainte par la coupe de probing */
-    NumCoupe = NumeroDeCoupeDeProbing[Cnt];
+	  /* On verifie si la contrainte est devenue toujours inactive */		
+		S = 0;
+    il0    = Mdeb0[Cnt];
+    il0Max = il0 + NbTerm0[Cnt];				
+    while ( il0 < il0Max) {
+		  Var = Nuvar0[il0];			
+			if ( Pne->TypeDeBorneTrav[Var] == VARIABLE_FIXE ) S +=  A0[il0] * X[Var];
+			else if ( A0[il0] > 0 ) S +=  A0[il0] * Xmax[Var];
+			else S +=  A0[il0] * Xmin[Var];
+      il0++;
+    }				
+		if ( S <= B0[Cnt] ) {
+			/* Inutile de remplacer par une coupe de probing */
+			goto ConserverLaContrainte;
+    }				
+    /* On remplace la contrainte par la coupe de probing */		
 		NbCmod++;
-	  B[Cnt] = SecondMembre[NumCoupe];
+	  B[Cnt] = SecondMembre[NumCoupe];		
     il0 = First[NumCoupe];
 		if ( il0 < 0 ) {
 		  printf("Bug dans PNE_ProbingModifierLaMatriceDesContraintes\n");
 			exit(0);
 		}
+	
 	  il0Max = il0 + NbElements[NumCoupe];
 	  while ( il0 < il0Max ) {
-	    if ( Coefficient[il0] != 0.0 ) {
+	    if ( Coefficient[il0] != 0.0 ) {			
         A    [il] = Coefficient[il0];				
         Nuvar[il] = Colonne[il0];				
 			  Nb++;
         il++;  
       }
       il0++;
-	  }						
-	}
-	
+	  }		
+	}	
   for ( il0 = 0 ; il0 < MARGE_EN_FIN_DE_CONTRAINTE ; il0++ ) {
     A[il] = 0.0;
     il++; 
-  }
-	
-	NbTerm[Cnt] = Nb;	
-		
+  }	
+	NbTerm[Cnt] = Nb;		
 }
 
 if ( Pne->AffichageDesTraces == OUI_PNE ) {
@@ -151,23 +154,6 @@ if ( Pne->AffichageDesTraces == OUI_PNE ) {
 }
 
 Pne->ChainageTransposeeExploitable = NON_PNE;
-
-Amn =  LINFINI_PNE;
-Amx = -LINFINI_PNE;
-for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
-  il    = Mdeb[Cnt];
-  ilMax = il + NbTerm[Cnt];
-  while ( il < ilMax ) {
-    a = fabs ( A[il] ); 
-    if ( a > 0 ) {
-      if ( a < Amn ) Amn = a;
-      else if ( a > Amx ) Amx = a; 
-    }
-    il++;
-  }
-}
-Pne->PlusGrandTerme = Amx;  
-Pne->PlusPetitTerme = Amn;
 
 Pne->MdebTrav = Mdeb;
 Pne->NbTermTrav = NbTerm;
@@ -188,10 +174,15 @@ free( Pne->NumContrainteTrav );
 Pne->CsuiTrav          = (int *) malloc( Pne->TailleAlloueePourLaMatriceDesContraintes * sizeof( int ) );
 Pne->NumContrainteTrav = (int *) malloc( Pne->TailleAlloueePourLaMatriceDesContraintes * sizeof( int ) );
 
+PNE_CalculPlusGrandEtPlusPetitTerme( Pne );
+
 /* Liberation des coupes de probing */
+
 if ( CoupesDeProbing != NULL ) {
   free( CoupesDeProbing->SecondMembre );
-  CoupesDeProbing->SecondMembre = NULL;	
+  CoupesDeProbing->SecondMembre = NULL;
+  free( CoupesDeProbing->NombreDeModificationsDeLaCoupeDeProbing );
+  CoupesDeProbing->NombreDeModificationsDeLaCoupeDeProbing = NULL;	
   free( CoupesDeProbing->First );
   CoupesDeProbing->First = NULL;	
   free( CoupesDeProbing->NbElements );

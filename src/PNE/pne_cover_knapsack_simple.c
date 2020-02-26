@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Recherche de couverture de sac a dos 
@@ -46,7 +30,7 @@ char * VariableSupprimee; char * ContrainteDejaUtilisee; double * VariableDuale;
 char Mixed_0_1_Knapsack; int Cnt1; int i; char Found; double u; double l; double bBorne;
 int VarBin; int * CntDeBorneInfVariable; int * CntDeBorneSupVariable; char RendreLesCoeffsEntiers;
 
-/*printf("PNE_CoverKnapsackSimple\n");*/  
+/*printf("     PNE_CoverKnapsackSimple\n");*/
 
 ContrainteDejaUtilisee = (char *) malloc( Pne->NombreDeContraintesTrav * sizeof( char ) );
 if ( ContrainteDejaUtilisee == NULL ) {
@@ -76,6 +60,10 @@ UTrav = Pne->UTrav;
 UminTrav = Pne->UminTravSv;
 UmaxTrav = Pne->UmaxTravSv;
 
+# if BORNES_INF_AUXILIAIRES == OUI_PNE
+  UminTrav = Pne->XminAuxiliaire;
+# endif
+
 VariableDuale = Pne->VariablesDualesDesContraintesTravEtDesCoupes;
 
 ContrainteKnapsack = Pne->ContrainteKnapsack;
@@ -87,8 +75,11 @@ NbKnapsack = 0;
 for ( Cnt = 0 ; Cnt < Pne->NombreDeContraintesTrav ; Cnt++ ) {
   if ( ContrainteKnapsack[Cnt] == IMPOSSIBLE ) continue;
 	if ( NbTermTrav[Cnt] > NB_TERMES_FORCE_CALCUL_DE_K ) {
-	  if ( fabs( VariableDuale[Cnt] ) < SEUIL_VARIABLE_DUALE_POUR_CALCUL_DE_COUPE ) continue;
-	}
+	  if ( fabs( VariableDuale[Cnt] ) < SEUIL_VARIABLE_DUALE_POUR_CALCUL_DE_COUPE ) {
+		  /*printf("Refus de test d'une Knapsack VariableDuale[%d] = %e Seuil = %e\n",Cnt,VariableDuale[Cnt],SEUIL_VARIABLE_DUALE_POUR_CALCUL_DE_COUPE);*/
+		  continue;
+		}
+	}	
 	Inf = IMPOSSIBLE;
 	Sup = IMPOSSIBLE;	
 	if ( ContrainteKnapsack[Cnt] == INF_ET_SUP_POSSIBLE ) {
@@ -175,7 +166,7 @@ for ( Cnt = 0 ; Cnt < Pne->NombreDeContraintesTrav ; Cnt++ ) {
         /* Fin borne sup variable */
 				
 			  if ( TypeBorne == VARIABLE_BORNEE_DES_DEUX_COTES || TypeBorne == VARIABLE_BORNEE_SUPERIEUREMENT ) {
-			    SecondMembre -= ATrav[il] * UmaxTrav[Var];								
+			    SecondMembre -= ATrav[il] * UmaxTrav[Var];										
         }								
 				else {
 				  NombreDeTermes = 0;
@@ -214,8 +205,8 @@ for ( Cnt = 0 ; Cnt < Pne->NombreDeContraintesTrav ; Cnt++ ) {
         }
         /* Fin borne inf variable */
 				
-			  if ( TypeBorne == VARIABLE_BORNEE_DES_DEUX_COTES || TypeBorne == VARIABLE_BORNEE_INFERIEUREMENT ) {
-			    SecondMembre -= ATrav[il] * UminTrav[Var];				
+			  if ( TypeBorne == VARIABLE_BORNEE_DES_DEUX_COTES || TypeBorne == VARIABLE_BORNEE_INFERIEUREMENT ) {				
+			    SecondMembre -= ATrav[il] * UminTrav[Var];					
         }								
 				else {
 				  NombreDeTermes = 0;
@@ -227,7 +218,7 @@ for ( Cnt = 0 ; Cnt < Pne->NombreDeContraintesTrav ; Cnt++ ) {
       il++; 
     }  
     /* Recherche couverture de sac a dos */		
-		if ( NombreDeTermes >= MIN_TERMES_POUR_KNAPSACK ) {
+		if ( NombreDeTermes >= MIN_TERMES_POUR_KNAPSACK ) {		
 		  /*printf("Recherche Knapsack simple\n");*/
 			RendreLesCoeffsEntiers = OUI_PNE;
 		  CouvertureTrouvee = NON_PNE;						

@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Detection des contraintes de borne variable de probing violees.
@@ -40,8 +24,8 @@
 # define PROFONDEUR_LIMITE_CONTRAINTES_DE_BORNE_VARIABLE 1000000  /*10*/ 
 # define MAX_COUPES_DE_BORNE_VARIABLE 1000
 
-# define TESTER_LE_CONDITIONNEMENT OUI_PNE
-# define RAPPORT_MAX 1.e+4 
+# define TESTER_LE_CONDITIONNEMENT OUI_PNE /*OUI_PNE*/
+# define RAPPORT_MAX 1.e+4
 
 # define TRACES NON_PNE
 
@@ -71,6 +55,11 @@ if ( Pne->ContraintesDeBorneVariable == NULL ) return;
 
 Bb = Pne->ProblemeBbDuSolveur;
 if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > PROFONDEUR_LIMITE_CONTRAINTES_DE_BORNE_VARIABLE ) return;
+
+if ( Bb->CalculerDesCoupesDeGomory == NON_PNE && 0 ) {
+  printf("Encours inhibition des DetectionDesContraintesDeBorneVariableViolees si CalculerDesCoupesDeGomory = NON_PNE\n");
+  return; /* A terme il faudra trouver un indicateur specifique */
+}
 
 # if TESTER_LE_CONDITIONNEMENT == OUI_PNE 			
   Spx = (PROBLEME_SPX *) Pne->ProblemeSpxDuSolveur;
@@ -120,7 +109,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintesDeBorne ; Cnt++ ) {
 	  ValeurMax = -LINFINI_PNE;
 	# endif
 	while ( il < ilMax ) {
-	  if ( TypeDeBorne[Colonne[il]] != VARIABLE_FIXE ) {
+	  if ( TypeDeBorne[Colonne[il]] != VARIABLE_FIXE ) {	
       /* Car sinon il n'y a pas de variable correspondante dans le simplexe */
 			/* Test de conditionnement */
       # if TESTER_LE_CONDITIONNEMENT == OUI_PNE 			
@@ -139,14 +128,14 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintesDeBorne ; Cnt++ ) {
 	    Indice[NbT] = Colonne[il];				
 		  NbT++;
 		}
-		else {
+		else {		
       NbT = 0; /* Pour qu'elle ne soit pas violee */
       break;			
 		}		
 		il++;
 	}
 	if ( NbT != 2 ) continue;
-
+	
   if ( S - B > Seuil ) {
     Pne->SommeViolationsBornesVariables += S - B;
     Pne->NombreDeBornesVariables++;
@@ -156,7 +145,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintesDeBorne ; Cnt++ ) {
 	  E = S - B;
 
     # if TESTER_LE_CONDITIONNEMENT == OUI_PNE
-	    RapportCoupe = ValeurMax / ValeurMin;
+	    RapportCoupe = ValeurMax / ValeurMin;			
 		  if ( RapportCoupe > RapportDeScaling ) continue;
 			RapportCoupe = 1.;
       # ifdef ON_COMPILE			
@@ -169,19 +158,22 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintesDeBorne ; Cnt++ ) {
 			  RapportCoupe = PlusPetitTermeDeLaMatrice / ValeurMin;
 			}
 			# endif
-			
+
       if ( ValeurMax > PlusGrandTermeDeLaMatrice ) {
         /* On fait une homothetie vers PlusGrandTermeDeLaMatrice */
-			  RapportCoupe = PlusGrandTermeDeLaMatrice / ValeurMax;
+			  RapportCoupe = PlusGrandTermeDeLaMatrice / ValeurMax;								
 			}
 			
-			if ( RapportCoupe != 1. ) {
-			  /*SPX_ArrondiEnPuissanceDe2( &RapportCoupe );*/				
-			  for ( NbT = 0 ; NbT < 2 ; NbT++ ) Coeff[NbT] *= RapportCoupe;				
-			  B *= RapportCoupe;				
+			if ( RapportCoupe != 1. ) {			
+			  /*SPX_ArrondiEnPuissanceDe2( &RapportCoupe );*/
+			  for ( NbT = 0 ; NbT < 2 ; NbT++ ) Coeff[NbT] *= RapportCoupe;								
+			  B *= RapportCoupe;
+				E *= RapportCoupe;
 			}
     # endif
-	
+
+    if ( PNE_LaCoupeEstColineaire( Pne, Coeff, Indice, B, NbT ) == OUI_PNE ) continue;
+			
 	  NormeV += E;
     /* On Stocke la coupe */
 		NbV++;
@@ -191,7 +183,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintesDeBorne ; Cnt++ ) {
 		  printf("%e (%d) + %e (%d) < %e  violation: %e\n",Coeff[0],Indice[0],Coeff[1],Indice[1],B,E);
 		# endif
     PNE_EnrichirLeProblemeCourantAvecUneCoupe( Pne, 'K', NbT, B, E, Coeff, Indice );
-    Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees-1]->IndexDansContraintesDeBorneVariable = Cnt;
+    Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees-1]->IndexDansContraintesDeBorneVariable = Cnt;   
 	}
 }
 

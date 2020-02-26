@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Ecriture du probleme au format MPS apres le presolve
@@ -43,14 +27,15 @@ int NombreDeVariables; int * TypeDeVariable; int * TypeDeBorneDeLaVariable;
 double * Xmax; double * Xmin; double * CoutLineaire; int NombreDeContraintes;   
 double * SecondMembre; char * Sens; int * IndicesDebutDeLigne; 
 int * NombreDeTermesDesLignes;	double * CoefficientsDeLaMatriceDesContraintes; 
-int * IndicesColonnes;                 
+int * IndicesColonnes; double * X;               
 /*                                                        */
 
 NombreDeVariables       = Pne->NombreDeVariablesTrav; 
 TypeDeVariable          = Pne->TypeDeVariableTrav; 
 TypeDeBorneDeLaVariable = Pne->TypeDeBorneTrav; 
 Xmax                    = Pne->UmaxTrav;
-Xmin                    = Pne->UminTrav; 
+Xmin                    = Pne->UminTrav;
+X                       = Pne->UTrav;
 CoutLineaire            = Pne->LTrav; 
 NombreDeContraintes                   = Pne->NombreDeContraintesTrav;   
 SecondMembre                          = Pne->BTrav; 
@@ -123,8 +108,8 @@ if( Flot == NULL ) {
 }
 
 /* Ecrire du titre */
-fprintf(Flot,"* Number of variables:   %d\n",NombreDeVariables);
-fprintf(Flot,"* Number of constraints: %d\n",NombreDeContraintes);
+fprintf(Flot,"* Nombre de variables:   %d\n",NombreDeVariables);
+fprintf(Flot,"* Nombre de contraintes: %d\n",NombreDeContraintes);
 
 /*
  Les champs du format MPS
@@ -214,7 +199,7 @@ fprintf(Flot,"BOUNDS\n");
 */
 for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
   if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_FIXE ) {
-    sprintf(Nombre,"%-.9lf",Xmin[Var]);
+    sprintf(Nombre,"%-.9lf",X[Var]/*Xmin[Var]*/);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
     fprintf(Flot," FX BNDVALUE  C%07d  %s\n",Var,Nombre);
     continue;

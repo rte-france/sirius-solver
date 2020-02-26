@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Calcul des coupes d'intersection (necessite d'avoir
@@ -31,6 +15,9 @@
 # include "spx_define.h"
 # include "spx_fonctions.h"
 
+# include "bb_define.h"
+# include "bb_fonctions.h"
+
 /*----------------------------------------------------------------------------*/
 
 void PNE_CalculerLesCoupesDIntersection( PROBLEME_PNE * Pne )
@@ -39,13 +26,20 @@ int i; int j; int NbPotentielDeCoupes; int NombreDeTermes; double S; double X;
 double SecondMembre; double PlusGrandCoeff; char OnAEcrete; double Y; int NombreDeVariablesTrav;
 double RapportMaxDesCoeffs; double ZeroPourCoeffVariablesDEcart; double ZeroPourCoeffVariablesNative;
 double RelaxRhsAbs; double RelaxRhsRel; int * IndiceDeLaVariable; double * Coefficient;
-double * UTrav;
+double * UTrav; BB * Bb; 
 
 RapportMaxDesCoeffs = RAPPORT_MAX_COEFF_COUPE_INTERSECTION;
 ZeroPourCoeffVariablesDEcart = ZERO_POUR_COEFF_VARIABLE_DECART_DANS_COUPE_GOMORY_OU_INTERSECTION;
 ZeroPourCoeffVariablesNative = ZERO_POUR_COEFF_VARIABLE_NATIVE_DANS_COUPE_GOMORY_OU_INTERSECTION;
 RelaxRhsAbs = RELAX_RHS_INTERSECTION_ABS;
 RelaxRhsRel = RELAX_RHS_INTERSECTION_REL;
+
+Bb = (BB *) Pne->ProblemeBbDuSolveur;
+if ( Bb != NULL ) {
+  if ( Bb->NoeudEnExamen == Bb->NoeudRacine ) {
+    RapportMaxDesCoeffs = COEFFICIENT_DELARGISSEMENT_DU_RAPPORT_MAX_COUPE_INTERSECTION_AU_NOEUD_RACINE * RAPPORT_MAX_COEFF_COUPE_INTERSECTION;
+  }
+}
 
 IndiceDeLaVariable = Pne->IndiceDeLaVariable_CG;
 Coefficient = Pne->Coefficient_CG;
@@ -105,6 +99,8 @@ for ( i = 0 ; i < NbPotentielDeCoupes ; i++ ) {
 		  printf(" < %e\n",SecondMembre);
 		  fflush( stdout );			
 			*/
+
+      if ( PNE_LaCoupeEstColineaire( Pne, Coefficient, IndiceDeLaVariable, SecondMembre, NombreDeTermes ) == OUI_PNE ) continue;		
 			
       PNE_NormaliserUnCoupe( Pne->Coefficient_CG, &SecondMembre, NombreDeTermes, PlusGrandCoeff );
 			

@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Chainage de la transposee. On stocke les contraintes
@@ -58,6 +42,8 @@ if ( CderTrav == NULL ) {
 
 for ( i = 0 ; i < Pne->NombreDeVariablesTrav ; i++ ) CdebTrav[i] = -1;
 
+/* C'est uniquement pour les MIR Marchand Wolsey. Si on n'en a plus besoin la, alors
+   c'est inutile */
 /* Contraintes d'egalite en premier */
 for ( i = 0 ; i < Pne->NombreDeContraintesTrav ; i++ ) {
   if ( SensContrainteTrav[i] != '=' ) continue;
@@ -81,7 +67,7 @@ for ( i = 0 ; i < Pne->NombreDeContraintesTrav ; i++ ) {
     il++;
   }
 }
-/* Contraintes d'inegalite ensuite */
+/* Contraintes d'inegalite ensuite */ 
 for ( i = 0 ; i < Pne->NombreDeContraintesTrav ; i++ ) {
   if ( SensContrainteTrav[i] == '=' ) continue;
   il    = MdebTrav[i];
@@ -105,7 +91,7 @@ for ( i = 0 ; i < Pne->NombreDeContraintesTrav ; i++ ) {
   }
 }
 
-free( CderTrav );
+free( CderTrav );  
 
 /* Decompte nombre de termes de chaque colonne */
 for ( i = 0 ; i < Pne->NombreDeVariablesTrav ; i++ ) {
@@ -115,7 +101,7 @@ for ( i = 0 ; i < Pne->NombreDeVariablesTrav ; i++ ) {
     ilk++;
 	  il = CsuiTrav[il];
 	}
-  CNbTermTrav[i] = ilk;
+  CNbTermTrav[i] = ilk;	
 }
 
 Pne->ChainageTransposeeExploitable = OUI_PNE;

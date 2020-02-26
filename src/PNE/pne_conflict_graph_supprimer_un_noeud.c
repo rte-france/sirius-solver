@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Suppression d'un noeud dans le conflict graph.
@@ -80,7 +64,71 @@ First[Noeud] = -1;
 return;
 }
 
+/*----------------------------------------------------------------------------*/
+/* On reporte les arcs sur le noeud restant et on elimine les arcs du neoud
+   supprime */
+	 
+void PNE_ConflictGraphSubstituerUnNoeud( PROBLEME_PNE * Pne, int NoeudConserve, int NoeudSubstitue,
+                                         int * First, int * Adjacent, int * Next )
+{
+int Edge; int Nv; int ComplementDuNoeudConserve; int Pivot; int Var; double Valeur; int VarNv;
+char * BorneInfConnue ;PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve; char * BorneInfConnueSv;
+int * NumeroDesVariablesFixees; int NombreDeVariablesFixees; int i;
 
+Pivot = Pne->ConflictGraph->Pivot;
+ProbingOuNodePresolve = Pne->ProbingOuNodePresolve;
+BorneInfConnue = ProbingOuNodePresolve->BorneInfConnue;   
+BorneInfConnueSv = ProbingOuNodePresolve->BorneInfConnueSv;
+NumeroDesVariablesFixees = ProbingOuNodePresolve->NumeroDesVariablesFixees;
+
+if ( NoeudConserve < Pivot ) {
+  ComplementDuNoeudConserve = NoeudConserve + Pivot;
+	Var = NoeudConserve;
+	Valeur = 1;
+}
+else {
+  ComplementDuNoeudConserve = NoeudConserve - Pivot;
+	Var = ComplementDuNoeudConserve;
+	Valeur = 0;
+}
+
+NombreDeVariablesFixees = 0;
+
+Edge = First[NoeudSubstitue];
+while ( Edge >= 0 ) {
+  Nv = Adjacent[Edge];
+  if ( Nv == NoeudConserve || Nv == ComplementDuNoeudConserve ) goto NextEdge;
+
+	if ( Nv < Pivot ) {
+    VarNv = Nv;
+	  BorneInfConnue[VarNv] = FIXATION_SUR_BORNE_INF;
+	}
+	else {
+    VarNv = Nv - Pivot;
+	  BorneInfConnue[VarNv] = FIXATION_SUR_BORNE_SUP;
+	}
+	
+  NumeroDesVariablesFixees[NombreDeVariablesFixees] = VarNv;
+  NombreDeVariablesFixees += 1;		
+
+	NextEdge:
+	Edge = Next[Edge];
+}
+
+ProbingOuNodePresolve->NombreDeVariablesFixees = NombreDeVariablesFixees;
+
+/* On recupere les arcs qu'il faut faire pointer sur NoeudConserve */
+PNE_MajConflictGraph( Pne, Var, Valeur );
+
+/* On remet les valeurs initiales de BorneInfConnue */
+for ( i = 0 ; i < NombreDeVariablesFixees ; i++ ) {
+  Var = NumeroDesVariablesFixees[i];
+  BorneInfConnue[Var] = BorneInfConnueSv[Var];
+}
+ProbingOuNodePresolve->NombreDeVariablesFixees = 0;		
+
+return;
+}
 
 
 

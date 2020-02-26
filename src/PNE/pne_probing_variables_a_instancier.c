@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Construction de la liste des variables a instancier
@@ -80,14 +64,21 @@ return;
 	 dans lequel elles interviennent */
 void PNE_ProbingInitVariablesAInstancierApresLePresolve( PROBLEME_PNE * Pne, PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve )
 {
-int Var; int NombreDeVariables; int * TypeDeBorne; int * TypeDeVariable; double * Umin;
-double * Umax; char * FlagVarAInstancier; int NbVarAInstancier; 
+int Var; int NombreDeVariables; int * TypeDeBorne; int * TypeDeVariable; double * Xmin;
+double * Xmax; char * FlagVarAInstancier; int NbVarAInstancier; 
 
 NombreDeVariables = Pne->NombreDeVariablesTrav;
 TypeDeBorne = Pne->TypeDeBorneTrav;
 TypeDeVariable = Pne->TypeDeVariableTrav;
-Umin = Pne->UminTrav;
-Umax = Pne->UmaxTrav;
+
+# if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+  Xmin = Pne->XminPourLeCalculDeBminBmax;
+  Xmax = Pne->XmaxPourLeCalculDeBminBmax;
+# else
+  Xmin = Pne->UminTrav;
+  Xmax = Pne->UmaxTrav;
+# endif
+
 
 FlagVarAInstancier = ProbingOuNodePresolve->FlagVarAInstancier;
 
@@ -96,7 +87,7 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
   FlagVarAInstancier[Var] = 0;
 	if ( TypeDeBorne[Var] == VARIABLE_FIXE ) continue;
 	if ( TypeDeVariable[Var] != ENTIER ) continue;
-	if ( Umin[Var] == Umax[Var] ) continue;
+	if ( Xmin[Var] == Xmax[Var] ) continue;
   FlagVarAInstancier[Var] = 1;
  	NbVarAInstancier++;
 }

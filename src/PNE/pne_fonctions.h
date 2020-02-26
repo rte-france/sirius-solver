@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 # ifdef __cplusplus
   extern "C"
 	{
@@ -29,8 +13,6 @@
 														
 /*--------------------------------------------------------------------------------------------------*/
 
-#include "mps_define.h"
-
 void PNE_SolveurProblemeReduit( PROBLEME_A_RESOUDRE * , CONTROLS * );
 
 void PNE_ControleMacAdresse( void );
@@ -40,8 +22,6 @@ void PNE_SolveurCalculs( PROBLEME_A_RESOUDRE * , PROBLEME_PNE * );
 void PNE_InitialiserLaPne( PROBLEME_PNE * , PROBLEME_A_RESOUDRE * );
 
 void PNE_EnleverLesToutPetitsTermes( int * , int * , int * , double * , double * , double * , int , char );							 
-
-void PNE_AjouterLaContrainteDeCoutMax( PROBLEME_PNE * );
 
 void PNE_ClasserLesCoefficientsDesContraintesOrdreDecroissant( PROBLEME_PNE * );
 
@@ -97,6 +77,8 @@ void PNE_ConstruireLeChainageDeLaTransposee( PROBLEME_PNE * );
 
 void PNE_CalculerLesCoupes( PROBLEME_PNE * );
 
+char PNE_LaCoupeEstColineaire( PROBLEME_PNE * , double * , int * , double , int );
+
 void PNE_EnrichirLeProblemeCourantAvecUneCoupe( PROBLEME_PNE * , char , /*int ,*/ int , double , double , double * , int * ); 
 
 void PNE_TrierLesCoupesCalculees( PROBLEME_PNE * , int , int , char , char * , char * , char * );
@@ -107,7 +89,7 @@ void PNE_CalculerLesCoupesDIntersection( PROBLEME_PNE * );
 
 void PNE_Gomory( PROBLEME_PNE * );
 
-void PNE_CalculerUneGomoryEnVariablesMixtes( PROBLEME_PNE * , int , double );
+/*void PNE_CalculerUneGomoryEnVariablesMixtes( PROBLEME_PNE * , int , double );*/
 
 void PNE_NormaliserUnCoupe( double * , double * , int , double );
 						  
@@ -127,12 +109,16 @@ void PNE_ArchivagesPourReducedCostFixingAuNoeudRacine( PROBLEME_PNE * , int * , 
 
 void PNE_ReducedCostFixingAuNoeudRacine( PROBLEME_PNE * );
 
+void PNE_TesterLaDominanceDesVariablesEntieres( PROBLEME_PNE * , int * , char * , char * );
+
 void PNE_RelanceDuSimplexeAuNoeudRacine(  PROBLEME_PNE * , int * );
 
 void PNE_FixationDesVariablesEntieresSurCritere( PROBLEME_PNE * );
 
 void  PNE_CalculerLesRestrictionsDeBornes( PROBLEME_PNE * , int * , char * , char );
 					
+void PNE_VerifierAdmissibiliteDeLaSolutionCourante( PROBLEME_PNE * , int * );
+
 void PNE_ArchiverLaSolutionCourante( PROBLEME_PNE * ); 
 
 void PNE_RestituerLaSolutionArchivee( PROBLEME_PNE * ); 
@@ -161,8 +147,6 @@ void PNE_LibereProbleme( PROBLEME_PNE * );
 
 void PNE_LireJeuDeDonneesMPS( void );
 
-void PNE_LireJeuDeDonneesMPS_AvecNom(PROBLEME_MPS * problemMps, const char * );
-
 void PNE_PrendreEnCompteLesContraintesRangeMPS( void );
 
 void PNE_EcrireJeuDeDonneesMPS( PROBLEME_PNE * , PROBLEME_A_RESOUDRE * );
@@ -187,7 +171,9 @@ void PNE_ClasserVariablesDansContraintes(  PROBLEME_PNE *  );
 
 double PNE_SRand( double );
                
-double PNE_Rand( double );	   
+double PNE_Rand( double );
+
+int PNE_LaValeurEstEntiere( double * );
 
 /* Heuristiques */
 
@@ -232,7 +218,9 @@ void PNE_KnapsackSurCombinaisonsDeContraintes( PROBLEME_PNE * , int , int , int 
 		
 void PNE_GreedyCoverKnapsack( PROBLEME_PNE * , int , int , int * , double * , double , char , char * ,
                               char , double , int , int * , char * , double * );
-															
+
+void PNE_LifterKnapsackAvecLeGrapheDeConflits( PROBLEME_PNE * , int * , double * , double * , int * );
+
 void PNE_FreeTasGreedyCoverKnapsack( char * );
 
 int PNE_MajorantKnapsack( int , int * , double * , double , char );
@@ -272,6 +260,9 @@ char PNE_C_MIR( PROBLEME_PNE * , int , int * , double * , double * , double * , 
 void PNE_SyntheseEtStockageMIR( PROBLEME_PNE * , int , int * , double * , double , double ,
 																int , int * , char * , double * );
 
+void PNE_SyntheseEtStockageMIR_New( PROBLEME_PNE * , int , int * , double * , double , double ,
+															   	  int , int * , char * , double * , char * );																
+
 char PNE_BoundSubstitution( PROBLEME_PNE * ,int , int , int * , double * , double , int * , int * ,
                             double * , double * , double * , double * , int * , int * , char * , double * , char * );
 
@@ -290,15 +281,30 @@ void PNE_CalculerUneKnapsackSurGomoryOuIntersection( PROBLEME_PNE * , double * ,
 
 void PNE_NodePresolve( PROBLEME_PNE * , int * );
 
+void PNE_ExploiterLeGrapheDeConflitsPourLesSubtitutionsDeVariables( PROBLEME_PNE * );
+int PNE_GrapheDeConflitsSubtituerUneVariable( PROBLEME_PNE * , int , int , int , double , double , double , double );
+void PNE_SubstituerUneVariableDansCliques( PROBLEME_PNE * , int ,int , double );
+void PNE_BornesVariableSubstituerUneVariable( PROBLEME_PNE * , int , int , double );
+int PNE_SubstituerUneVariableDansLaMatrice( PROBLEME_PNE * , int , int , int , double , double , int , int , int , int );
+int PNE_SubstituerUneVariableDansCoupesDeProbing ( PROBLEME_PNE * , int , int , int , double , double , int , int , int , int );
+void PNE_SubstituerUneVariableDansGrapheDeConflits( PROBLEME_PNE * , int );
+int PNE_SubtituerUneVariableUneVariableEntiere( PROBLEME_PNE * , int , int , int , double , double , double , double ,
+                                                int , int , int , int );
+
 void PNE_PresolveSimplifie( PROBLEME_PNE * , char * , char , int * );
 void PNE_PresolveSimplifieVariableProbing( PROBLEME_PNE * , int * , char * );
 void PNE_PresolveSimplifieContraintesDeBornesVariables( PROBLEME_PNE * , int * , char * );
+void PNE_PresolveSimplifieColonnesColineaires( PROBLEME_PNE * , char * , char );   
 
 PROBLEME_PNE * PNE_AllocPnePbReduit( PROBLEME_PNE * , int * );
 
 void PNE_ProbingNodePresolveAlloc( PROBLEME_PNE * , char * );
 
 void PNE_InitBorneInfBorneSupDesVariables( PROBLEME_PNE * );
+
+void PNE_AppliquerToutesLesContraintesDeBorneVariable( PROBLEME_PNE * );
+
+void PNE_AppliquerToutesLesContraintesDeBorneVariablePourUneVariableEntiere( PROBLEME_PNE * , int );
 
 void PNE_ProbingModifierLaMatriceDesContraintes( PROBLEME_PNE * , PROBING_OU_NODE_PRESOLVE * );
 
@@ -372,6 +378,10 @@ void PNE_TransformerCliquesEnEgalites( PROBLEME_PNE * );
 
 void PNE_ArchiverMaxClique( PROBLEME_PNE * , int , int * );
 
+void PNE_RechercherTousLesCyclesSansCorde( PROBLEME_PNE * );
+
+void PNE_DetectionDesOddCyclesVioles( PROBLEME_PNE * );
+
 void PNE_ExtendConflictGraph( PROBLEME_PNE * );
 
 void PNE_ConflictGraphFixerVariables( PROBLEME_PNE * );
@@ -379,6 +389,8 @@ void PNE_ConflictGraphFixerVariables( PROBLEME_PNE * );
 void PNE_ConflictGraphSupprimerUnArc( int , int , int * , int * , int * );
 
 void PNE_ConflictGraphSupprimerUnNoeud( int , int * , int * , int * );
+
+void PNE_ConflictGraphSubstituerUnNoeud( PROBLEME_PNE * , int , int , int * , int * , int * );
 
 void PNE_DetectionDesCliquesViolees( PROBLEME_PNE * );
 
@@ -405,7 +417,17 @@ void PNE_ProbingCloseDetectionDesBornesVariables( PROBLEME_PNE * );
 
 void PNE_ProbingConstruireContraintesDeBornes( PROBLEME_PNE * , PROBING_OU_NODE_PRESOLVE * , double * , double * );
 
+void PNE_ProbingSupprimerCntDeBornesVariablesSiVariableEntiereFixee( PROBLEME_PNE * );
+
+void PNE_ProbingAppliquerCntDeBornesVariablesSiVariableEntiereFixee( PROBLEME_PNE * , int );
+
+void PNE_ContraintesDeBornesVariablesInitListeDesContraintesAExaminer( PROBLEME_PNE * , int );
+
+void PNE_ProbingAppliquerCntDeBornesVariablesEnFinDeVariableProbing( PROBLEME_PNE * , char * );
+
 void PNE_DetectionDesContraintesDeBorneVariableViolees( PROBLEME_PNE * );
+
+void PNE_DetectionDesContraintesDeBorneInfViolees( PROBLEME_PNE * );
 
 void PNE_CreerUneCoupeDeProbing( PROBLEME_PNE * , int , double , int , char , int , double );
 
@@ -431,11 +453,17 @@ void PNE_PostSolveForcingConstraints( PROBLEME_PNE * , PROBLEME_A_RESOUDRE * , v
 
 void PNE_PostSolveContraintesColineaires( PROBLEME_PNE * , PROBLEME_A_RESOUDRE * , int );
 
-void PNE_ChangerLesTypesDeVariables( PROBLEME_PNE * Pne );
-
 void PNE_BranchAndBoundIntermediare( PROBLEME_PNE * , double );
 
 void PNE_PostSolveSiUniquementPresolve( PROBLEME_PNE * , PROBLEME_A_RESOUDRE * );
+
+/************************************************************************/
+
+void PNE_EmpilementDesCoutsReduitsDesVariablesBinairesNonFixees( PROBLEME_PNE * ,  double * , double * , double * , int * , double );
+
+void PNE_DetectionDesCoupesDeCoutsReduitsViolees( PROBLEME_PNE * );
+
+/************************************************************************/
 
 /*
 void PNE_NodeDumalgeMendelsonMatriceDesContraintes( PROBLEME_PNE * , double * , double * ,
@@ -449,6 +477,8 @@ void PNE_DumalgeResoudrePrimal( PROBLEME_PNE * , void * , void * , int , int , i
 		                            double * , double * , char * , char * , char * );
 */
 
+void PNE_CalculPlusGrandEtPlusPetitTerme( PROBLEME_PNE * );
+
 double PNE_Round( double , double );
 
 void PNE_MiseAJourSeuilCoupes( PROBLEME_PNE * , char , double * );
@@ -456,6 +486,41 @@ void PNE_MiseAJourDesSeuilDeSelectionDesCoupes( PROBLEME_PNE * );
 
 /* En test: pour detecter les contraintes d'egalite sur des entiere infaisables */
 void PNE_DetectionContraintesEntieresInfaisable( PROBLEME_PNE * );
+
+void PNE_ColonnesColineaires(  PROBLEME_PNE * );
+
+void PNE_ContraintesColineaires( PROBLEME_PNE * , int * , char * );
+
+void PNE_ColonnesColineairesParNoeud(  PROBLEME_PNE * );
+
+void PNE_StrongBranchingInstancierLesVariablesEquivalentes( PROBLEME_PNE * );
+
+/* Granularite */
+
+void PNE_Pgcd( int , long * , long * );
+void PNE_GranulariteDuCout( PROBLEME_PNE * , double * );
+void PNE_GranulariteDesContraintes( PROBLEME_PNE * );
+
+/* Autres */
+void PNE_AugmenterLeCreuxDeLaMatrice( PROBLEME_PNE * );
+
+void PNE_ProbingGubInegalites( PROBLEME_PNE * );
+
+void PNE_ComparerLesContraintes( PROBLEME_PNE * , char * , char , char * );
+
+void  PNE_InitDonneesPourLaRechercheDesGroupesDeVariablesEquivalentes( PROBLEME_PNE * );
+
+void PNE_RechercherLesGroupesDeVariablesEquivalentes(  PROBLEME_PNE * );
+
+void PNE_ContraintesDeRelationDordre(  PROBLEME_PNE * );
+
+void PNE_ConstruireLesContraintesDOrdre( PROBLEME_PNE * );
+
+void PNE_ConstruireUneContrainteDOrdre( PROBLEME_PNE * , int , double , int , double );
+
+void PNE_DetectionDesContraintesDOrdreViolees( PROBLEME_PNE * );
+
+void PNE_KnapsackAvecCombinaisonsDeContraintes( PROBLEME_PNE * );
 
 /*******************************************************************************************/
 # define FONCTIONS_PNE_DEJA_DEFINIES	

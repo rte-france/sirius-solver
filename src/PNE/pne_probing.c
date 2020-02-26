@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Variable probing
@@ -31,6 +15,8 @@
   
 # include "bb_define.h"
 
+# include "prs_define.h"
+
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "pne_memoire.h"
 # endif
@@ -38,12 +24,25 @@
 # define VERBOSE_VARIABLE_PROBING 0 
 
 # define DEBUG NON_PNE /* NON_PNE */
-
+  
 # define MAJ_FLAG OUI_PNE /*OUI_PNE*/
 
 /* Remarque: il y a aussi une limite liee au nombre de balayages de la matrice */
 # define DUREE_DU_PROBING 1800 /*2*/ /* En seconde */
 # define NB_MAX_PARCOURS_MATRICE (2*1000)
+
+# define AMELIORER_LES_COEFFICIENTS_SI_VARIABLE_ENTIERE_FIXEE OUI_PNE /*OUI_PNE*/  
+
+# define ZERO 1.e-10
+# define GRAND_COEFFICIENT 0. /* 10 */
+# define MODIFICATION_MINIMALE 1
+
+# define MARGE_AMELIORATION_COEFFICIENTS 1.e-4 /*1.e-6*/
+# define APPLIQUER_UNE_MARGE_QUE_SI_VALEUR_FRACTIONNAIRE OUI_PNE
+# define BRUITER_LA_MARGE NON_PNE
+# define COEFF_MARGE_A_BRUITER  0.1
+
+# define EXPLOITER_LE_GRAPHE_DE_CONFLITS_POUR_LES_SUBSTITUTIONS_DE_VARIABLES NON_PNE /*NON_PNE*/
 
 /*----------------------------------------------------------------------------*/
 
@@ -193,6 +192,7 @@ Prb->NombreDeVariablesFixees = 0; /* Sert a construire le graphe de conflit */
 # endif
 
 Prb->NombreDeContraintesAAnalyser = 0;
+Prb->IndexLibreContraintesAAnalyser = 0;
 Prb->NbCntCoupesDeProbing = 0;
 
 return;
@@ -223,7 +223,11 @@ else { printf("BUG dans VariableProbingPreparerInstanciation\n"); return; }
 
 PNE_MajIndicateursDeBornes(  Pne, ValeurDeBorneInf, ValeurDeBorneSup, BorneInfConnue, BorneSupConnue,
 														 ValeurDeVar, Var, UneVariableAEteFixee, BorneMiseAJour );
-														
+
+# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+  PNE_ContraintesDeBornesVariablesInitListeDesContraintesAExaminer( Pne, Var ); 
+# endif
+														 													
 /* On applique le conflict graph s'il existe */
 if ( Pne->ConflictGraph == NULL ) return;
 
@@ -279,6 +283,7 @@ for ( Cnt = 0; Cnt < NombreDeContraintes ; Cnt++ ) {
   ContrainteAAnalyser[Cnt] = NON_PNE;
 }
 ProbingOuNodePresolve->NombreDeContraintesAAnalyser = 0;
+ProbingOuNodePresolve->IndexLibreContraintesAAnalyser = 0;
 return;
 }
 
@@ -303,12 +308,21 @@ void PNE_VariableProbingFixerUneVariableInstanciee( PROBLEME_PNE * Pne, PROBING_
                                                     int Var, double ValeurDeVar )
 {
 int NombreDeVariables; int NombreDeContraintes; int Noeud; char BorneMiseAJour; char UneVariableAEteFixee;
+double * Xmin; double * Xmax;
 
 if ( ValeurDeVar < 0 ) {
   printf("Bug dans PNE_VariableProbingFixerUneVariableInstanciee:\n");
 	printf(" -> on cherche a fixer la variable binaire %d a %e\n",Var,ValeurDeVar);
 	exit(0);
 }
+
+# if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+  Xmin = Pne->XminPourLeCalculDeBminBmax;
+  Xmax = Pne->XmaxPourLeCalculDeBminBmax;
+# else
+  Xmin = Pne->UminTrav;
+  Xmax = Pne->UmaxTrav;
+# endif
 
 ProbingOuNodePresolve->Faisabilite = OUI_PNE;
 
@@ -336,36 +350,269 @@ memset( (int *) ProbingOuNodePresolve->NbFoisContrainteModifiee, 0, NombreDeCont
 /* On peut fixer definitivement la variable */
 if ( Pne->ConflictGraph != NULL ) {
   Noeud = -1;
-  if ( ValeurDeVar == Pne->UminTrav[Var] ) Noeud = Pne->ConflictGraph->Pivot + Var;
-	else if ( ValeurDeVar == Pne->UmaxTrav[Var] ) Noeud = Var;
+  if ( ValeurDeVar == Xmin[Var] ) Noeud = Pne->ConflictGraph->Pivot + Var;
+	else if ( ValeurDeVar == Xmax[Var] ) Noeud = Var;
 	else {
     printf("Erreur dans PNE_VariableProbingFixerUneVariableInstanciee la valeur d instanciation de la variable %d n'est ni le min ni le max\n",Var);
 	}
 	if ( Noeud < 0 ) return;
 
   /* Mise a jour des indicateurs de variables a instancier a nouveau */
-  PNE_ProbingMajFlagVariablesAInstancier( Pne, Var, ValeurDeVar );
+  /*PNE_ProbingMajFlagVariablesAInstancier( Pne, Var, ValeurDeVar );*/ /* Fait dans PNE_ConflictGraphFixerLesNoeudsVoisinsDunNoeud */
 	
   PNE_ConflictGraphFixerLesNoeudsVoisinsDunNoeud( Pne, Noeud );
 }
 else {
   BorneMiseAJour = NON_PNE;
-	if ( ValeurDeVar == Pne->UminTrav[Var] ) UneVariableAEteFixee = FIXE_AU_DEPART;
-	else if ( ValeurDeVar == Pne->UmaxTrav[Var] ) UneVariableAEteFixee = FIXE_AU_DEPART; 
+	if ( ValeurDeVar == Xmin[Var] ) UneVariableAEteFixee = FIXE_AU_DEPART;
+	else if ( ValeurDeVar == Xmax[Var] ) UneVariableAEteFixee = FIXE_AU_DEPART; 
 	else {
     printf("Erreur dans PNE_VariableProbingFixerUneVariableInstanciee la valeur d instanciation de la variable %d n'est ni le min ni le max\n",Var);
 		return;
 	}
+  Pne->UTrav[Var] = ValeurDeVar;
   Pne->UminTrav[Var] = ValeurDeVar;		
-  Pne->UmaxTrav[Var] = ValeurDeVar;		
-  Pne->UTrav[Var] = ValeurDeVar;					
-							
+  Pne->UmaxTrav[Var] = ValeurDeVar;
+
+  # if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+    Pne->XminPourLeCalculDeBminBmax[Var] = ValeurDeVar;
+    Pne->XmaxPourLeCalculDeBminBmax[Var] = ValeurDeVar;
+  # endif
+								
   PNE_ProbingMajBminBmax( Pne, Var, ValeurDeVar, BorneMiseAJour );
 			
   PNE_MajIndicateursDeBornes( Pne, ProbingOuNodePresolve->ValeurDeBorneInf, ProbingOuNodePresolve->ValeurDeBorneSup,
 	                            ProbingOuNodePresolve->BorneInfConnue, ProbingOuNodePresolve->BorneSupConnue,
-															ValeurDeVar, Var, UneVariableAEteFixee, BorneMiseAJour );			
+															ValeurDeVar, Var, UneVariableAEteFixee, BorneMiseAJour );
+	
+  /* La variable devient de type fixe */	
+	/*
+	Pne->TypeDeBorneTrav[Var] = VARIABLE_FIXE;
+  Pne->TypeDeVariableTrav[Var] = REEL;			
+  Pne->ProbingOuNodePresolve->FlagVarAInstancier[Var] = 0;
+	# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+    PNE_ProbingSupprimerCntDeBornesVariablesSiVariableEntiereFixee( Pne );
+	# endif	
+	*/														
 }
+
+# if AMELIORER_LES_COEFFICIENTS_SI_VARIABLE_ENTIERE_FIXEE == OUI_PNE
+{
+int Var; int Cnt; int ic; double Smax; int icEntier; int NombreDeVariables; double Coeff;
+int * TypeDeVariable; int * Cdeb; int * Csui; int * NumContrainte; char * SensContrainte;
+int * Mdeb; int * NbTerm; int * Nuvar; double NouveauCoeff; double * B; double * A; double PlusPetitTerme;
+double * Xmin; double * Xmax; char CoeffModifie; double * Bmax; char * BmaxValide;
+char * BorneInfConnue; double Marge; int NbC; char * BminValide; double * Bmin;
+double EcartRelatif; double EcartAbsolu; double C; double Smin; char SminValide; int il;
+int ilMax; int VarCnt;
+
+Marge = MARGE_REDUCTION; /* Rq: MARGE_REDUCTION ne sert plus */
+
+NombreDeVariables = Pne->NombreDeVariablesTrav;
+TypeDeVariable = Pne->TypeDeVariableTrav;
+Cdeb = Pne->CdebTrav;
+Csui = Pne->CsuiTrav;
+NumContrainte = Pne->NumContrainteTrav;
+SensContrainte = Pne->SensContrainteTrav;
+B = Pne->BTrav;
+Mdeb = Pne->MdebTrav;
+NbTerm = Pne->NbTermTrav;
+Nuvar = Pne->NuvarTrav;
+A = Pne->ATrav;
+PlusPetitTerme = Pne->PlusPetitTerme;
+
+Xmin = Pne->ProbingOuNodePresolve->ValeurDeBorneInf;
+Xmax = Pne->ProbingOuNodePresolve->ValeurDeBorneSup;
+BorneInfConnue = Pne->ProbingOuNodePresolve->BorneInfConnue;
+BmaxValide = Pne->ProbingOuNodePresolve->BmaxValide;
+Bmax = Pne->ProbingOuNodePresolve->Bmax;	
+BminValide = Pne->ProbingOuNodePresolve->BminValide;
+Bmin = Pne->ProbingOuNodePresolve->Bmin;
+
+NbC = 0;
+Rebouclage:
+CoeffModifie = NON_PNE;
+for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
+  if ( TypeDeVariable[Var] != ENTIER ) continue;
+  if ( BorneInfConnue[Var] == FIXE_AU_DEPART ) continue;	
+  ic = Cdeb[Var];
+  while ( ic >= 0 ) {
+    Cnt = NumContrainte[ic];
+    if ( SensContrainte[Cnt] == '=' ) goto ContrainteSuivante;    		   
+    /* La contrainte est donc de type < , calcul du max du membre de gauche */
+		icEntier = ic;
+		Coeff = A[icEntier];
+    if ( Coeff == 0.0 ) goto ContrainteSuivante;
+		
+    if ( fabs( Coeff ) < GRAND_COEFFICIENT ) goto ContrainteSuivante;
+		
+		if ( BmaxValide[Cnt] == OUI_PNE ) Smax = Bmax[Cnt];		
+		else goto ContrainteSuivante;
+		
+		if ( Smax <= B[Cnt] ) goto ContrainteSuivante; /* Contrainte redondante */
+
+		/* On affine le calcul de Smax */
+    Smin = 0.0;
+		SminValide = BminValide[Cnt];
+    Smax = 0.0;
+    il = Mdeb[Cnt];
+    ilMax = il + NbTerm[Cnt];
+    while ( il < ilMax ) {
+      VarCnt = Nuvar[il];		
+      if ( BorneInfConnue[VarCnt] == FIXE_AU_DEPART ) {      
+	  	  if ( SminValide == OUI_PNE ) Smin += A[il] * Xmin[VarCnt];
+		    Smax += A[il] * Xmin[VarCnt];				
+	    }
+	    else {
+	      if ( A[il] > 0.0 ) {
+			    if ( SminValide == OUI_PNE ) Smin += A[il] * Xmin[VarCnt];
+			    Smax += A[il] * Xmax[VarCnt];
+		    }
+	      else {			
+			    if ( SminValide == OUI_PNE ) Smin += A[il] * Xmax[VarCnt];
+			    Smax += A[il] * Xmin[VarCnt];
+		    }
+	    }								 
+	    il++;
+    }
+		Bmax[Cnt] = Smax;
+    if ( SminValide == OUI_PNE ) Bmin[Cnt] = Smin;
+				
+    if ( Coeff < 0.0 ) {					
+      if ( Smax + Coeff < B[Cnt] - EPS_COEFF_REDUCTION ) {  
+        /* On peut diminuer le coeff de la variable entiere */
+				NouveauCoeff = B[Cnt] - Smax;
+
+        /* Modifs du 29/8/16 */
+        Marge = MARGE_AMELIORATION_COEFFICIENTS;
+        if ( NouveauCoeff != 0 ) NouveauCoeff -= Marge;
+
+        # if APPLIQUER_UNE_MARGE_QUE_SI_VALEUR_FRACTIONNAIRE == OUI_PNE
+			    if ( PNE_LaValeurEstEntiere( &NouveauCoeff ) == OUI_PNE ) {
+						/*printf("Pas de marge\n");*/
+					  Marge = 0;
+					}
+				# endif								
+
+        # if BRUITER_LA_MARGE == OUI_PNE
+          Pne->A1 = PNE_Rand( Pne->A1 );
+					Marge -= Pne->A1 * ( COEFF_MARGE_A_BRUITER * Marge );
+				# endif			
+				
+				if ( fabs( NouveauCoeff ) < ZERO ) NouveauCoeff = 0;				
+				
+				if ( NouveauCoeff != 0 ) {				
+          if ( fabs( NouveauCoeff ) < PlusPetitTerme ) {				
+					  goto ContrainteSuivante;
+					}
+				}
+
+				if ( NouveauCoeff * Coeff < 0 ) goto ContrainteSuivante;
+
+				if ( fabs( NouveauCoeff ) > fabs( Coeff ) ) goto ContrainteSuivante;
+				
+        EcartAbsolu	= fabs( Coeff - NouveauCoeff );
+				if ( EcartAbsolu < MODIFICATION_MINIMALE ) {
+				  /*printf("Echec EcartAbsolu %e\n",EcartAbsolu);*/
+				  goto ContrainteSuivante;
+				}
+        EcartRelatif = fabs( EcartAbsolu / Coeff );
+			  if ( EcartRelatif < ECART_RELATIF_MIN ) {
+				  /*printf("Echec EcartRelatif %e\n",EcartRelatif);*/
+				  goto ContrainteSuivante;
+				}
+				       
+				/* Mise a jour des limites des contraintes */
+        Bmax[Cnt] -= Coeff * Xmin[Var];
+        Bmax[Cnt] += NouveauCoeff * Xmin[Var]; /* Meme si on sait que borne inf = 0 */
+        if ( BminValide[Cnt] == OUI_PNE ) {
+				  Bmin[Cnt] -= Coeff * Xmax[Var];
+					Bmin[Cnt] += NouveauCoeff * Xmax[Var];						
+				}									
+				/* Modif du coefficient */
+        A[icEntier] = NouveauCoeff;
+				CoeffModifie = OUI_PNE;
+				NbC++;				
+			}
+		}
+		else if ( Coeff > 0.0 ) {		
+      if ( Smax - Coeff < B[Cnt] - EPS_COEFF_REDUCTION ) {
+        /* On peut diminuer le coeff de la variable entiere */
+				NouveauCoeff = Smax - B[Cnt];
+
+        /* Modifs du 29/8/16 */
+        Marge = MARGE_AMELIORATION_COEFFICIENTS;
+        if ( NouveauCoeff != 0 ) NouveauCoeff -= Marge;
+				else Marge = 0;
+
+        # if APPLIQUER_UNE_MARGE_QUE_SI_VALEUR_FRACTIONNAIRE == OUI_PNE
+			    if ( PNE_LaValeurEstEntiere( &NouveauCoeff ) == OUI_PNE ) {
+						/*printf("Pas de marge\n");*/
+					  Marge = 0;
+					}
+				# endif												
+
+        # if BRUITER_LA_MARGE == OUI_PNE
+          Pne->A1 = PNE_Rand( Pne->A1 );
+					Marge -= Pne->A1 * ( COEFF_MARGE_A_BRUITER * Marge );
+				# endif				
+				
+				if ( fabs( NouveauCoeff ) < ZERO ) {
+				  NouveauCoeff = 0;
+					Marge = 0;
+				}
+				
+				C = Coeff - NouveauCoeff;																
+
+				if ( NouveauCoeff != 0 ) {				
+          if ( fabs( NouveauCoeff ) < PlusPetitTerme ) {
+					  goto ContrainteSuivante;
+					}
+				}								
+				if ( fabs( NouveauCoeff ) > fabs( Coeff ) ) goto ContrainteSuivante;
+				
+				if ( NouveauCoeff * Coeff < 0 ) goto ContrainteSuivante;
+
+        EcartAbsolu	= fabs( Coeff - NouveauCoeff );				
+				if ( EcartAbsolu < MODIFICATION_MINIMALE ) {
+				  goto ContrainteSuivante;
+        }
+				EcartRelatif = fabs( EcartAbsolu / Coeff );
+				if ( EcartRelatif < ECART_RELATIF_MIN ) {
+				  goto ContrainteSuivante;
+				}
+				
+				/* Mise a jour des limites des contraintes */
+        Bmax[Cnt] -= Coeff * Xmax[Var];
+        Bmax[Cnt] += NouveauCoeff * Xmax[Var];
+        if ( BminValide[Cnt] == OUI_PNE ) {
+				  Bmin[Cnt] -= Coeff * Xmin[Var];
+					Bmin[Cnt] += NouveauCoeff * Xmin[Var];
+				}						
+				/* Modif du coefficient */					
+				A[icEntier] = NouveauCoeff;					
+				CoeffModifie = OUI_PNE;
+				B[Cnt] = Smax - Coeff + Marge;
+				/*B[Cnt] -= C;*/												
+				NbC++;				
+		  }
+		}		
+    ContrainteSuivante:
+    ic = Csui[ic];
+  }
+}
+if ( CoeffModifie == OUI_PNE && 0 ) {
+  goto Rebouclage;
+}
+
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
+  if ( NbC != 0 ) printf("%d binary coefficient(s) reduced\n",NbC);
+}
+
+/*PNE_CalculMinEtMaxDesContraintes( Pne, &(ProbingOuNodePresolve->Faisabilite) );*/
+
+}
+# endif
 
 PNE_VariableProbingSauvegardesDonnees( Pne );
 
@@ -391,6 +638,10 @@ int * NumeroDeCoupeDeProbing; int i; double * Umin0; double * Umax0; int NbVarAI
 int * NumVarAInstancier; PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve; char FaireProbing;
 char LaVariableDoitEtreFixee; double ValeurDeLaVariableAFixer; double DureeDuProbing;
 int Iteration; int Nb; int NbTermesMatrice; int * NbTerm; double X; char * ContrainteAAnalyser;
+char BornesModifiees;
+# if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+  double * XminPourLeCalculDeBminBmax; double * XmaxPourLeCalculDeBminBmax;
+# endif	
 
 Umin0 = NULL;
 Umax0 = NULL;
@@ -423,14 +674,25 @@ UmaxTrav = Pne->UmaxTrav;
 UTrav = Pne->UTrav;
 NbTerm = Pne->NbTermTrav;
 
+# if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+  XminPourLeCalculDeBminBmax = Pne->XminPourLeCalculDeBminBmax;
+  XmaxPourLeCalculDeBminBmax = Pne->XmaxPourLeCalculDeBminBmax;
+# endif	
+
 /* Sauvegarde des bornes inf et sup des variables. Elles vont nous servir a identifier les variables
    qu'on a pu fixer */
 Umin0 = (double *) malloc( NombreDeVariablesTrav * sizeof( double ) );
 if ( Umin0 == NULL ) goto Fin;
 Umax0 = (double *) malloc( NombreDeVariablesTrav * sizeof( double ) );
 if ( Umax0 == NULL ) goto Fin;
-memcpy( (char *) Umin0, (char *) UminTrav, NombreDeVariablesTrav * sizeof( double ) );
-memcpy( (char *) Umax0, (char *) UmaxTrav, NombreDeVariablesTrav * sizeof( double ) );
+
+# if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+  memcpy( (char *) Umin0, (char *) XminPourLeCalculDeBminBmax, NombreDeVariablesTrav * sizeof( double ) );
+  memcpy( (char *) Umax0, (char *) XmaxPourLeCalculDeBminBmax, NombreDeVariablesTrav * sizeof( double ) );
+# else
+  memcpy( (char *) Umin0, (char *) UminTrav, NombreDeVariablesTrav * sizeof( double ) );
+  memcpy( (char *) Umax0, (char *) UmaxTrav, NombreDeVariablesTrav * sizeof( double ) );
+# endif
 
 if ( Pne->ProbingOuNodePresolve == NULL ) {
   PNE_ProbingNodePresolveAlloc( Pne, &CodeRet );
@@ -480,12 +742,16 @@ DebutVariableProbing:
 
 Iteration++;
 
+
+printf("Iteration de variable probing %d\n",Iteration);
+
+
 ContrainteAAnalyser = ProbingOuNodePresolve->ContrainteAAnalyser;
 for ( Cnt = 0; Cnt < NombreDeContraintesTrav ; Cnt++ ) {
   ContrainteAAnalyser[Cnt] = NON_PNE;
 }
 ProbingOuNodePresolve->NombreDeContraintesAAnalyser = 0;
-
+ProbingOuNodePresolve->IndexLibreContraintesAAnalyser = 0;
 ProbingOuNodePresolve->Faisabilite = OUI_PNE;   
 
 PNE_InitBorneInfBorneSupDesVariables( Pne );
@@ -498,12 +764,37 @@ if ( ProbingOuNodePresolve->Faisabilite == NON_PNE ) {
 }
 PNE_VariableProbingSauvegardesDonnees( Pne );
 
+/* Creation de contraintes dans le graphe pour les colonnes colineaires de meme cout */
+# if RELATION_DORDRE_DANS_LE_PROBING == OUI_PNE
+  PNE_ContraintesDeRelationDordre( Pne );
+  PNE_VariableProbingReinitDonnees( Pne ); /* Je ne suis pas certain que ce soit indispensable */
+# endif
+/* Tentative de transformation de Gub en contraintes d'egalite. Attention, pour le moment il ne
+   faut pas y fixer de variables car il faudrait reinitialiser les Bmin Bmax etc ..; */
+ProbingOuNodePresolve->Faisabilite = OUI_PNE;
+PNE_ProbingGubInegalites( Pne );
+
+if ( Pne->ProbingOuNodePresolve->Faisabilite == NON_PNE ) {
+  /* Le probleme n'a pas de solution */
+  printf("PNE_ProbingGubInegalites pas de solution\n");
+	goto Fin;
+}
+if ( Pne->ProbingOuNodePresolve->Faisabilite == NON_PNE ) {
+  /* Le probleme n'a pas de solution */
+	if ( Pne->AffichageDesTraces == OUI_PNE ) {
+    printf("Variable probing: problem is infeasible while testing GUB\n");
+	}		
+	goto Fin;
+}
+PNE_VariableProbingReinitDonnees( Pne ); /* Je ne suis pas certain que ce soit indispensable */
+
 /* Liste des variables a tester */
 
 NbVarAInstancier = ProbingOuNodePresolve->NbVarAInstancier;
 if ( Pne->AffichageDesTraces == OUI_PNE && 0 ) {
   printf("Probing on %d variable(s)\n",ProbingOuNodePresolve->NbVarAInstancier);
 }
+
 for ( i = 0 ; i < NbVarAInstancier && FaireProbing == OUI_PNE ; i++ ) {
 	
   if ( Pne->ConflictGraph != NULL ) { if ( Pne->ConflictGraph->NbEdges > 1000000 ) break; }
@@ -532,15 +823,20 @@ for ( i = 0 ; i < NbVarAInstancier && FaireProbing == OUI_PNE ; i++ ) {
   LaVariableDoitEtreFixee = NON_PNE; 
 	ValeurDeLaVariableAFixer = -1;
 					 
-	/* Instanciation a 1 */
   PNE_VariableProbingReinitDonnees( Pne );
-	
+
+	/*
 	if ( BorneInfConnue[Var] == FIXE_AU_DEPART || BorneInfConnue[Var] == FIXATION_SUR_BORNE_INF ||
 		   BorneInfConnue[Var] == FIXATION_SUR_BORNE_SUP ) continue;
-  		
+  */
+	
+	/* Instanciation a 1 */
+	ValeurDeVar = 1.0;
+  /* Si la variable a ete fixee a 0 on ne teste pas la valeur 1 */
+	if ( ValeurDeVar > ValeurDeBorneSup[Var] ) goto InstanciationAZero;
+	
 	ProbingOuNodePresolve->VariableInstanciee = Var;
   ProbingOuNodePresolve->Faisabilite = OUI_PNE;	
-	ValeurDeVar = 1.0;
   ProbingOuNodePresolve->ValeurDeLaVariableInstanciee = ValeurDeVar;
   PNE_VariableProbingPreparerInstanciation( Pne, Var, ValeurDeVar );
 	
@@ -585,22 +881,26 @@ for ( i = 0 ; i < NbVarAInstancier && FaireProbing == OUI_PNE ; i++ ) {
     # endif		
 	}
 	
+  PNE_VariableProbingReinitDonnees( Pne );
+
+	InstanciationAZero:
 	/* Instanciation a 0 */			
-  PNE_VariableProbingReinitDonnees( Pne );	
+	ValeurDeVar = 0.0;
+  /* Si la variable a ete fixee a 1 on ne teste pas la valeur 0 */
+	if ( ValeurDeVar < ValeurDeBorneInf[Var] ) continue;		
 	
 	ProbingOuNodePresolve->VariableInstanciee = Var;
   ProbingOuNodePresolve->Faisabilite = OUI_PNE;						
-	ValeurDeVar = 0.0;	
   ProbingOuNodePresolve->ValeurDeLaVariableInstanciee = ValeurDeVar;	
   PNE_VariableProbingPreparerInstanciation( Pne, Var, ValeurDeVar );
 		
   # if VERBOSE_VARIABLE_PROBING == 1		
 	  printf("Instanciation de la variable %d a %e\n",Var,ValeurDeVar);
-	# endif
+	# endif	
 	
 	NbEdges = 0;
 	if ( Pne->ConflictGraph != NULL ) NbEdges = Pne->ConflictGraph->NbEdges;
-	
+	  
   # if VERBOSE_VARIABLE_PROBING == 1
     printf("Analyse de contraintes  NombreDeContraintesAAnalyser %d\n", ProbingOuNodePresolve->NombreDeContraintesAAnalyser);
 	# endif
@@ -669,14 +969,21 @@ if ( Pne->ConflictGraph != NULL ) {
 	if ( Pne->ProbingOuNodePresolve->Faisabilite == NON_PNE ) {
     /* Le probleme n'a pas de solution */
 	 	goto Fin;
-  }	
-	
-  PNE_ProbingMajVariablesAInstancier( Pne, ProbingOuNodePresolve );
+  }		
+  
+	PNE_ProbingMajVariablesAInstancier( Pne, ProbingOuNodePresolve );
   if ( ProbingOuNodePresolve->NbVarAInstancier > 0 ) {
-    /*printf("2- NbVarAInstancier %d\n",ProbingOuNodePresolve->NbVarAInstancier);*/
     goto DebutVariableProbing;
   }
 	
+  # if EXPLOITER_LE_GRAPHE_DE_CONFLITS_POUR_LES_SUBSTITUTIONS_DE_VARIABLES == OUI_PNE
+    PNE_ExploiterLeGrapheDeConflitsPourLesSubtitutionsDeVariables( Pne );	
+	  PNE_ProbingMajVariablesAInstancier( Pne, ProbingOuNodePresolve );
+    if ( ProbingOuNodePresolve->NbVarAInstancier > 0 ) {
+      goto DebutVariableProbing;
+    }
+	# endif
+		
 }
 
 if ( Pne->AffichageDesTraces == OUI_PNE ) {
@@ -701,20 +1008,49 @@ UmaxTravSv = Pne->UmaxTravSv;
 NbFix = 0;
 for ( Var = 0 ; Var < Pne->NombreDeVariablesTrav ; Var++ ) {
   if ( Umin0[Var] == Umax0[Var] ) continue;
-	if ( UminTrav[Var] == UmaxTrav[Var] ) {
-	  NbFix++;
+  # if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+	  if ( XminPourLeCalculDeBminBmax[Var] == XmaxPourLeCalculDeBminBmax[Var] ) {
+	# else
+	  if ( UminTrav[Var] == UmaxTrav[Var] ) {
+	# endif
+	  if ( Pne->TypeDeVariableTrav[Var] == ENTIER ) NbFix++;
     # if PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE		  
 			Pne->TypeDeBorneTrav[Var] = VARIABLE_FIXE;
 		  Pne->TypeDeVariableTrav[Var] = REEL;			
 		  UTrav[Var] = UminTrav[Var];
 			UminTrav[Var] = Umin0[Var];
 			UmaxTrav[Var] = Umax0[Var];
+      # if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+        XminPourLeCalculDeBminBmax[Var] = Umin0[Var];
+			  XmaxPourLeCalculDeBminBmax[Var] = Umax0[Var];
+      # endif
 		# else
 	    UminTravSv[Var] = UminTrav[Var];
-	    UmaxTravSv[Var] = UminTrav[Var];		
+	    UmaxTravSv[Var] = UminTrav[Var]; /* ? */	
     # endif		
 	}
 }
+
+ProbingOuNodePresolve->NombreDeVariablesFixeesDansLeProbing = NbFix;
+  
+ProbingOuNodePresolve->VariableInstanciee = -1;
+
+BornesModifiees = NON_PNE;
+# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+ PNE_ProbingAppliquerCntDeBornesVariablesEnFinDeVariableProbing( Pne, &BornesModifiees );
+ if ( BornesModifiees == OUI_PNE ) { 
+   PNE_InitBorneInfBorneSupDesVariables( Pne );
+   PNE_CalculMinEtMaxDesContraintes( Pne, &(ProbingOuNodePresolve->Faisabilite) );
+   if ( ProbingOuNodePresolve->Faisabilite == NON_PNE ) {
+    # if VERBOSE_VARIABLE_PROBING == 1
+      printf("PNE_CalculMinEtMaxDesContraintes pas de solution\n");
+	  # endif
+    goto Fin;
+  }
+  PNE_VariableProbingSauvegardesDonnees( Pne );
+ } 
+# endif
+
 if ( Pne->AffichageDesTraces == OUI_PNE ) {
   if ( NbFix > 0 ) printf("%d variable(s) fixed using probing techniques\n",NbFix);
   # if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
@@ -726,27 +1062,15 @@ if ( Pne->AffichageDesTraces == OUI_PNE ) {
   # endif		
 }
 
-ProbingOuNodePresolve->NombreDeVariablesFixeesDansLeProbing = NbFix;
-  
-ProbingOuNodePresolve->VariableInstanciee = -1;
+/* Car utilise dans AmeliorerLesCoefficientsDesVariablesBinaires */
 
-/* En mode Probing apres le premier simplexe, il faut recalculer BmiSv BmasSv avec UminTravSv UmaxTravSv */
+memcpy( (char *) ProbingOuNodePresolve->BorneInfConnue, (char *) ProbingOuNodePresolve->BorneInfConnueSv, Pne->NombreDeVariablesTrav * sizeof( char ) );
+memcpy( (char *) ProbingOuNodePresolve->BorneSupConnue, (char *) ProbingOuNodePresolve->BorneSupConnueSv, Pne->NombreDeVariablesTrav * sizeof( char ) );
+memcpy( (char *) ProbingOuNodePresolve->ValeurDeBorneInf, (char *) ProbingOuNodePresolve->ValeurDeBorneInfSv, Pne->NombreDeVariablesTrav * sizeof( double ) );
+memcpy( (char *) ProbingOuNodePresolve->ValeurDeBorneSup, (char *) ProbingOuNodePresolve->ValeurDeBorneSupSv, Pne->NombreDeVariablesTrav * sizeof( double ) );
 
-# if PROBING_JUSTE_APRES_LE_PRESOLVE == NON_PNE 
-  if ( NbFix > 0 && 0 ) {
-    /* En mode probing juste apres le presolve le recalcul est inutile */
-	  /* En mode probing apres les simplexes du noeud racine le recalcul est inutile car:
-		  - on met a jour UminSv et UmaxSv en fonction de Umin et Umax
-			- le node presolve au noeud racine se calcule a chaque fois un Bmin Bmax fonction de Umin Umax
-			  qui sont toujours egaux au Umin Umax au noeud racine
-		*/
-    PNE_InitBorneInfBorneSupDesVariables( Pne );
-    PNE_CalculMinEtMaxDesContraintes( Pne, &(ProbingOuNodePresolve->Faisabilite) );
-    /* Et on sauvegarde le resultat comme point de depart pour les noeuds suibvants */
-    memcpy( (char *) ProbingOuNodePresolve->BminSv, (char *) ProbingOuNodePresolve->Bmin, Pne->NombreDeContraintesTrav * sizeof( double ) );
-    memcpy( (char *) ProbingOuNodePresolve->BmaxSv, (char *) ProbingOuNodePresolve->Bmax, Pne->NombreDeContraintesTrav * sizeof( double ) );
-  }
-# endif
+memcpy( (char *) ProbingOuNodePresolve->Bmin, (char *) ProbingOuNodePresolve->BminSv, Pne->NombreDeContraintesTrav * sizeof( double ) );
+memcpy( (char *) ProbingOuNodePresolve->Bmax, (char *) ProbingOuNodePresolve->BmaxSv, Pne->NombreDeContraintesTrav * sizeof( double ) );
 
 Fin:
 
@@ -756,8 +1080,6 @@ free( Umax0 );
 if ( Pne->ProbingOuNodePresolve != NULL ) Pne->ProbingOuNodePresolve->VariableInstanciee = -1;
 
 return;
-}
-
-
+} 
 
 

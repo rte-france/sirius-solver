@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Marquage des contraintes mixtes sur lesquelles on peut
@@ -53,7 +37,7 @@ TypeDeVariableTrav = Pne->TypeDeVariableTrav;
 
 VariableBinaireBigM = Pne->VariableBinaireBigM;
 
-if ( Pne->ChainageTransposeeExploitable == NON_PNE ) PNE_ConstruireLeChainageDeLaTransposee( Pne );
+if ( Pne->ChainageTransposeeExploitable == NON_PNE || 1 ) PNE_ConstruireLeChainageDeLaTransposee( Pne );
 
 CdebTrav = Pne->CdebTrav;
 CsuiTrav = Pne->CsuiTrav;
@@ -92,10 +76,10 @@ for ( Var = 0 ; Var < Pne->NombreDeVariablesTrav ; Var++ ) {
 		if ( fabs( Abin / AmaxCont ) < RAPPORT_BIG_M ) goto NextIc;
 		Pne->YaDesBigM = OUI_PNE;
     VariableBinaireBigM[Var] = OUI_PNE;
-		break;
+		break;	
+	  NextIc:
+ 	  ic = CsuiTrav[ic];
 	}
-	NextIc:
-	ic = CsuiTrav[ic];
 }
 
 if ( Pne->YaDesBigM == OUI_PNE ) {

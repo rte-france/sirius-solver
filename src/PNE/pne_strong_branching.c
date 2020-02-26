@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Strong branching pour le choix de la variable a instancier.   
@@ -102,6 +86,10 @@ if ( *CalculerDesCoupes == OUI_PNE ) {
   }
 }
 
+# if PRISE_EN_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTS == OUI_PNE
+  PNE_ColonnesColineairesParNoeud( Pne );     
+# endif
+
 Bb = Pne->ProblemeBbDuSolveur; 
 Noeud = Bb->NoeudEnExamen;
 
@@ -188,7 +176,6 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
 	
 	/* Valeur par defaut: PENTE_DE_LA_VARIATION */
   ChoixDuTypeDeVariation = PENTE_DE_LA_VARIATION;
-
   Seuil   = 1.e-3;
   NbSeuil = 0;	
 	
@@ -207,7 +194,7 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
     i = SuivFrac[i];
   }
    
-  if ( NbSeuil < 4/*2*/ ) NbSeuil = 4/*2*/;
+  if ( NbSeuil < 4 ) NbSeuil = 4;
   else if ( NbSeuil > SeuilMx ) NbSeuil = SeuilMx;
 		
 	/* Si les fractionnalites sont trop disparates, on evite d'utiliser la pente de variation */
@@ -249,10 +236,8 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
 
 	if ( Nb > 0 ) {
 	  FracMoy /= Nb;
-		/*printf("FracMoy %e \n",FracMoy);*/
 		if ( FracMoy < 1.e-2 ) {
       ChoixDuTypeDeVariation = VALEUR_ABSOLUE_DE_LA_VARIATION;
-			/*printf("FracMoy %e => VALEUR_ABSOLUE_DE_LA_VARIATION\n",FracMoy);*/ 
 		}
 	}	
 
@@ -260,12 +245,12 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
     if ( ChoixDuTypeDeVariation == VALEUR_ABSOLUE_DE_LA_VARIATION ) printf("ChoixDuTypeDeVariation = VALEUR_ABSOLUE_DE_LA_VARIATION\n");
     if ( ChoixDuTypeDeVariation == PENTE_DE_LA_VARIATION ) printf("ChoixDuTypeDeVariation = PENTE_DE_LA_VARIATION\n");
   #endif
-
+	
 	/* Test */
   if ( Bb->NombreDeSolutionsEntieresTrouvees > 0 ) {
     if ( Bb->EcartBorneInf < 1.e-2 ) ChoixDuTypeDeVariation = PENTE_DE_LA_VARIATION;			
-	}
-	/* Fin test */
+	}	
+	/* Fin test */	
 
   SupDeNouveauCritere    = -CritereInfini;
   SupEcartDInstanciation = 1.e-6;
@@ -288,20 +273,21 @@ if ( Pne->SolveurPourLeProblemeRelaxe != POINT_INTERIEUR && Pne->NombreDeVariabl
 
 	CritereAGauche = Pne->Critere; /* Pour ne pas avoir de warning a la compilation */
 	CritereADroite = Pne->Critere; /* Pour ne pas avoir de warning a la compilation */
-	
+
   VariableSelectionnee = NON_PNE;	
-  i = PremFrac;  
+  i = PremFrac;
+			
   while ( i >= 0 && Count < NbSeuil ) {
   
 	  Frac = Pne->UTrav[i] - floor( Pne->UTrav[i] );
     if ( Frac > ceil( Pne->UTrav[i] ) - Pne->UTrav[i] ) {
       Frac = ceil( Pne->UTrav[i] ) - Pne->UTrav[i];
 	  }
-		
+			
 		if ( Frac < 0.1 * PremiereFractionnalite && Count > 20 ) break;    
 		else if ( Frac < 0.01 * PremiereFractionnalite && 0 ) break;
-		else if ( Frac < 1.e-8 && 0 ) break;		
-		
+		else if ( Frac < 1.e-8 && 0 ) break;
+			  				
     #if VERBOSE_PNE
       printf(" Variable fractionnaire etudiee -> %d cout %e valeur %e UminTrav %lf UmaxTrav %lf SeuilDeFractionnalite %e\n",
                i,Pne->LTrav[i],Pne->UTrav[i],Pne->UminTrav[i],Pne->UmaxTrav[i],Pne->SeuilDeFractionnalite[i]); 
@@ -475,22 +461,196 @@ if ( Pne->VariableLaPlusFractionnaire >= 0 ) {
     printf(" Variable la plus fractionnaire: %d Valeur: %e \n",
              Pne->VariableLaPlusFractionnaire,Pne->UTrav[Pne->VariableLaPlusFractionnaire]);
   #endif
+	
   if ( *BasesFilsDisponibles == OUI_PNE ) {
     if ( PositionDeLaVariableAGauche[Pne->VariableLaPlusFractionnaire] < 0 ||
          PositionDeLaVariableADroite[Pne->VariableLaPlusFractionnaire] < 0 ) { printf("Bug dans le strong branching\n"); exit(0); }
   }
-  fflush(stdout);
+	
+  # if PRISE_EN_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTS == OUI_PNE
+    if ( ChoisirLaVariableAInstancier == OUI_PNE ) {
+      /* Si la variable a instancier est dans un groupe equivalent, on instancie les variables du groupe a 0 */
+      PNE_StrongBranchingInstancierLesVariablesEquivalentes( Pne	);
+		}
+  # endif
 
+  # if RELATION_DORDRE_DANS_LE_PROBING == OUI_PNE && METHODE_DE_PRISE_EN_COMPTE_DES_CONTRAINTES_DORDRE == CONTRAINTES_DORDRE_DANS_LES_COUPES 
+    if ( ChoisirLaVariableAInstancier == OUI_PNE ) {
+      /* Si la variable a instancier est dans un groupe equivalent, on instancie les variables du groupe a 0 */
+      PNE_StrongBranchingInstancierLesVariablesEquivalentes( Pne	);
+		}
+  # endif
+
+  # if TENIR_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTES_POUR_LE_BRANCHING == OUI_PNE
+    if ( ChoisirLaVariableAInstancier == OUI_PNE ) {
+      /* Si la variable a instancier est dans un groupe equivalent, on instancie les variables du groupe a 0 */
+      PNE_StrongBranchingInstancierLesVariablesEquivalentes( Pne	);
+		}
+  # endif	
+	
   if ( *CalculerDesCoupes != OUI_PNE && 0 ) {     
 	  /* test: on cherche les symetries (seulement colonnes identiques) */
     PNE_RechercheSymetries( Pne, Pne->VariableLaPlusFractionnaire, BasesFilsDisponibles );
   }
-
 	
 }
 
 return;
 }
+
+/*----------------------------------------------------------------------------*/
+
+# if PRISE_EN_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTS == OUI_PNE
+
+/* Si la variable a instancier est dans un groupe equivalent, on instancie les variables du groupe a 0 */
+void PNE_StrongBranchingInstancierLesVariablesEquivalentes( PROBLEME_PNE * Pne )
+{
+int i; GROUPE * G;
+
+if ( Pne->LesGroupesDeVariablesEquivalentesSontValides == NON_PNE ) return;		
+if ( Pne->NumeroDeGroupeDeVariablesEquivalentes[Pne->VariableLaPlusFractionnaire] < 0 ) return;
+
+printf("***********************************************************\n");
+printf("Variable instanciee dans le groupe %d \n",Pne->NumeroDeGroupeDeVariablesEquivalentes[Pne->VariableLaPlusFractionnaire]);
+printf("***********************************************************\n");
+
+G = Pne->Groupe[Pne->NumeroDeGroupeDeVariablesEquivalentes[Pne->VariableLaPlusFractionnaire]];
+
+Pne->NbVarGauche = G->NombreDeVariablesDuGroupe;
+Pne->ValeurAGauche = 0;
+printf("Valeur 0: ");
+for ( i = 0 ; i < G->NombreDeVariablesDuGroupe ; i++ ) {
+  Pne->PaquetDeGauche[i] = G->VariablesDuGroupe[i];	
+	printf(" %d ",Pne->PaquetDeGauche[i]);
+}
+printf("\n");
+
+Pne->NbVarDroite = 1;
+Pne->ValeurADroite = 1;
+printf("Valeur 1: ");
+Pne->PaquetDeDroite[0] = Pne->VariableLaPlusFractionnaire;        
+printf(" %d ",Pne->PaquetDeDroite[0]);
+printf("\n");
+  
+return;
+}
+
+# endif
+
+
+/*----------------------------------------------------------------------------*/
+
+# if RELATION_DORDRE_DANS_LE_PROBING == OUI_PNE && METHODE_DE_PRISE_EN_COMPTE_DES_CONTRAINTES_DORDRE == CONTRAINTES_DORDRE_DANS_LES_COUPES 
+
+/* Si la variable a instancier est dans un groupe equivalent, on instancie les variables du groupe a 0 */
+void PNE_StrongBranchingInstancierLesVariablesEquivalentes( PROBLEME_PNE * Pne )
+{
+int i; GROUPE * G; int VariableInstanciee;
+
+if ( Pne->NombreDeGroupesDeVariablesEquivalentes <= 0 ) return;
+
+if ( Pne->NumeroDeGroupeDeVariablesEquivalentes[Pne->VariableLaPlusFractionnaire] < 0 ) return;
+
+printf("***********************************************************\n");
+printf("Variable instanciee dans le groupe %d \n",Pne->NumeroDeGroupeDeVariablesEquivalentes[Pne->VariableLaPlusFractionnaire]);
+printf("***********************************************************\n");
+
+VariableInstanciee = Pne->VariableLaPlusFractionnaire;
+G = Pne->Groupe[Pne->NumeroDeGroupeDeVariablesEquivalentes[VariableInstanciee]];
+
+Pne->NbVarGauche = 0;
+Pne->ValeurAGauche = 0;
+printf("Valeur 0: ");
+/* On instancie a 0 toutes les variables qui sont a sa droite */
+for ( i = 0 ; i < G->NombreDeVariablesDuGroupe ; i++ ) {
+  if ( G->VariablesDuGroupe[i] == VariableInstanciee ) {
+    for ( ; i < G->NombreDeVariablesDuGroupe ; i++ ) {	
+      Pne->PaquetDeGauche[Pne->NbVarGauche] = G->VariablesDuGroupe[i];
+	    printf(" %d ",Pne->PaquetDeGauche[Pne->NbVarGauche]);
+      Pne->NbVarGauche++;						
+	  }
+		break;
+	}
+}
+printf("\n");
+
+
+Pne->NbVarDroite = 0;
+Pne->ValeurADroite = 1;
+
+printf("Valeur 1: ");
+/* On instancie a 1 toutes les variables qui sont a sa gauche */
+for ( i = 0 ; i < G->NombreDeVariablesDuGroupe ; i++ ) {
+  Pne->PaquetDeDroite[Pne->NbVarDroite] = G->VariablesDuGroupe[i];
+	printf(" %d ",Pne->PaquetDeDroite[Pne->NbVarDroite]);
+  Pne->NbVarDroite++;					
+  if ( G->VariablesDuGroupe[i] == VariableInstanciee ) break; 
+}
+printf("\n");
+
+ 
+return;
+}
+
+# endif
+
+/*----------------------------------------------------------------------------*/
+
+# if TENIR_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTES_POUR_LE_BRANCHING == OUI_PNE
+
+/* Si la variable a instancier est dans un groupe equivalent, on instancie les variables du groupe a 0 */
+void PNE_StrongBranchingInstancierLesVariablesEquivalentes( PROBLEME_PNE * Pne )
+{
+int i; GROUPE * G; int VariableInstanciee;
+
+if ( Pne->NombreDeGroupesDeVariablesEquivalentes <= 0 ) return;
+
+VariableInstanciee = Pne->VariableLaPlusFractionnaire;
+if ( VariableInstanciee < 0 ) return;
+
+if ( Pne->NumeroDeGroupeDeVariablesEquivalentes[VariableInstanciee] < 0 ) return;
+
+printf("***********************************************************\n");
+printf("Variable instanciee dans le groupe %d \n",Pne->NumeroDeGroupeDeVariablesEquivalentes[Pne->VariableLaPlusFractionnaire]);
+printf("***********************************************************\n");
+
+G = Pne->Groupe[Pne->NumeroDeGroupeDeVariablesEquivalentes[VariableInstanciee]];
+
+Pne->NbVarGauche = 0;
+Pne->ValeurAGauche = 0;
+printf("Valeur 0: ");
+/* On instancie a 0 toutes les variables qui sont a sa droite */
+for ( i = 0 ; i < G->NombreDeVariablesDuGroupe ; i++ ) {
+  if ( G->VariablesDuGroupe[i] == VariableInstanciee ) {
+    for ( ; i < G->NombreDeVariablesDuGroupe ; i++ ) {	
+      Pne->PaquetDeGauche[Pne->NbVarGauche] = G->VariablesDuGroupe[i];			
+	    printf(" %d ",Pne->PaquetDeGauche[Pne->NbVarGauche]);
+      Pne->NbVarGauche++;						
+	  }
+		break;
+	}
+}
+printf("\n");
+
+
+Pne->NbVarDroite = 0;
+Pne->ValeurADroite = 1;
+
+printf("Valeur 1: ");
+/* On instancie a 1 toutes les variables qui sont a sa gauche */
+for ( i = 0 ; i < G->NombreDeVariablesDuGroupe ; i++ ) {
+  Pne->PaquetDeDroite[Pne->NbVarDroite] = G->VariablesDuGroupe[i];	
+	printf(" %d ",Pne->PaquetDeDroite[Pne->NbVarDroite]);
+  Pne->NbVarDroite++;					
+  if ( G->VariablesDuGroupe[i] == VariableInstanciee ) break; 
+}
+printf("\n");
+
+ 
+return;
+}
+
+# endif
 
 /*----------------------------------------------------------------------------*/
 /* Si une variable a ete choisie et si elle fait partie d'une gub, on cherche a faire
@@ -642,7 +802,7 @@ return;
 
 if ( Pne->ConflictGraph == NULL ) return;
 
-printf("Application du conflict graph variable %d: %e\n",Var,ValeurDeVar);
+/*printf("Application du conflict graph variable %d: %e\n",Var,ValeurDeVar);*/
 
 Xmin = Pne->UminTrav;
 Xmax = Pne->UmaxTrav;
@@ -655,7 +815,7 @@ Next = Pne->ConflictGraph->Next;
 if ( ValeurDeVar == 1.0 ) { Noeud = Var; Complement = Pivot + Var; }
 else { Noeud = Pivot + Var; Complement = Var; }
 
-printf("Pivot %d Noeud %d Complement %d\n",Pivot,Noeud,Complement);
+/*printf("Pivot %d Noeud %d Complement %d\n",Pivot,Noeud,Complement);*/
 
 Edge = First[Noeud];
 while ( Edge >= 0 ) {
@@ -671,7 +831,7 @@ while ( Edge >= 0 ) {
 		}
 		if ( Xmin[Var] == Xmax[Var] ) goto NextEdge;
 		ValeurDeVar = 0.0;				
-		printf("Variable %d fixee a %e\n",Var,ValeurDeVar);
+		/*printf("Variable %d fixee a %e\n",Var,ValeurDeVar);*/
 		fflush( stdout );
     PNE_StrongBranchingGraphedeConflit( Pne, Var, ValeurDeVar );
 	}
@@ -686,7 +846,7 @@ while ( Edge >= 0 ) {
 		}		
 		if ( Xmin[Var] == Xmax[Var] ) goto NextEdge;
 		ValeurDeVar = 1.0;						
-		printf("Variable %d fixee a %e\n",Var,ValeurDeVar);
+		/*printf("Variable %d fixee a %e\n",Var,ValeurDeVar);*/
 		fflush( stdout );
     PNE_StrongBranchingGraphedeConflit( Pne, Var, ValeurDeVar );		
 	}

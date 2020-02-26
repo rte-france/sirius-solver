@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Calcul des coupes 
@@ -47,7 +31,7 @@
 # define NOMBRE_MAX_DE_COUPES_INSEREES_FIXE_A_LAVANCE NON_PNE /* Si OUI_PNE on prend  NOMBRE_MAX_DE_COUPES_INSEREES
                                                                  si NON_PNE on prend PROPORTION_MAX_DE_COUPES_INSEREES * nb de contraintes */
 # define NOMBRE_MAX_DE_COUPES_INSEREES  200
-# define PROPORTION_MAX_DE_COUPES_INSEREES 0.2 /*0.1*/
+# define PROPORTION_MAX_DE_COUPES_INSEREES 0.2 
 
 # define SEUIL_INHIB_GOMORY 1.e-5 /*1.e-4*/
 
@@ -98,29 +82,62 @@ int NbCoupesInserees; char ContrainteSaturee; int NbTermesMx ; int DernierIndex;
 int FinDeBoucle; int NombreDeCoupesDejaCalculees; BB * Bb; int Plim; char InhiberGomory;
 double SeuilAdm; double S; int Cnt; int il; int ilMax; int * MdebTrav; int * NbTermTrav;
 int * NuvarTrav; double * ATrav; double * UTrav; char * SensContrainteTrav; double * BTrav;
+int NombreDeVariables; int NombreDeContraintes;
 
 PNE_MiseAJourDesSeuilDeSelectionDesCoupes( Pne );
 
 Bb = Pne->ProblemeBbDuSolveur;
+NombreDeVariables = Pne->NombreDeVariablesTrav;
+NombreDeContraintes = Pne->NombreDeContraintesTrav;
 
 /* Au premier passage on alloue les vecteurs pour les coupes */
 if ( Pne->Coefficient_CG == NULL ) {
-  Pne->Coefficient_CG         = (double *) malloc( Pne->NombreDeVariablesTrav * sizeof( double ) );
-  Pne->IndiceDeLaVariable_CG  = (int *)    malloc( Pne->NombreDeVariablesTrav * sizeof( int   ) );
+  Pne->Coefficient_CG         = (double *) malloc( NombreDeVariables * sizeof( double ) );
+  Pne->IndiceDeLaVariable_CG  = (int *)    malloc( NombreDeVariables * sizeof( int   ) );
   if ( Pne->Coefficient_CG == NULL || Pne->IndiceDeLaVariable_CG == NULL ) {
     printf(" Solveur PNE , memoire insuffisante. Sous-programme: PNE_CalculerLesCoupes \n");
     Pne->AnomalieDetectee = OUI_PNE;
     longjmp( Pne->Env , Pne->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
-  }	
+  }
+  memset( (double *) Pne->Coefficient_CG, 0, NombreDeVariables * sizeof( double ) );
+  memset( (char *) Pne->IndiceDeLaVariable_CG, 0, NombreDeVariables * sizeof( int ) );		
 }
+
 if ( Pne->ValeurLocale == NULL ) {
-  Pne->ValeurLocale = (double *) malloc( Pne->NombreDeVariablesTrav * sizeof( double ) );
-  Pne->IndiceLocal  = (int *)    malloc( Pne->NombreDeVariablesTrav * sizeof( int   ) );
+  Pne->ValeurLocale = (double *) malloc( NombreDeVariables * sizeof( double ) );
+  Pne->IndiceLocal  = (int *)    malloc( NombreDeVariables * sizeof( int   ) );
   if ( Pne->ValeurLocale == NULL || Pne->IndiceLocal == NULL ) {
     printf(" Solveur PNE , memoire insuffisante. Sous-programme: PNE_CalculerLesCoupes \n");
     Pne->AnomalieDetectee = OUI_PNE;
     longjmp( Pne->Env , Pne->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
-  }	
+  }
+  memset( (double *) Pne->ValeurLocale, 0, NombreDeVariables * sizeof( double ) );
+  memset( (char *) Pne->IndiceLocal, 0, NombreDeVariables * sizeof( int ) );	
+}
+
+if ( Pne->FlottantBanaliseEnNombreDeVariables_1 == NULL ) {
+  Pne->FlottantBanaliseEnNombreDeVariables_1 = (double *) malloc( NombreDeVariables * sizeof( double ) );
+  Pne->FlottantBanaliseEnNombreDeVariables_2 = (double *) malloc( NombreDeVariables * sizeof( double ) );
+  Pne->FlottantBanaliseEnNombreDeVariables_3 = (double *) malloc( NombreDeVariables * sizeof( double ) );
+	
+  Pne->EntierBanaliseEnNombreDeVariables_1 = (int *) malloc( NombreDeVariables * sizeof( int ) );
+  Pne->EntierBanaliseEnNombreDeVariables_2 = (int *) malloc( NombreDeVariables * sizeof( int ) );
+  Pne->EntierBanaliseEnNombreDeVariables_3 = (int *) malloc( NombreDeVariables * sizeof( int ) );
+
+  Pne->CharBanaliseEnNombreDeVariables_1 = (char *) malloc( NombreDeVariables * sizeof( char ) );
+  Pne->CharBanaliseEnNombreDeVariables_2 = (char *) malloc( NombreDeVariables * sizeof( char ) );
+  Pne->CharBanaliseEnNombreDeVariables_3 = (char *) malloc( NombreDeVariables * sizeof( char ) );
+
+  Pne->EntierBanaliseEnNombreDeContraintes_1 = (int *) malloc( NombreDeContraintes * sizeof( int ) );
+  Pne->CharBanaliseEnNombreDeContraintes_1 = (char *) malloc( NombreDeContraintes * sizeof( char ) );
+  if ( Pne->FlottantBanaliseEnNombreDeVariables_1 == NULL || Pne->FlottantBanaliseEnNombreDeVariables_2 == NULL || Pne->FlottantBanaliseEnNombreDeVariables_3 == NULL ||
+	     Pne->EntierBanaliseEnNombreDeVariables_1 == NULL || Pne->EntierBanaliseEnNombreDeVariables_2 == NULL || Pne->EntierBanaliseEnNombreDeVariables_3 == NULL ||
+			 Pne->CharBanaliseEnNombreDeVariables_1 == NULL || Pne->CharBanaliseEnNombreDeVariables_2  == NULL || Pne->CharBanaliseEnNombreDeVariables_3 == NULL ||
+			 Pne->EntierBanaliseEnNombreDeContraintes_1 == NULL || Pne->CharBanaliseEnNombreDeContraintes_1 == NULL ) {
+    printf(" Solveur PNE , memoire insuffisante. Sous-programme: PNE_CalculerLesCoupes \n");
+    Pne->AnomalieDetectee = OUI_PNE;
+    longjmp( Pne->Env , Pne->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
+  }
 }
 
 Pne->NombreDeCoupesCalculeesNonEvaluees = 0;
@@ -130,13 +147,23 @@ Pne->NombreDeCoupesAjoute = 0;
 NombreDeCoupesDejaCalculees = Pne->NombreDeCoupesCalculees;
 
 # if UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE
-  PNE_DetectionDesCliquesViolees( Pne );
+  PNE_DetectionDesCliquesViolees( Pne ); 
+  # if UTILISER_LES_ODD_HOLES == OUI_PNE
+    PNE_DetectionDesOddCyclesVioles( Pne );
+  # endif	
   # if UTILISER_LES_COUPES_DE_PROBING == OUI_PNE 
     PNE_DetectionDesCoupesDeProbingViolees( Pne );
 	# endif
   # if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
-    PNE_DetectionDesContraintesDeBorneVariableViolees( Pne );
+    PNE_DetectionDesContraintesDeBorneVariableViolees( Pne );		
+	# endif
+  # if RELATION_DORDRE_DANS_LE_PROBING == OUI_PNE
+    PNE_DetectionDesContraintesDOrdreViolees( Pne );		
 	# endif	
+# endif
+
+# if UTILISER_LES_COUPES_DE_COUTS_REDUITS == OUI_PNE
+  PNE_DetectionDesCoupesDeCoutsReduitsViolees( Pne );
 # endif
 
 PNE_DetectionKnapsackNegligeesViolees( Pne );
@@ -214,7 +241,11 @@ if ( Pne->PremFrac >= 0 && 0 ) {
 
 # if CALCULER_COUPES_KNAPSACK_SIMPLE == OUI_PNE
   if ( Pne->PremFrac >= 0 ) {
-    PNE_CoverKnapsackSimple( Pne );
+    /*PNE_CoverKnapsackSimple( Pne );*/
+		/* En test: on remplace par les agregations de contraintes */
+		
+    PNE_KnapsackAvecCombinaisonsDeContraintes( Pne );
+		
   }
 # endif
   
@@ -223,6 +254,10 @@ if ( Pne->PremFrac >= 0 && 0 ) {
   if ( Pne->PremFrac >= 0 ) {
     PNE_MIRMarchandWolsey( Pne );
   }
+# endif
+
+# if FAIRE_DES_COUPES_AVEC_LES_BORNES_INF_MODIFIEES == OUI_PNE
+  PNE_DetectionDesContraintesDeBorneInfViolees( Pne );
 # endif
 
 #if VERBOSE_PNE
@@ -281,13 +316,13 @@ if ( NbCoupesInserees < 1 ) {
 NbCoupesInserees = 0;
 
 DernierIndex = Pne->NombreDeCoupesCalculees - 1;
-FinDeBoucle  = Pne->NombreDeCoupesCalculees;
+FinDeBoucle  = Pne->NombreDeCoupesCalculees; 
 
 /* Limitation du nombre de coupes ajoutees */
 # if NOMBRE_MAX_DE_COUPES_INSEREES_FIXE_A_LAVANCE == OUI_PNE 
   if ( NbMxCoupes > NOMBRE_MAX_DE_COUPES_INSEREES ) NbMxCoupes = NOMBRE_MAX_DE_COUPES_INSEREES;
 # else
-  if ( NbMxCoupes > PROPORTION_MAX_DE_COUPES_INSEREES * Pne->NombreDeContraintesTrav ) {
+  if ( NbMxCoupes > PROPORTION_MAX_DE_COUPES_INSEREES * Pne->NombreDeContraintesTrav ) {	
 	  NbMxCoupes = (int) ceil ( PROPORTION_MAX_DE_COUPES_INSEREES * Pne->NombreDeContraintesTrav );
 		if ( NbMxCoupes < NOMBRE_MIN_DE_COUPES_INSEREES ) NbMxCoupes = NOMBRE_MIN_DE_COUPES_INSEREES;
 	}
@@ -330,7 +365,7 @@ for ( i = NombreDeCoupesDejaCalculees ; NbCoupesInserees < NbMxCoupes && i < Fin
   }
 }
 
-/*printf("Nombre de coupes inserees parmi les coupes nouvellement calculees %d\n",NbCoupesInserees);*/
+/*printf("Nombre de coupes inserees parmi les coupes nouvellement calculees %d  (on en a calcule %d)\n",NbCoupesInserees,FinDeBoucle-NombreDeCoupesDejaCalculees);*/
 
 /* On libere le reste des structures */
 for ( ; i < Pne->NombreDeCoupesCalculees ; i++ ) {

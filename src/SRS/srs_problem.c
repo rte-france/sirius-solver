@@ -29,9 +29,9 @@ void PNE_copy_problem(PROBLEME_MPS * Mps, PROBLEME_A_RESOUDRE * Probleme, int To
 	Probleme->X = Mps->U;
 	Probleme->Xmax = Mps->Umax;
 	Probleme->Xmin = Mps->Umin;
-	Probleme->CoutLineaire = Mps->CoefsObjectif;
+	Probleme->CoutLineaire = Mps->L;
 	Probleme->NombreDeContraintes = Mps->NbCnt;
-	Probleme->SecondMembre = Mps->Rhs;
+	Probleme->SecondMembre = Mps->B;
 	Probleme->Sens = Mps->SensDeLaContrainte;
 	Probleme->IndicesDebutDeLigne = Mps->Mdeb;
 	Probleme->NombreDeTermesDesLignes = Mps->NbTerm;
@@ -137,13 +137,13 @@ int initProblemMpsPointer(SRS_PROBLEM * problem_srs) {
 	problem_srs->problem_mps->A = NULL;
 	problem_srs->problem_mps->Mdeb = NULL;
 	problem_srs->problem_mps->NbTerm = NULL;
-	problem_srs->problem_mps->Rhs = NULL;
+	problem_srs->problem_mps->B = NULL;
 	problem_srs->problem_mps->SensDeLaContrainte = NULL;
 	problem_srs->problem_mps->VariablesDualesDesContraintes = NULL;
 	problem_srs->problem_mps->TypeDeVariable = NULL;
 	problem_srs->problem_mps->TypeDeBorneDeLaVariable = NULL;
 	problem_srs->problem_mps->U = NULL;
-	problem_srs->problem_mps->CoefsObjectif = NULL;
+	problem_srs->problem_mps->L = NULL;
 	problem_srs->problem_mps->Umin = NULL;
 	problem_srs->problem_mps->Umax = NULL;
 	problem_srs->problem_mps->LabelDeLaVariable = NULL;
@@ -191,7 +191,7 @@ int SRSfreempsprob(PROBLEME_MPS * problem_mps) {
 		free(problem_mps->Mdeb);
 		free(problem_mps->NbTerm);
 		free(problem_mps->Mder);
-		free(problem_mps->Rhs);
+		free(problem_mps->B);
 		free(problem_mps->SensDeLaContrainte);
 		free(problem_mps->BRange);
 		free(problem_mps->VariablesDualesDesContraintes);
@@ -208,7 +208,7 @@ int SRSfreempsprob(PROBLEME_MPS * problem_mps) {
 		free(problem_mps->TypeDeVariable);
 		free(problem_mps->TypeDeBorneDeLaVariable);
 		free(problem_mps->U);
-		free(problem_mps->CoefsObjectif);
+		free(problem_mps->L);
 		free(problem_mps->Umin);
 		free(problem_mps->Umax);
 		if (problem_mps->LabelDeLaVariable != NULL) {
@@ -241,7 +241,7 @@ int SRSreadmpsprob(SRS_PROBLEM * problem_srs, const char * fileName) {
 		initProblemMpsPointer(problem_srs);
 	}
 	
-	PNE_LireJeuDeDonneesMPS_AvecNom(problem_srs->problem_mps, fileName);
+	//PNE_LireJeuDeDonneesMPS_AvecNom(problem_srs->problem_mps, fileName);
 
 	for (int idxCol = 0; idxCol < problem_srs->problem_mps->NbVar; ++idxCol) {
 		if (problem_srs->problem_mps->TypeDeVariable[idxCol] != REEL) {
@@ -296,7 +296,7 @@ int SRScreatecols(SRS_PROBLEM * problem_srs,
 	problem_mps->U = malloc(nb_cols * sizeof(double));
 
 	mallocAndCopyIntArray(nb_cols, col_types, &problem_mps->TypeDeVariable);
-	mallocAndCopyDoubleArray(nb_cols, obj_coefs, &problem_mps->CoefsObjectif);
+	mallocAndCopyDoubleArray(nb_cols, obj_coefs, &problem_mps->L);
 	mallocAndCopyDoubleArray(nb_cols, lb, &problem_mps->Umin);
 	mallocAndCopyDoubleArray(nb_cols, ub, &problem_mps->Umax);
 	
@@ -326,7 +326,7 @@ int SRScreaterows(SRS_PROBLEM * problem_srs,
 	problem_mps->NbCnt = nb_rows;
 	problem_mps->VariablesDualesDesContraintes = malloc(nb_rows * sizeof(double));
 	
-	mallocAndCopyDoubleArray(nb_rows, rhs, &problem_mps->Rhs);
+	mallocAndCopyDoubleArray(nb_rows, rhs, &problem_mps->B);
 	mallocAndCopyCharArray(nb_rows, sense, &problem_mps->SensDeLaContrainte);
 	mallocAndCopyDoubleArray(nb_rows, range, &problem_mps->BRange);
 	
@@ -390,8 +390,8 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs) {
 
 		if (problem_spx != NULL)
 		{
-			SPX_ModifierLeVecteurCouts(problem_spx, problem_mps->CoefsObjectif, problem_mps->NbVar);
-			SPX_ModifierLeVecteurSecondMembre(problem_spx, problem_mps->Rhs, problem_mps->SensDeLaContrainte, problem_mps->NbCnt);
+			SPX_ModifierLeVecteurCouts(problem_spx, problem_mps->L, problem_mps->NbVar);
+			SPX_ModifierLeVecteurSecondMembre(problem_spx, problem_mps->B, problem_mps->SensDeLaContrainte, problem_mps->NbCnt);
 			
 			size_t arraySizeInBytes = problem_mps->NbVar * sizeof(double);
 			memcpy(problem_spx->Xmin, problem_mps->Umin, arraySizeInBytes);
@@ -438,7 +438,7 @@ int SRSoptimize(SRS_PROBLEM * problem_srs) {
 	int nbCols = problem_srs->problem_mps->NbVar;
 	if (problem_srs->maximize) {
 		for (int idxCol = 0; idxCol < nbCols; ++idxCol) {
-			problem_srs->problem_mps->CoefsObjectif[idxCol] *= -1.0;
+			problem_srs->problem_mps->L[idxCol] *= -1.0;
 		}
 	}
 	
@@ -460,7 +460,7 @@ int SRSoptimize(SRS_PROBLEM * problem_srs) {
 
 	if (problem_srs->maximize < 0) {
 		for (int idxCol = 0; idxCol < nbCols; ++idxCol) {
-			problem_srs->problem_mps->CoefsObjectif[idxCol] *= -1.0;
+			problem_srs->problem_mps->L[idxCol] *= -1.0;
 		}
 	}
 
@@ -473,7 +473,7 @@ int SRSgetobjval(SRS_PROBLEM * problem_srs, double * objVal) {
 	(*objVal) = 0.0;
 	int nbCols = problem_mps->NbVar;
 	for (int idxCol = 0; idxCol < nbCols; ++idxCol) {
-		(*objVal) += problem_mps->CoefsObjectif[idxCol] * problem_mps->U[idxCol];
+		(*objVal) += problem_mps->L[idxCol] * problem_mps->U[idxCol];
 	}
 	if (problem_srs->maximize)
 		(*objVal) *= -1.;
@@ -507,7 +507,7 @@ int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simp
 	problem_simplexe->StrategieAntiDegenerescence = AGRESSIF; // Vaut AGRESSIF ou PEU_AGRESSIF
 	problem_simplexe->NombreMaxDIterations = -1; // si i < 0 , alors le simplexe prendre sa valeur par defaut
 	problem_simplexe->DureeMaxDuCalcul = -1; // si i < 0 , alors le simplexe prendre sa valeur par defaut
-	problem_simplexe->CoutLineaire = problem_mps->CoefsObjectif;
+	problem_simplexe->CoutLineaire = problem_mps->L;
 	problem_simplexe->X = problem_mps->U;
 	problem_simplexe->Xmin = problem_mps->Umin;
 	problem_simplexe->Xmax = problem_mps->Umax;
@@ -519,7 +519,7 @@ int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simp
 	problem_simplexe->IndicesColonnes = problem_mps->Nuvar;
 	problem_simplexe->CoefficientsDeLaMatriceDesContraintes = problem_mps->A;
 	problem_simplexe->Sens = problem_mps->SensDeLaContrainte;
-	problem_simplexe->SecondMembre = problem_mps->Rhs;
+	problem_simplexe->SecondMembre = problem_mps->B;
 	problem_simplexe->CoutsMarginauxDesContraintes = problem_mps->VariablesDualesDesContraintes;
 	problem_simplexe->ChoixDeLAlgorithme = SPX_DUAL;
 
@@ -537,7 +537,7 @@ int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simp
 SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * problem_simplexe)
 {
 	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
-	problem_mps->CoefsObjectif = problem_simplexe->CoutLineaire;
+	problem_mps->L = problem_simplexe->CoutLineaire;
 	problem_mps->U = problem_simplexe->X;
 	problem_mps->Umin = problem_simplexe->Xmin;
 	problem_mps->Umax = problem_simplexe->Xmax;
@@ -549,7 +549,7 @@ SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * pro
 	problem_mps->Nuvar = problem_simplexe->IndicesColonnes;
 	problem_mps->A = problem_simplexe->CoefficientsDeLaMatriceDesContraintes;
 	problem_mps->SensDeLaContrainte = problem_simplexe->Sens;
-	problem_mps->Rhs = problem_simplexe->SecondMembre;
+	problem_mps->B = problem_simplexe->SecondMembre;
 	problem_mps->VariablesDualesDesContraintes = problem_simplexe->CoutsMarginauxDesContraintes;
 
 	return 0;
@@ -558,7 +558,7 @@ SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * pro
 int SRSchgrhs(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * rowIndexes, const double * newRhs) {
 	for (int idx = 0; idx < nbRowIndexes; ++idx) {
 		int rowAbsoluteIndex = rowIndexes[idx];
-		problem_srs->problem_mps->Rhs[rowAbsoluteIndex] = newRhs[idx];
+		problem_srs->problem_mps->B[rowAbsoluteIndex] = newRhs[idx];
 	}
 
 	return 0;
@@ -587,7 +587,7 @@ int SRSchgobj(SRS_PROBLEM * problem_srs, size_t nbColIndexes, const int * colInd
 			fprintf(stderr, "(ERROR) col %d does not exist, can't change its objective coef\n", absoluteIndex);
 			return -1;
 		}
-		problem_mps->CoefsObjectif[absoluteIndex] = newObj[relativeIndex];
+		problem_mps->L[absoluteIndex] = newObj[relativeIndex];
 	}
 	return 0;
 }

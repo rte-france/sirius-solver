@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Calcul des coupes 
@@ -33,7 +17,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-void PNE_EnrichirLeProblemeCourantAvecUneCoupe( PROBLEME_PNE * Pne, 
+void PNE_EnrichirLeProblemeCourantAvecUneCoupe( PROBLEME_PNE * Pne,  
                                                 char     Type,
                                                 int      NombreDeTermes,
 					                                     	double   SecondMembre,
@@ -69,8 +53,10 @@ if ( Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees] == NULL ) {
 
 Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees]->Type = Type;
 Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees]->IndexDansCliques = -1;
+Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees]->IndexDansOddHole = -1;
 Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees]->IndexDansCoupesDeProbing = -1;
 Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees]->IndexDansContraintesDeBorneVariable = -1;
+Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees]->IndexDansCoupesContraintesDOrdre = -1;
 Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees]->IndexDansKNegligees = -1;
 Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees]->IndexDansGNegligees = -1;
 Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees]->NumeroDeLaContrainte = Pne->Coupes.NombreDeContraintes;

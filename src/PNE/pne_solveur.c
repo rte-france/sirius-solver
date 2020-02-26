@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION:  Solveur de PLNE 
@@ -59,7 +43,7 @@ void PNE_Solveur( PROBLEME_A_RESOUDRE * Probleme )
 PROBLEME_PNE * Pne; void * Tas;
 
 /* Controle anti piratage tres simplifie: on controle l'adresse MAC de la machine */
-/*PNE_ControleMacAdresse( );*/
+PNE_ControleMacAdresse( );
 
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   Probleme->ExistenceDUneSolution = ARRET_CAR_ERREUR_INTERNE;

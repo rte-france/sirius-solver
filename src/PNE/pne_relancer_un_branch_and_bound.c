@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 # include "pne_fonctions.h"   
 # include "pne_define.h"
 
@@ -42,7 +26,8 @@ int NombreDeVariablesNatives; int il; int NbTermesNatif; int NombreDeContraintes
 int NbContraintesNecessaires; double * SecondMembre; char * Sens;  int * Colonne; double * Coefficient;
 MATRICE_DE_CONTRAINTES * Contraintes; int Nb; double * L; int Var; int ii; int iiMx;
 char * ContrainteActivable; int NbT; int * Mdeb; int * NbTerm; char * SensContrainte; int * Nuvar;
-double * B; double * A; int Cnt;
+double * B; double * A; int Cnt; CLIQUES * Cliques; int c; int * NoeudDeClique; int Pivot;
+int * First; int * NbElements; double Sec;
 
 Contraintes = NULL;
 /* Allocation */
@@ -66,6 +51,16 @@ NbTermesNatif = Pne->TailleAlloueePourLaMatriceDesContraintes;
 
 NbTermesNecessaires = NbTermesNatif;
 
+/* Pour les cliques */
+/*
+if ( Pne->Cliques != NULL ) {
+  Cliques = Pne->Cliques;
+  NbElements = Cliques->NbElements;
+  for ( c = 0 ; c < Cliques->NombreDeCliques ; c++ ) NbTermesNecessaires += NbElements[c];
+  NbContraintesNecessaires += Cliques->NombreDeCliques;
+}
+*/
+
 /* Pour les coupes */
 for ( Nb = 0 ; Nb < Pne->Coupes.NombreDeContraintes; Nb++ ) NbTermesNecessaires += Pne->Coupes.NbTerm[Nb];
 
@@ -73,7 +68,7 @@ for ( Nb = 0 ; Nb < Pne->Coupes.NombreDeContraintes; Nb++ ) NbTermesNecessaires 
 NbTermesNecessaires += NombreDeVariablesNatives;   
 
 /* Pour la borne sur le cout de la solution entiere */
-NbTermesNecessaires += NombreDeVariablesNatives;   
+NbTermesNecessaires += NombreDeVariablesNatives;
 
 IndexDebut = (int *) malloc( NbContraintesNecessaires * sizeof( int ) );
 NombreDeTermes = (int *) malloc( NbContraintesNecessaires * sizeof( int ) );
@@ -104,15 +99,16 @@ A = Pne->ATrav;
 
 il = 0;
 NombreDeContraintes = 0;
+     
 for ( Cnt = 0 ; Cnt < NombreDeContraintesNatives ; Cnt++ ) {
-  if ( ContrainteActivable[Cnt] == NON_PNE && 0 ) continue;
+  if ( ContrainteActivable[Cnt] == NON_PNE ) continue;
 	IndexDebut[NombreDeContraintes] = il;
 	NbT = 0;  
   ii = Mdeb[Cnt];
   iiMx = ii + NbTerm[Cnt];
 	while ( ii < iiMx ) {
 	  Colonne[il] = Nuvar[ii];
-    Coefficient[il] = A[ii];
+    Coefficient[il] = A[ii];		
 		ii++;
 		il++;
 		NbT++;
@@ -124,8 +120,40 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintesNatives ; Cnt++ ) {
 		NombreDeContraintes++;
 	}
 }
+
 /*
-printf("Pne->Coupes.NombreDeContraintes = %d\n",Pne->Coupes.NombreDeContraintes);
+if ( Pne->Cliques != NULL ) {
+  Cliques = Pne->Cliques;
+  First = Cliques->First;  
+  NbElements = Cliques->NbElements;
+  NoeudDeClique = Cliques->Noeud;
+  Pivot = Pne->ConflictGraph->Pivot;
+  for ( c = 0 ; c < Cliques->NombreDeCliques ; c++ ) {
+    ii = First[c];
+	  if ( ii < 0 ) continue; 
+    iiMx = ii + NbElements[c];
+    IndexDebut[NombreDeContraintes] = il;		
+    Sec = 1;		
+    while ( ii < iiMx ) {
+	    if ( NoeudDeClique[ii] < Pivot ) {
+	      Coefficient[il] = 1;				
+		    Colonne[il] = NoeudDeClique[ii];			
+		  }
+		  else {
+	      Coefficient[il] = -1;				
+		    Colonne[il] = NoeudDeClique[ii]-Pivot;
+			  Sec -= 1;
+		  }			
+			ii++;
+	    il++;
+	  }
+	  NombreDeTermes[NombreDeContraintes] = NbElements[c];
+    Sens[NombreDeContraintes] = '<';
+    SecondMembre[NombreDeContraintes] = Sec;
+    NombreDeContraintes++;		
+	}
+}
+*/
 
 for ( Nb = 0 ; Nb < Pne->Coupes.NombreDeContraintes; Nb++ ) {
   IndexDebut[NombreDeContraintes] = il;
@@ -142,26 +170,10 @@ for ( Nb = 0 ; Nb < Pne->Coupes.NombreDeContraintes; Nb++ ) {
 	}	
   NombreDeContraintes++;
 }
-*/
-/* On se replace au noeud racine et on impose que le cout soit superieur ou egal au meilleur minorant */
-/*
-L = Pne->LTrav;
-IndexDebut[NombreDeContraintes] = il;
-Nb = 0;
-for ( Var = 0 ; Var < NombreDeVariablesNatives ; Var++ ) {
-  if ( L[Var] != 0.0 ) {
-    Colonne[il] = Var;
-    Coefficient[il] = L[Var];
-		il++; Nb++;
-	}
-}
-NombreDeTermes[NombreDeContraintes] = Nb;
-SecondMembre[NombreDeContraintes] = MeilleurMinorant - 1.;
-Sens[NombreDeContraintes] = '>';
-NombreDeContraintes++;
-*/
+
+
 /* Pour la borne sur le cout de la solution entiere */
-/*
+
 L = Pne->LTrav;
 IndexDebut[NombreDeContraintes] = il;
 Nb = 0;
@@ -173,10 +185,10 @@ for ( Var = 0 ; Var < NombreDeVariablesNatives ; Var++ ) {
 	}
 }
 NombreDeTermes[NombreDeContraintes] = Nb;
-SecondMembre[NombreDeContraintes] = Pne->CoutOpt - Pne->Z0 + 1.;
+SecondMembre[NombreDeContraintes] = Pne->CoutOpt - Pne->Z0 + 0.1;
 Sens[NombreDeContraintes] = '<';
 NombreDeContraintes++;
-*/
+
 Contraintes->NombreDeContraintes = NombreDeContraintes;
 
 return( Contraintes );
@@ -190,10 +202,37 @@ MATRICE_DE_CONTRAINTES * Contraintes; char BrnInfConnue; int * TypeDeBorne;
 PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve; int NombreDeVariables;
 double * Xmin; double * Xmax; double * X; int * TypeDeVariable;  char * BorneSupConnue;
 char * BorneInfConnue; double * ValeurDeBorneSup; double * ValeurDeBorneInf;
-int * TypeDeVariablePne; 
+int * TypeDeVariablePne; char BorneMiseAJour; char UneVariableAEteFixee; double NouvelleValeur;
 
-if ( Pne->Controls != NULL ) return; /* C'est gere au niveau de l'appelant */
- 
+/*if ( Pne->Controls != NULL ) return;*/ /* C'est gere au niveau de l'appelant */
+
+if ( Pne->Controls == NULL ) {
+  Controls.Pne = Pne;
+  Controls.PneFils = NULL;
+  Controls.Presolve = NULL;   
+  Controls.PresolveUniquement = NON_PNE;
+  Controls.FaireDuVariableProbing = OUI_PNE;
+  Controls.RechercherLesCliques = OUI_PNE;
+}
+else {
+  Controls.Pne = Pne;
+  Controls.PneFils = NULL;
+  Controls.Presolve = NULL;   
+  Controls.PresolveUniquement = OUI_PNE;
+  Controls.FaireDuVariableProbing = NON_PNE;
+  Controls.RechercherLesCliques = NON_PNE;
+}
+
+  /* On fait que du presolve */
+  /*
+  Controls.Pne = Pne;
+  Controls.PneFils = NULL;
+  Controls.Presolve = NULL;   
+  Controls.PresolveUniquement = OUI_PNE;
+  Controls.FaireDuVariableProbing = NON_PNE;
+  Controls.RechercherLesCliques = NON_PNE;
+	*/
+
 if ( Pne->AffichageDesTraces == OUI_PNE ) {
   printf("Trying to improve bounds restarting presolve\n");
 }
@@ -284,13 +323,6 @@ Probleme.NombreMaxDeSolutionsEntieres = NbMaxSol;
 
 Probleme.ToleranceDOptimalite = 1.e-4; /* C'est en % donc 1.e-4 ca fait 1.e-6 */
 
-Controls.Pne = Pne;
-Controls.PneFils = NULL;
-Controls.Presolve = NULL;   
-Controls.PresolveUniquement = OUI_PNE;
-Controls.FaireDuVariableProbing = OUI_PNE;
-Controls.RechercherLesCliques = OUI_PNE;
-    
 PNE_SolveurProblemeReduit( &Probleme, &Controls );
 
 if ( Controls.PresolveUniquement != OUI_PNE ) {
@@ -314,13 +346,17 @@ else {
   /* On recupere les bornes */
 
   if ( Probleme.ExistenceDUneSolution != OUI_PNE ) {
-	  printf("Pas de solution \n");
+	  goto Fin;
 	}
-		
-	TypeDeVariablePne = Pne->TypeDeVariableTrav;
 
-	int Stop;
-	Stop = 0;
+  ProbingOuNodePresolve->Faisabilite = OUI_PNE;
+  ProbingOuNodePresolve->VariableInstanciee = -1;
+  ProbingOuNodePresolve->NbVariablesModifiees = 0;
+  ProbingOuNodePresolve->NbContraintesModifiees = 0;
+  ProbingOuNodePresolve->NombreDeContraintesAAnalyser = 0;
+  ProbingOuNodePresolve->IndexLibreContraintesAAnalyser = 0;
+			
+	TypeDeVariablePne = Pne->TypeDeVariableTrav;
 	
   for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
     if ( ValeurDeBorneInf[Var] == ValeurDeBorneSup[Var] ) continue;
@@ -329,21 +365,31 @@ else {
         if ( Xmin[Var] == Xmax[Var] ) {
           printf("Variable entiere %d fixee par le presolve a %e  ValeurDeBorneInf %e ValeurDeBorneSup %e\n",
 					        Var,Xmin[Var],ValeurDeBorneInf[Var],ValeurDeBorneSup[Var]);
-					ValeurDeBorneInf[Var] = Xmin[Var];
-					ValeurDeBorneSup[Var] = Xmin[Var];
-					BorneInfConnue[Var] = OUI_PNE;
-					BorneSupConnue[Var] = OUI_PNE;
+          BorneMiseAJour = NON_PNE;
+				  NouvelleValeur = Xmin[Var];
+					if ( Xmax[Var] < ValeurDeBorneSup[Var] - 0.1 ) {
+			      UneVariableAEteFixee = FIXATION_SUR_BORNE_INF;
+					}
+					else {
+					  UneVariableAEteFixee = FIXATION_SUR_BORNE_SUP;
+					}
+				  PNE_VariableProbingAppliquerLeConflictGraph( Pne, Var, NouvelleValeur, BorneMiseAJour, UneVariableAEteFixee );
+					
 				}
 			}
 		}
 		else {
+		  if ( ValeurDeBorneInf[Var] != ValeurDeBorneSup[Var] ) {
+		    if ( Xmin[Var] == Xmax[Var] ) {
+          printf("Variable continue %d peut etre fixee a %e\n",Var,Xmin[Var]);
+				}
+			}
       if ( Xmin[Var] > ValeurDeBorneInf[Var] + 1.e-5 ) {
         printf("Variable continue %d nouveau Xmin %e  ancien %e ecart %e\n",Var,Xmin[Var],ValeurDeBorneInf[Var],Xmin[Var]-ValeurDeBorneInf[Var]);
         ValeurDeBorneInf[Var] = Xmin[Var];
 				BorneInfConnue[Var] = OUI_PNE;
 				if ( Xmin[Var] > ValeurDeBorneSup[Var] ) {
 				  printf("    BUG  Var %d Xmin %e ValeurDeBorneInf %e ValeurDeBorneSup %e\n",Var,Xmin[Var],ValeurDeBorneInf[Var],ValeurDeBorneSup[Var]);
-					Stop = 1;
 				}
 			}		
       if ( Xmax[Var] < ValeurDeBorneSup[Var] - 1.e-5 ) {
@@ -352,19 +398,11 @@ else {
 				BorneSupConnue[Var] = OUI_PNE;
 				if ( Xmax[Var] < ValeurDeBorneInf[Var] ) {
 				  printf("   BUG  Var %d Xmax %e ValeurDeBorneInf %e ValeurDeBorneSup %e\n",Var,Xmax[Var],ValeurDeBorneInf[Var],ValeurDeBorneSup[Var]);
-					Stop = 1;
 				}				
-			}
+			}		 
 		}
 	}
-	
-  if ( Stop == 1 ) {
-	  printf("Stop %d\n",Stop);
-	  exit(0);
-	}
-
-
-	
+		
 }
 Fin:
 

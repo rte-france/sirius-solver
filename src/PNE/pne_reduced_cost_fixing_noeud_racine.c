@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Reduced cost fixing au noeud racine. Appele a chaque fois
@@ -33,6 +17,7 @@
 # include "pne_fonctions.h"
 # include "pne_define.h"
 
+# include "spx_fonctions.h"
 # include "spx_define.h"
 
 # include "bb_define.h"
@@ -47,9 +32,9 @@
 
 # define MARGE_CONTINUE 10
 # define MARGE_DE_SECURITE 0.05
+# define DEPASSEMENT_MIN   1.
 
-void PNE_ReducedCostFixingAuNoeudRacineRechercheNouvellesIncompatibilites( PROBLEME_PNE * , double , int * , int , double , int , int * ,
-																															   				   int * , char * , double * , double * , double * , int * );
+# define MARGE_POUR_RELAXATION 1.e-8 
 																																			
 /*----------------------------------------------------------------------------*/
 
@@ -60,6 +45,7 @@ void PNE_ArchivagesPourReducedCostFixingAuNoeudRacine( PROBLEME_PNE * Pne,
 {
 int i ; double * CoutsReduitsAuNoeudRacine; int * PositionDeLaVariableAuNoeudRacine;
 double MxCoutReduit; double * Umin; double * Umax; double X; int * TypeDeBorneTrav;
+double * UminALaResolutionDuNoeudRacine; double * UmaxALaResolutionDuNoeudRacine;
 
 if ( Pne->CoutsReduitsAuNoeudRacine == NULL ) {
   Pne->CoutsReduitsAuNoeudRacine = (double *) malloc( Pne->NombreDeVariablesTrav * sizeof( double ) );
@@ -74,8 +60,29 @@ if ( Pne->PositionDeLaVariableAuNoeudRacine == NULL ) {
 	}
 }
 
+if ( Pne->UminALaResolutionDuNoeudRacine == NULL ) {
+  Pne->UminALaResolutionDuNoeudRacine = (double *) malloc( Pne->NombreDeVariablesTrav * sizeof( double ) );
+	if ( Pne->UminALaResolutionDuNoeudRacine == NULL ) {
+	  free( Pne->CoutsReduitsAuNoeudRacine );
+	  free( Pne->PositionDeLaVariableAuNoeudRacine );
+	  return;    
+	}
+}
+
+if ( Pne->UmaxALaResolutionDuNoeudRacine == NULL ) {
+  Pne->UmaxALaResolutionDuNoeudRacine = (double *) malloc( Pne->NombreDeVariablesTrav * sizeof( double ) );
+	if ( Pne->UmaxALaResolutionDuNoeudRacine == NULL ) {
+	  free( Pne->CoutsReduitsAuNoeudRacine );
+	  free( Pne->PositionDeLaVariableAuNoeudRacine );
+	  free( Pne->UminALaResolutionDuNoeudRacine );
+	  return;    
+	}
+}
+
 CoutsReduitsAuNoeudRacine = Pne->CoutsReduitsAuNoeudRacine;
 PositionDeLaVariableAuNoeudRacine = Pne->PositionDeLaVariableAuNoeudRacine;
+UminALaResolutionDuNoeudRacine = Pne->UminALaResolutionDuNoeudRacine;
+UmaxALaResolutionDuNoeudRacine = Pne->UmaxALaResolutionDuNoeudRacine;
  
 Pne->CritereAuNoeudRacine = Critere;
 
@@ -84,6 +91,8 @@ Umin = Pne->UminTrav;
 Umax = Pne->UmaxTrav;
 TypeDeBorneTrav = Pne->TypeDeBorneTrav;
 for ( i = 0 ; i < Pne->NombreDeVariablesTrav ; i++ ) {
+  UminALaResolutionDuNoeudRacine[i] = Umin[i];
+  UmaxALaResolutionDuNoeudRacine[i] = Umax[i];	
   PositionDeLaVariableAuNoeudRacine[i] = PositionDeLaVariable[i];	
   CoutsReduitsAuNoeudRacine[i] = CoutsReduits[i];
 	X = fabs( CoutsReduits[i] * ( Umax[i] - Umin[i] ) );
@@ -104,20 +113,28 @@ return;
 void PNE_ReducedCostFixingAuNoeudRacine( PROBLEME_PNE * Pne )														
 {
 int Var; double Delta; double h; int * TypeDeBorne; int * TypeDeVariable; int Arret;
-double * CoutsReduits; int * PositionDeLaVariable; int NbFix; int * T; int Nb;
-int * Num; int j; PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve; int NombreDeVariables;
+double * CoutsReduitsALaResolutionDuNoeudRacine; int * PositionDeLaVariableALaResolutionDuNoeudRacine;
+int NbFix; int * T; int Nb; int * Num; int j; PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve; int NombreDeVariables;
 double NouvelleValeur; char * SensContrainte; double * B; char * ContrainteActivable;
-int Cnt; int NbCntRelax; int NombreDeContraintes; int NbFixBin; int Faisabilite;
+int Cnt; int NbCntRelax; int NombreDeContraintes; int NbFixBin; int Faisabilite; char CntActiv;
 char * BorneSupConnue; double * ValeurDeBorneSup; char * BorneInfConnue; double * ValeurDeBorneInf;
 char BrnInfConnue; char BorneMiseAJour; char UneVariableAEteFixee; double * Umin;
 double * UminSv; double * Umax; double * UmaxSv; char * BminValide; char * BmaxValide;
-double * BminSv; double * BmaxSv; double * Bmin; double * Bmax; char Mode;
+double * BminSv; double * BmaxSv; double * Bmin; double * Bmax; char Mode; int * TypeDeBorneSv;
 int NombreDeVariablesNonFixes; int * NumeroDesVariablesNonFixes; int i; int NbBranchesAjoutees;
+double * UminALaResolutionDuNoeudRacine; double * UmaxALaResolutionDuNoeudRacine;
+double Marge;
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  double * UminAmeliore;
+# endif
 # if TEST_RELANCE_BRANCH_AND_BOUND == 1
   BB * Bb;
 # endif
+# if FAIRE_DES_COUPES_AVEC_LES_BORNES_INF_MODIFIEES == OUI_PNE
+  double * UminAmeliorePourCoupes;
+# endif
 
-# if REDUCED_COST_FIXING_AU_NOEUD_RACINE == NON_PNE
+# if REDUCED_COST_FIXING_AU_NOEUD_RACINE == NON_PNE  
   return;
 # endif
 
@@ -142,18 +159,33 @@ memset( (char *) T, 0, NombreDeVariables * sizeof( int ) );
 TypeDeVariable = Pne->TypeDeVariableTrav;
 
 /* Attention c'est le type de borne au noeud racine qu'il faut prendre */
-memcpy( (char *) Pne->TypeDeBorneTrav, (char *) Pne->TypeDeBorneTravSv, NombreDeVariables * sizeof( int ) );
+TypeDeBorneSv = Pne->TypeDeBorneTravSv;
 TypeDeBorne = Pne->TypeDeBorneTrav;
+memcpy( (char *) TypeDeBorne, (char *) TypeDeBorneSv, NombreDeVariables * sizeof( int ) );
 
 Umin = Pne->UminTrav;
 UminSv = Pne->UminTravSv;
 Umax = Pne->UmaxTrav;
 UmaxSv = Pne->UmaxTravSv;
 
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  UminAmeliore = Pne->UminAmeliore;
+# endif
+
+# if FAIRE_DES_COUPES_AVEC_LES_BORNES_INF_MODIFIEES == OUI_PNE
+  UminAmeliorePourCoupes = Pne->UminAmeliorePourCoupes;
+# endif
+
 /* Attention c'est Umin au noeud racine qu'il faut prendre */
 memcpy( (char *) Umin, (char *) UminSv, NombreDeVariables * sizeof( double ) );
 /* Attention c'est Umax au noeud racine qu'il faut prendre */
 memcpy( (char *) Umax, (char *) UmaxSv, NombreDeVariables * sizeof( double ) );
+
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  for ( Var = 0 ; Var < NombreDeVariables; Var++ ) {
+    if ( UminAmeliore[Var] != VALEUR_NON_INITIALISEE ) Umin[Var] = UminAmeliore[Var];
+  } 
+# endif
 
 /* Initialisation des bornes inf et sup des variables */
 PNE_InitBorneInfBorneSupDesVariables( Pne );
@@ -163,8 +195,10 @@ ValeurDeBorneSup = ProbingOuNodePresolve->ValeurDeBorneSup;
 BorneInfConnue = ProbingOuNodePresolve->BorneInfConnue;
 ValeurDeBorneInf = ProbingOuNodePresolve->ValeurDeBorneInf;
 
-CoutsReduits = Pne->CoutsReduitsAuNoeudRacine;
-PositionDeLaVariable = Pne->PositionDeLaVariableAuNoeudRacine;
+CoutsReduitsALaResolutionDuNoeudRacine = Pne->CoutsReduitsAuNoeudRacine;
+PositionDeLaVariableALaResolutionDuNoeudRacine = Pne->PositionDeLaVariableAuNoeudRacine;
+UminALaResolutionDuNoeudRacine =  Pne->UminALaResolutionDuNoeudRacine;
+UmaxALaResolutionDuNoeudRacine =  Pne->UmaxALaResolutionDuNoeudRacine;
 
 /* On recupere les bornes des contraintes au noeud racine */
 Bmin = ProbingOuNodePresolve->Bmin;
@@ -194,15 +228,16 @@ ProbingOuNodePresolve->Faisabilite = OUI_PNE;
 ProbingOuNodePresolve->VariableInstanciee = -1;
 ProbingOuNodePresolve->NbVariablesModifiees = 0;
 ProbingOuNodePresolve->NbContraintesModifiees = 0;
+ProbingOuNodePresolve->NombreDeContraintesAAnalyser = 0;
+ProbingOuNodePresolve->IndexLibreContraintesAAnalyser = 0;
+
 Faisabilite = OUI_PNE;
 
 for ( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 
   Var = NumeroDesVariablesNonFixes[i];
-
-  /*if ( TypeDeVariable[Var] != ENTIER ) continue;*/
 	
-  if ( fabs( CoutsReduits[Var] ) < ZERO_COUT_REDUIT ) continue;
+  if ( fabs( CoutsReduitsALaResolutionDuNoeudRacine[Var] ) < ZERO_COUT_REDUIT ) continue;
 	
   BrnInfConnue = BorneInfConnue[Var];
   if ( BrnInfConnue == FIXE_AU_DEPART || BrnInfConnue == FIXATION_SUR_BORNE_INF ||
@@ -212,17 +247,20 @@ for ( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 	Nb = 0;
 
   if ( TypeDeVariable[Var] == ENTIER ) {		
-    if( PositionDeLaVariable[Var] == HORS_BASE_SUR_BORNE_SUP ) {	
+    if( PositionDeLaVariableALaResolutionDuNoeudRacine[Var] == HORS_BASE_SUR_BORNE_SUP ) {	
 	    /* On regarde ce qu'il se passe si la variable passe a 0 */
-		  Arret = NON_PNE;
-			
-      PNE_ReducedCostFixingConflictGraph( Pne, Var, ValeurDeBorneInf[Var], &h, Delta, CoutsReduits, ValeurDeBorneInf, ValeurDeBorneSup,
-			                                    PositionDeLaVariable, &Nb, T, Num, &Arret );					
+		  Arret = NON_PNE;			
+      PNE_ReducedCostFixingConflictGraph( Pne, Var, UminALaResolutionDuNoeudRacine[Var], &h, Delta,
+			                                    CoutsReduitsALaResolutionDuNoeudRacine,
+			                                    UminALaResolutionDuNoeudRacine,
+			                                    UmaxALaResolutionDuNoeudRacine,
+			                                    PositionDeLaVariableALaResolutionDuNoeudRacine,
+																					&Nb, T, Num, &Arret );																					
       if ( h > Delta ) {		
 	      /* La variable entiere est fixee a Umax */				
         BorneMiseAJour = NON_PNE;
 			  UneVariableAEteFixee = FIXATION_SUR_BORNE_SUP;
-				NouvelleValeur = ValeurDeBorneSup[Var];
+				NouvelleValeur = UmaxALaResolutionDuNoeudRacine[Var];
         /* Applique le graphe de conflit s'il y a lieu, modifie Bmin et Bmax, fixe les variables entieres du graphe
 				   si necessaire */
         PNE_VariableProbingAppliquerLeConflictGraph( Pne, Var, NouvelleValeur, BorneMiseAJour, UneVariableAEteFixee );
@@ -230,24 +268,22 @@ for ( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 			  NbFix++;
 				NbFixBin++;
       }
-			else {
-			  /* On regarde les incompatibilites avec les variables qui ne sont pas dans le graphe de conflit */
-        PNE_ReducedCostFixingAuNoeudRacineRechercheNouvellesIncompatibilites( Pne, Delta, T, Var, ValeurDeBorneInf[Var], NombreDeVariables,
-				                                                                      TypeDeVariable, PositionDeLaVariable, BorneInfConnue,
-																																					    ValeurDeBorneInf,  ValeurDeBorneSup, CoutsReduits, &NbBranchesAjoutees ); 
-			}
       for ( j = 0 ; j < Nb ; j++ ) T[Num[j]] = 0;			
     }  
-    else if( PositionDeLaVariable[Var] == HORS_BASE_SUR_BORNE_INF ) {
+    else if( PositionDeLaVariableALaResolutionDuNoeudRacine[Var] == HORS_BASE_SUR_BORNE_INF ) {
 	    /* On regarde ce qu'il se passe si la variable passe a 1 */
 		  Arret = NON_PNE;
-      PNE_ReducedCostFixingConflictGraph( Pne, Var, ValeurDeBorneSup[Var], &h, Delta, CoutsReduits, ValeurDeBorneInf, ValeurDeBorneSup,
-			                                    PositionDeLaVariable, &Nb, T, Num, &Arret );				
+      PNE_ReducedCostFixingConflictGraph( Pne, Var, UmaxALaResolutionDuNoeudRacine[Var], &h, Delta,
+			                                    CoutsReduitsALaResolutionDuNoeudRacine,
+			                                    UminALaResolutionDuNoeudRacine,
+			                                    UmaxALaResolutionDuNoeudRacine,
+			                                    PositionDeLaVariableALaResolutionDuNoeudRacine,
+																					&Nb, T, Num, &Arret );																					
       if ( h > Delta ) {		
 	      /* La variable entiere sest fixee a Umin */
         BorneMiseAJour = NON_PNE;
 			  UneVariableAEteFixee = FIXATION_SUR_BORNE_INF;
-				NouvelleValeur = ValeurDeBorneInf[Var];
+				NouvelleValeur = UminALaResolutionDuNoeudRacine[Var];
         /* Applique le graphe de conflit s'il y a lieu, modifie Bmin et Bmax, fixe les variables entieres du graphe
 				   si necessaire */
         PNE_VariableProbingAppliquerLeConflictGraph( Pne, Var, NouvelleValeur, BorneMiseAJour, UneVariableAEteFixee );
@@ -255,31 +291,28 @@ for ( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 			  NbFix++;
 				NbFixBin++;		
       }
-			else {
-			  /* On regarde les incompatibilites avec les variables qui ne sont pas dans le graphe de conflit */
-        PNE_ReducedCostFixingAuNoeudRacineRechercheNouvellesIncompatibilites( Pne, Delta, T, Var, ValeurDeBorneSup[Var], NombreDeVariables,
-				                                                                      TypeDeVariable, PositionDeLaVariable, BorneInfConnue,
-																																					    ValeurDeBorneInf,  ValeurDeBorneSup, CoutsReduits, &NbBranchesAjoutees ); 
-			}
       for ( j = 0 ; j < Nb ; j++ ) T[Num[j]] = 0;			
     }
 	}
 	else	if ( TypeDeBorne[Var] == VARIABLE_BORNEE_DES_DEUX_COTES ) {	
-    h = fabs( CoutsReduits[Var] * ( ValeurDeBorneSup[Var] - ValeurDeBorneInf[Var] ) );						
+    h = fabs( CoutsReduitsALaResolutionDuNoeudRacine[Var] * ( UmaxALaResolutionDuNoeudRacine[Var] - UminALaResolutionDuNoeudRacine[Var] ) );						
 	  /* Variable continue */
-    if( PositionDeLaVariable[Var] == HORS_BASE_SUR_BORNE_INF ) {		
-	    /* On regarde ce qu'il se passe si la variable passe a ValeurdeBorneSup */
-      if ( h > Delta ) {			
-		    NouvelleValeur = ( Delta / fabs( CoutsReduits[Var] ) ) + ValeurDeBorneInf[Var];				
-			  if ( ValeurDeBorneSup[Var] - NouvelleValeur > MARGE_CONTINUE ) {
+    if( PositionDeLaVariableALaResolutionDuNoeudRacine[Var] == HORS_BASE_SUR_BORNE_INF ) {		
+	    /* On regarde ce qu'il se passe si la variable passe a BorneSup */
+      if ( h > Delta ) {
+		    NouvelleValeur = ( Delta / fabs( CoutsReduitsALaResolutionDuNoeudRacine[Var] ) ) + UminALaResolutionDuNoeudRacine[Var];				
+			  if ( ValeurDeBorneSup[Var] - NouvelleValeur > DEPASSEMENT_MIN /*MARGE_CONTINUE*/ ) {
           /* On abaisse la borne sup */
           BorneMiseAJour = MODIF_BORNE_SUP;
 			    UneVariableAEteFixee = NON_PNE;				
 					NouvelleValeur = ( MARGE_DE_SECURITE * ValeurDeBorneSup[Var] ) + ( NouvelleValeur * ( 1 - MARGE_DE_SECURITE ) );
+					if ( BorneInfConnue[Var] != NON_PNE ) {
+					  if ( NouvelleValeur < ValeurDeBorneInf[Var] ) NouvelleValeur = ValeurDeBorneInf[Var];						
+					}
 				  # if TRACES == 1
             printf("On peut abaisser la borne Sup de la variable %d : %e -> %e   abaissement %e  CoutsReduits %e\n",
-						        Var,ValeurdeBorneSup[Var],NouvelleValeur,ValeurdeBorneSup[Var]-NouvelleValeur,CoutsReduits[Var]);
-          # endif
+						        Var,ValeurDeBorneSup[Var],NouvelleValeur,ValeurDeBorneSup[Var]-NouvelleValeur,CoutsReduitsALaResolutionDuNoeudRacine[Var]);
+          # endif					
           /* Applique le graphe de conflit s'il y a lieu, modifie Bmin et Bmax, fixe les variables entieres du graphe
 				     si necessaire */
           PNE_VariableProbingAppliquerLeConflictGraph( Pne, Var, NouvelleValeur, BorneMiseAJour, UneVariableAEteFixee );
@@ -288,19 +321,22 @@ for ( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 			  }			
       }
     }
-    else if( PositionDeLaVariable[Var] == HORS_BASE_SUR_BORNE_SUP ) {				
+    else if( PositionDeLaVariableALaResolutionDuNoeudRacine[Var] == HORS_BASE_SUR_BORNE_SUP ) {		
 	    /* On regarde ce qu'il se passe si la variable passe a Xmin */
-      if ( h > Delta ) {				
-		    NouvelleValeur = ValeurDeBorneSup[Var] - ( Delta / fabs( CoutsReduits[Var] ) );
-			  if ( NouvelleValeur - ValeurDeBorneInf[Var] > MARGE_CONTINUE ) {					  
+      if ( h > Delta ) {				  
+		    NouvelleValeur = UmaxALaResolutionDuNoeudRacine[Var] - ( Delta / fabs( CoutsReduitsALaResolutionDuNoeudRacine[Var] ) );
+			  if ( NouvelleValeur - ValeurDeBorneInf[Var] > DEPASSEMENT_MIN /*MARGE_CONTINUE*/ ) {					  
 			    /* On remonte la borne inf */
           BorneMiseAJour = MODIF_BORNE_INF;
 			    UneVariableAEteFixee = NON_PNE;			
 				  NouvelleValeur = ( MARGE_DE_SECURITE * ValeurDeBorneInf[Var] ) + ( NouvelleValeur * ( 1 - MARGE_DE_SECURITE ) );
+					if ( BorneSupConnue[Var] != NON_PNE ) {
+					  if ( NouvelleValeur > ValeurDeBorneSup[Var] ) NouvelleValeur = ValeurDeBorneSup[Var];						
+					}					
 				  # if TRACES == 1
             printf("On peut relever la borne Inf de la variable %d : %e -> %e   relevement %e  Umax %e CoutsReduits %e\n",
-						        Var,ValeurDeBorneInf[Var],NouvelleValeur,NouvelleValeur-ValeurDeBorneInf[Var],ValeurdeBorneSup[Var],CoutsReduits[Var]);				
-          # endif
+						        Var,ValeurDeBorneInf[Var],NouvelleValeur,NouvelleValeur-ValeurDeBorneInf[Var],ValeurDeBorneSup[Var],CoutsReduitsALaResolutionDuNoeudRacine[Var]);				
+          # endif				 
           /* Applique le graphe de conflit s'il y a lieu, modifie Bmin et Bmax, fixe les variables entieres du graphe
 				     si necessaire */
           PNE_VariableProbingAppliquerLeConflictGraph( Pne, Var, NouvelleValeur, BorneMiseAJour, UneVariableAEteFixee );
@@ -309,12 +345,13 @@ for ( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
         }
       }
 	  }
-	}  
+	}	
 }
+
 
 free( T );
 free( Num );
-				
+			
 /* Pour l'instant on n'utilise pas Faisabilite */
 PNE_PresolveSimplifie( Pne, ContrainteActivable, Mode, &Faisabilite );
 if ( Faisabilite == NON_PNE ) {
@@ -324,62 +361,124 @@ if ( Faisabilite == NON_PNE ) {
 	}
 	*/
 }
-
-# if TEST_RELANCE_BRANCH_AND_BOUND == 1
-  /* On regarde si on a pu fixer des variables ou abaisser des bornes afin de lancer un presolve plus
-     complet si c'est prometteur */
-  NbFix = 0;
-  NbFixBin = 0;
-  for ( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
-    Var = NumeroDesVariablesNonFixes[i];
-    if ( BorneInfConnue[Var] == FIXE_AU_DEPART ) continue;		
-    if ( TypeDeVariable[Var] == ENTIER ) {
-	    if ( ValeurDeBorneInf[Var] > Umin[Var] + 1.e-6 ) { NbFix++; NbFixBin++; }
-	    if ( ValeurDeBorneSup[Var] < Umax[Var] - 1.e-6 ) { NbFix++; NbFixBin++; }
-	  }
-    else {		
-	    if ( ValeurDeBorneInf[Var] > Umin[Var] + 1.e-6 ) NbFix++; 	
-		  if ( ValeurDeBorneSup[Var] < Umax[Var] - 1.e-6 ) NbFix++;
-	  }  
-	  if ( NbFixBin > 0 || NbFix > 10 ) {
-      Bb = (BB *) Pne->ProblemeBbDuSolveur;
-      if ( Pne->Controls == NULL ) {	
-		    PNE_BranchAndBoundIntermediare( Pne, Bb->ValeurDuMeilleurMinorant );
-				break;
-		  }
-    }  
-	}
-# endif
-
+																													 
 /* Synthese */
 /* On recupere Umin, Umax */
 
 NbFix = 0;
 NbFixBin = 0;
 
+Marge = MARGE_SUR_LA_MODIFICATION_DE_BORNE;
+			
 for ( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 
   Var = NumeroDesVariablesNonFixes[i];
 
   if ( BorneInfConnue[Var] == FIXE_AU_DEPART ) continue;
-  if ( TypeDeVariable[Var] == ENTIER ) {
-	  if ( ValeurDeBorneInf[Var] > Umin[Var] + 1.e-6 ) { NbFix++; NbFixBin++; }
-	  Umin[Var] = ValeurDeBorneInf[Var];
+  if ( TypeDeVariable[Var] == ENTIER ) {	
+	  if ( ValeurDeBorneInf[Var] > UminSv[Var] + 1.e-6 ) { NbFix++; NbFixBin++; }
 	  UminSv[Var] = ValeurDeBorneInf[Var];
-	  if ( ValeurDeBorneSup[Var] < Umax[Var] - 1.e-6 ) { NbFix++; NbFixBin++; }
-	  Umax[Var] = ValeurDeBorneSup[Var];
-	  UmaxSv[Var] = ValeurDeBorneSup[Var];
-	}
-  else {		
-	  if ( ValeurDeBorneInf[Var] > Umin[Var] + 1.e-6 ) NbFix++; 	
-		if ( ValeurDeBorneSup[Var] < Umax[Var] - 1.e-6 ) NbFix++;
 		
-	  Umax[Var] = ValeurDeBorneSup[Var];
-	  UmaxSv[Var] = ValeurDeBorneSup[Var];
+    # if BORNES_INF_AUXILIAIRES == OUI_PNE
+      Pne->XminAuxiliaire[Var] = ValeurDeBorneInf[Var];
+      Pne->CreerContraintesPourK = OUI_PNE; /* Car il y a eu un changement */			
+    # endif
+		
+	  if ( ValeurDeBorneSup[Var] < UmaxSv[Var] - 1.e-6 ) { NbFix++; NbFixBin++; }
+	  UmaxSv[Var] = ValeurDeBorneSup[Var];		
+	}
+  else {
+	
+	  if ( ValeurDeBorneInf[Var] > UminSv[Var] + 1.e-6 ) NbFix++; 	
+		if ( ValeurDeBorneSup[Var] < UmaxSv[Var] - 1.e-6 ) NbFix++;
+
+    # if BORNES_INF_AUXILIAIRES == OUI_PNE
+			if ( BorneInfConnue[Var] != NON_PNE ) {						
+        if ( ValeurDeBorneInf[Var] > Pne->XminAuxiliaire[Var] + Marge ) {
+          Pne->XminAuxiliaire[Var] = ValeurDeBorneInf[Var] - (0.1*Marge);
+          Pne->CreerContraintesPourK = OUI_PNE; /* Car il y a eu un changement */			
+        }
+			}
+    # endif
+
+    # if FAIRE_DES_COUPES_AVEC_LES_BORNES_INF_MODIFIEES == OUI_PNE
+		  if ( UminAmeliorePourCoupes != NULL ) {
+		    if ( UminAmeliorePourCoupes[Var] == VALEUR_NON_INITIALISEE ) {
+		      if ( ValeurDeBorneInf[Var] - Marge > UminSv[Var] ) UminAmeliorePourCoupes[Var] = ValeurDeBorneInf[Var];         
+		    }
+		    else if ( ValeurDeBorneInf[Var] - Marge > UminAmeliorePourCoupes[Var] ) UminAmeliorePourCoupes[Var] = ValeurDeBorneInf[Var];		    		
+      }		
+    # endif
+		
+    # if UTILISER_UMIN_AMELIORE == OUI_PNE
+		  if ( TypeDeBorneSv[Var] != VARIABLE_NON_BORNEE && TypeDeBorneSv[Var] != VARIABLE_BORNEE_SUPERIEUREMENT ) {
+			  if ( BorneInfConnue[Var] != NON_PNE ) {						
+		    if ( ValeurDeBorneInf[Var] - Marge > UminSv[Var] ) {						
+		        UminAmeliore[Var] = ValeurDeBorneInf[Var];
+          }
+				}
+			}
+    # endif    	
+
+    # if RECUPERER_XMAX_DANS_LE_REDUCED_COST_FIXING_AU_NOEUD_RACINE == OUI_PNE
+		  if ( TypeDeBorneSv[Var] == VARIABLE_NON_BORNEE ) continue;			
+	  	if ( BorneSupConnue[Var] == NON_PNE ) continue;			
+		  if ( ValeurDeBorneSup[Var] + Marge < UmaxSv[Var] ) {
+			  Pne->CreerContraintesPourK = OUI_PNE; /* Car il y a eu un changement */			
+ 	      UmaxSv[Var] = ValeurDeBorneSup[Var] + Marge;				
+				if ( UmaxSv[Var] < UminSv[Var] ) UmaxSv[Var] = UminSv[Var];
+        # if UTILISER_UMIN_AMELIORE == OUI_PNE
+				  if ( UminAmeliore[Var] != VALEUR_NON_INITIALISEE ) {
+				    if ( UmaxSv[Var] < UminAmeliore[Var] ) UmaxSv[Var] = UminAmeliore[Var];
+					}
+				# endif	
+        /* Precaution */
+			  if ( UmaxSv[Var] < UminSv[Var] ) {
+			    UmaxSv[Var] = UminSv[Var]; /* Si le pb est vraiment infaisable on s'en apercevra ensuite */
+			  }				
+        if ( TypeDeBorneSv[Var] == VARIABLE_BORNEE_INFERIEUREMENT ) {
+			    if ( UmaxSv[Var] - UminSv[Var] < 1.e+9 ) {
+            TypeDeBorneSv[Var] = VARIABLE_BORNEE_DES_DEUX_COTES;
+            TypeDeBorne[Var] = VARIABLE_BORNEE_DES_DEUX_COTES;
+				  }
+			  }				
+		  }
+		# endif
 	}
 }
 
-/* On recalcule Bmin Bmax */
+/* On recalcule Bmin Bmax avec le contenu de Umin et Umax */
+for ( i = 0 ; i < Pne->NombreDeVariablesNonFixes ; i++ ) {
+  Var = NumeroDesVariablesNonFixes[i];
+	Umin[Var] = UminSv[Var];
+	Umax[Var] = UmaxSv[Var];
+}
+
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  for ( Var = 0 ; Var < NombreDeVariables; Var++ ) {
+    if ( UminAmeliore[Var] != VALEUR_NON_INITIALISEE ) Umin[Var] = UminAmeliore[Var];
+  } 
+# endif
+
+
+# if TEST_RELANCE_BRANCH_AND_BOUND == 1
+  /* On regarde si on a pu fixer des variables ou abaisser des bornes afin de lancer un presolve plus
+     complet si c'est prometteur */
+	if ( NbFixBin > 0 || NbFix > 10 ) {
+    Bb = (BB *) Pne->ProblemeBbDuSolveur;
+    if ( Pne->Controls == NULL ) {	
+		  PNE_BranchAndBoundIntermediare( Pne, Bb->ValeurDuMeilleurMinorant );
+ 	    exit(0);
+		}
+  }
+# endif
+
+# if UTILISER_LES_COUPES_DE_COUTS_REDUITS == OUI_PNE
+  /*printf("Attention PNE_ReducedCostFixingAuNoeudRacine appel de PNE_EmpilementDesCoutsReduitsDesVariablesBinairesNonFixees\n");*/
+  PNE_EmpilementDesCoutsReduitsDesVariablesBinairesNonFixees( Pne, CoutsReduitsALaResolutionDuNoeudRacine, UminSv, UmaxSv,
+																				                      PositionDeLaVariableALaResolutionDuNoeudRacine, Pne->CritereAuNoeudRacine );
+# endif
+
 PNE_InitBorneInfBorneSupDesVariables( Pne );
 PNE_CalculMinEtMaxDesContraintes( Pne, &Faisabilite );
 /* Et on sauvegarde le resultat comme point de depart pour les noeuds suivants */
@@ -390,16 +489,33 @@ memcpy( (char *) BmaxSv, (char *) Bmax, NombreDeContraintes * sizeof( double ) )
 
 NbCntRelax = 0;
 for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
-  if ( ContrainteActivable[Cnt] == NON_PNE ) NbCntRelax++;
+  CntActiv = ContrainteActivable[Cnt];
+  # if UTILISER_UMIN_AMELIORE == NON_PNE
+    ContrainteActivable[Cnt] = OUI_PNE; 
+	# endif	
+	if ( SensContrainte[Cnt] == '<' ) {
+		if ( BmaxValide[Cnt] == OUI_PNE ) {
+      if ( Bmax[Cnt] <= B[Cnt] + MARGE_POUR_RELAXATION ) {
+				if ( CntActiv == OUI_PNE ) {
+          Pne->CreerContraintesPourK = OUI_PNE; /* Car il y a eu un changement */							
+				}
+				ContrainteActivable[Cnt] = NON_PNE;
+				NbCntRelax++;
+			}			
+		}		
+	}
 	else {
-	  if ( SensContrainte[Cnt] == '<' ) {
-		  if ( BmaxValide[Cnt] == OUI_PNE ) {
-        if ( Bmax[Cnt] < B[Cnt] - 1.e-6 ) {
+		if ( BminValide[Cnt] == OUI_PNE && BmaxValide[Cnt] == OUI_PNE ) {
+      if ( fabs( Bmax[Cnt] - Bmin[Cnt] ) < MARGE_POUR_RELAXATION ) {
+				if ( fabs( Bmax[Cnt] - B[Cnt] ) < MARGE_POUR_RELAXATION ) {
+				  if ( CntActiv == OUI_PNE ) {
+            Pne->CreerContraintesPourK = OUI_PNE; /* Car il y a eu un changement */							
+				  }				
 				  ContrainteActivable[Cnt] = NON_PNE;
 				  NbCntRelax++;
 				}
-			}
-		}   
+      }
+    }		
 	}
 }
 
@@ -412,95 +528,46 @@ if ( Pne->AffichageDesTraces == OUI_PNE ) {
 	}
 }
 
+# if PRISE_EN_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTS == OUI_PNE
+  PNE_ColonnesColineaires( Pne );
+# endif
+
+# if TENIR_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTES_POUR_LE_BRANCHING == OUI_PNE
+  /* On desalloue la structure des groupes de variables equivalents */
+  free( Pne->NumeroDeGroupeDeVariablesEquivalentes );
+  if ( Pne->Groupe != NULL ) {
+    for ( i = 0 ; i < Pne->NombreDeGroupesDeVariablesEquivalentes ; i++ ) {
+	    free( Pne->Groupe[i]->VariablesDuGroupe );
+	    free( Pne->Groupe[i] );
+	  }
+    free( Pne->Groupe );		
+  }
+	Pne->Groupe = NULL;
+	Pne->NumeroDeGroupeDeVariablesEquivalentes = NULL;
+  Pne->NombreDeGroupesDeVariablesEquivalentes = 0;
+
+	PNE_RechercherLesGroupesDeVariablesEquivalentes( Pne );
+	
+# endif
+
+/* Attention ce n'est utile que si on modifie le second membre */
+/*
+SPX_ModifierLeVecteurSecondMembre( (PROBLEME_SPX *) Pne->ProblemeSpxDuSolveur, Pne->BTrav, Pne->SensContrainteTrav, Pne->NombreDeContraintesTrav );
+*/
+
+/*
+PNE_TransformerCliquesEnEgalites( Pne );
+exit(0);
+*/
+
+/*
+PNE_EcrirePresolvedMPS( Pne );
+exit(0);
+*/
+
 return;
 }
 
 /*----------------------------------------------------------------------------*/
 
-void PNE_ReducedCostFixingAuNoeudRacineRechercheNouvellesIncompatibilites( PROBLEME_PNE * Pne, double Delta, int * T,
-                                                                           int VarEtudiee, double ValeurDeVariableEtudiee,
-																																					 int NombreDeVariables, int * TypeDeVariable,
-																																					 int * PositionDeLaVariable, char * BorneInfConnue,
-																																					 double * ValeurDeBorneInf, double * ValeurDeBorneSup,
-																																					 double * CoutsReduits, int * NbEdges )
-{
-int Var; char  BrnInfConnue; int PosVariable; double DeltaCout; double h;
 
-int * Cdeb; int * Csui; int * NumContrainte; int * Mdeb; int * NbTerm; int * Nuvar; int ic; int il; int ilMax; int Cnt; char OnPrend;
-
-return;  /* Ca marche mais ca sert a rien et ca consomme du temps */
-
-DeltaCout = fabs( CoutsReduits[VarEtudiee] * ( ValeurDeBorneSup[VarEtudiee] - ValeurDeBorneInf[VarEtudiee] ) );
-
-h = fabs( Pne->CoutOpt ) * 0.01;
-if ( h < 1 ) h = 1;
-if ( h > 1000 ) h = 1000;
-
-Delta += h;
-
-Cdeb = Pne->CdebTrav;
-Csui = Pne->CsuiTrav;
-NumContrainte = Pne->NumContrainteTrav;
-
-Mdeb = Pne->MdebTrav;
-NbTerm = Pne->NbTermTrav;
-Nuvar = Pne->NuvarTrav;
-
-for ( Var = VarEtudiee + 1 ; Var < NombreDeVariables ; Var++ ) {
-
-  if ( TypeDeVariable[Var] != ENTIER ) continue;
-  BrnInfConnue = BorneInfConnue[Var];
-  if ( BrnInfConnue == FIXE_AU_DEPART || BrnInfConnue == FIXATION_SUR_BORNE_INF ||
-	     BrnInfConnue == FIXATION_SUR_BORNE_SUP || BrnInfConnue == FIXATION_A_UNE_VALEUR ) continue;	
-	if ( T[Var] == 1 ) continue; 
-	PosVariable = PositionDeLaVariable[Var];
-  if( PosVariable == HORS_BASE_SUR_BORNE_INF || PosVariable == HORS_BASE_SUR_BORNE_SUP ) {
-	  /* On change la variable de borne */
-    h = DeltaCout + fabs( CoutsReduits[Var] * ( ValeurDeBorneSup[Var] - ValeurDeBorneInf[Var] ) );  
-    if ( h > Delta ) {
-
-      /* Si on trouve une contrainte native avec les 2 variables, seulles on ne cree pas l'implication */
-			OnPrend = OUI_PNE;
-      ic = Cdeb[VarEtudiee];
-			while ( ic >= 0 && OnPrend == OUI_PNE ) {
-        Cnt = NumContrainte[ic];
-				if ( NbTerm[Cnt] == 2 ) {
-				  il = Mdeb[Cnt];
-				  ilMax = il + NbTerm[Cnt];
-				  while ( il < ilMax ) {
-            if ( Nuvar[il] == Var ) {
-						  OnPrend = NON_PNE;
-							break;
-						}
-				    il++;
-				  }
-			  }
-			  ic = Csui[ic];
-			}
-			if ( OnPrend == NON_PNE ) continue;
-		
-			if( PosVariable == HORS_BASE_SUR_BORNE_INF ) {
-			  /* On ne peut pas la passer a 1 */
-			  BorneInfConnue[Var] = FIXATION_SUR_BORNE_INF;
-			}
-			else {
-			  /* On ne peut pas la passer a 0 */
-			  BorneInfConnue[Var] = FIXATION_SUR_BORNE_SUP;
-			}
-
-	    Pne->ProbingOuNodePresolve->NumeroDesVariablesFixees[0] = Var;
-      Pne->ProbingOuNodePresolve->NombreDeVariablesFixees = 1;			
-			
-      PNE_MajConflictGraph( Pne, VarEtudiee, ValeurDeVariableEtudiee );
-
-			/* On recupere l'information sur la borne inf */
-			*NbEdges = *NbEdges + 1;
-			BorneInfConnue[Var] = BrnInfConnue;
-      Pne->ProbingOuNodePresolve->NombreDeVariablesFixees = 0;
-			
-		}
-  }
-}
-
-return;
-}

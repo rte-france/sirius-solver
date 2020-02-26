@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Recherche de couverture de sac a dos
@@ -50,12 +34,6 @@
 # define KNAPSACK_SEQUENCE_INDEPENDENT_LIFTING  NON_PNE
 
 # define VALEUR_CONTRAINTE_MOINS_A_DE_VARIABLE_A_1 OUI_PNE /* OUI_PNE */
-
-
-
-int NbK=0; double SommeViolations=0;
-
-
 
 /*----------------------------------------------------------------------------*/
 int PNE_PartitionTriRapide( double * Tableau, int * Ordre, int Deb, int Fin, char TypeTri )
@@ -591,16 +569,13 @@ void PNE_GreedyCoverKnapsack( PROBLEME_PNE * Pne, int Mdeb, int NbTerm, int * Nu
 															double * CoefficientDeLaVariableSubstituee 
 														)
 {
-double * Coefficients; int il; int ilMax; double X; int Var; int NbBooleens;
-int i; char * Complementee; int NombreDeTermes; double SecondMembre;
-int * C; double a; char * Z; double * CsurA; int * OrdreVar; double * ValeurDeX;
-int * NumVarDeVarBooleenne; double SecondMembreCouverture; int NombreDeVariablesCouverture;
-double * CoefficientCouverture; int * VariableBooleenneCouverture;
-int NumVarBooleenne; int * IndiceColonne; double * UTrav; int * TypeDeBorneTrav;
-int * TypeDeVariableTrav; double S; double * A1; int * NumVar; double ValB;
-char * TasPourKnapsack; char * pt; int LallocTas; char LesCoeffSontEntiers;
-double CoeffDeLaVariableContinue; double FacteurMultiplicatifSurPGCD;
-double Seuil;
+double * Coefficients; int il; int ilMax; double X; int Var; int NbBooleens; int i; char * Complementee;
+int NombreDeTermes; double SecondMembre; int * C; double a; char * Z; double * CsurA; int * OrdreVar;
+double * ValeurDeX; int * NumVarDeVarBooleenne; double SecondMembreCouverture; int NombreDeVariablesCouverture;
+double * CoefficientCouverture; int * VariableBooleenneCouverture; int NumVarBooleenne; int * IndiceColonne;
+double * UTrav; int * TypeDeBorneTrav; int * TypeDeVariableTrav; double S; double * A1; int * NumVar;
+double ValB; char LesCoeffSontEntiers; double CoeffDeLaVariableContinue; double FacteurMultiplicatifSurPGCD;
+double Seuil; char MirAcceptee;
 
 *CouvertureTrouvee = NON_PNE;
 
@@ -613,40 +588,16 @@ C = Pne->IndiceLocal;
 Coefficients = Pne->Coefficient_CG;
 OrdreVar = Pne->IndiceDeLaVariable_CG;
 
-LallocTas  = NbTerm * sizeof( double ); /* Pour CsurA */
-LallocTas  += NbTerm * sizeof( double ); /* Pour CoefficientCouverture */
-LallocTas  += NbTerm * sizeof( double ); /* Pour A1 */
+CsurA = Pne->FlottantBanaliseEnNombreDeVariables_1;
+CoefficientCouverture = Pne->FlottantBanaliseEnNombreDeVariables_2;
+A1 = Pne->FlottantBanaliseEnNombreDeVariables_3;
 
-LallocTas += NbTerm * sizeof( int ); /* Pour NumVarDeVarBooleenne */
-LallocTas += NbTerm * sizeof( int ); /* Pour VariableBooleenneCouverture */
-LallocTas += NbTerm * sizeof( int ); /* Pour NumVar */
+NumVarDeVarBooleenne = Pne->EntierBanaliseEnNombreDeVariables_1;
+VariableBooleenneCouverture = Pne->EntierBanaliseEnNombreDeVariables_2;
+NumVar = Pne->EntierBanaliseEnNombreDeVariables_3;
 
-LallocTas += NbTerm * sizeof( char );/* Pour Complementee */
-LallocTas += NbTerm * sizeof( char );/* Pour Z */
-
-TasPourKnapsack = (char *) malloc( LallocTas );
-if ( TasPourKnapsack == NULL ) {
-  printf(" Solveur PNE , memoire insuffisante. Sous-programme: PNE_GreedyCoverKnapsack \n");
-	goto FinGreedy;
-}
-
-pt = TasPourKnapsack;
-CsurA = (double *) pt;
-pt += NbTerm * sizeof( double );
-CoefficientCouverture = (double *) pt;
-pt += NbTerm * sizeof( double );
-A1 = (double *) pt;
-pt += NbTerm * sizeof( double );
-NumVarDeVarBooleenne = (int *) pt;
-pt += NbTerm * sizeof( int );
-VariableBooleenneCouverture = (int *) pt;
-pt += NbTerm * sizeof( int );
-NumVar = (int *) pt;
-pt += NbTerm * sizeof( int );
-Complementee = (char *) pt;
-pt += NbTerm * sizeof( char );
-Z  = (char *) pt;
-pt += NbTerm * sizeof( char );
+Complementee = Pne->CharBanaliseEnNombreDeVariables_1;
+Z = Pne->CharBanaliseEnNombreDeVariables_2;
 
 il = Mdeb;
 ilMax = il + NbTerm;
@@ -679,7 +630,7 @@ while ( il < ilMax ) {
       Coefficients[NbBooleens] = a;
       C           [NbBooleens] = 0; /* Sera initialise ensuite */
       ValeurDeX           [NbBooleens] = X;
-      NumVarDeVarBooleenne[NbBooleens] = Var;
+      NumVarDeVarBooleenne[NbBooleens] = Var;			
       NbBooleens++;    
     }
     else {
@@ -767,7 +718,7 @@ for ( i = 0 ; i < NombreDeVariablesCouverture ; i++ ) {
     B -= X;
     X *= -1.0;
   }
-	if ( X != 0.0 ) {
+	if ( X != 0.0 ) {	
     Coefficients[NombreDeTermes] = X;		
 		Var = NumVarDeVarBooleenne[NumVarBooleenne];
     IndiceColonne[NombreDeTermes] = Var;
@@ -775,6 +726,7 @@ for ( i = 0 ; i < NombreDeVariablesCouverture ; i++ ) {
     NombreDeTermes++;
 	}
 }
+
 SecondMembre = B;
 S -= SecondMembre;
 
@@ -783,17 +735,27 @@ if ( Mixed_0_1_Knapsack == OUI_PNE ) printf("Violation de la K apres retour aux 
 PNE_MiseAJourSeuilCoupes( Pne, COUPE_KNAPSACK, &Seuil );
 
 if ( S >= Seuil ) {
-  Pne->SommeViolationsK += S;
-  Pne->NombreDeK++;
+  if ( PNE_LaCoupeEstColineaire( Pne, Coefficients, IndiceColonne, SecondMembre, NombreDeTermes ) == NON_PNE ) { 
+    Pne->SommeViolationsK += S;
+    Pne->NombreDeK++;
+	}
+	else {	
+    S = 0; /* Pour ne pas prendre la coupe en compte */
+	}
 }
 
-if ( S >= Pne->SeuilDeViolationK ) { 
+if ( S >= Pne->SeuilDeViolationK ) {  
   if ( Mixed_0_1_Knapsack == NON_PNE ) {
+
+    /* printf("violation de knapsack %e\n",S); */
+	
+	  /* On essaie de lifter la coupe avec le graphe de conflits */
+    PNE_LifterKnapsackAvecLeGrapheDeConflits( Pne, &NombreDeTermes, &SecondMembre, Coefficients, IndiceColonne );		
     /* On peut tout de suite stocker */		
     PNE_EnrichirLeProblemeCourantAvecUneCoupe( Pne, 'K', NombreDeTermes, SecondMembre, S, Coefficients, IndiceColonne );
 	}
 	else {
-    /* Il faut redecomposer la variable continue, puis stocker la coupe */
+	    /* Il faut redecomposer la variable continue, puis stocker la coupe */
 
 		/* Attention: Coefficients est remis a 0 dans SyntheseEtStockageMIR car
 		   NuVarCoupe = Pne->IndiceDeLaVariable_CG;
@@ -805,10 +767,16 @@ if ( S >= Pne->SeuilDeViolationK ) {
 		  Co[i] = Coefficients[i];
 			Nu[i] = IndiceColonne[i];
 		}
-		
+		/*
     PNE_SyntheseEtStockageMIR( Pne, NombreDeTermes, Nu, Co, SecondMembre, CoeffDeLaVariableContinue,
 															 NombreDeVariablesSubstituees, NumeroDesVariablesSubstituees,
 														   TypeDeSubsitution, CoefficientDeLaVariableSubstituee );
+    */
+		
+    PNE_SyntheseEtStockageMIR_New( Pne, NombreDeTermes, Nu, Co, SecondMembre, CoeffDeLaVariableContinue,
+														    	 NombreDeVariablesSubstituees, NumeroDesVariablesSubstituees,
+														       TypeDeSubsitution, CoefficientDeLaVariableSubstituee, &MirAcceptee );
+														 
     free(Co);
 		free(Nu);
 
@@ -820,8 +788,6 @@ else {
 }
 
 FinGreedy:
-
-PNE_FreeTasGreedyCoverKnapsack( TasPourKnapsack ); 
 
 return;
 }

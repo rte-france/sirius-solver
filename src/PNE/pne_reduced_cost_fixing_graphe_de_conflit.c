@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: On applique le graphe de conflit quand on simule l'instanciation
@@ -46,7 +30,7 @@ void PNE_ReducedCostFixingConflictGraph( PROBLEME_PNE * Pne, int VariableFixee,
 																				 int * Arret )
 {
 int Pivot; int Noeud; int Edge; int Complement; int Nv; int * Adjacent; int * Next;
-int * First; CONFLICT_GRAPH * ConflictGraph;
+int * First; CONFLICT_GRAPH * ConflictGraph; int * TypeDeBorneTrav;
 
 if ( T[VariableFixee] == 1 ) return;
 
@@ -61,8 +45,8 @@ else {
 	}
 }
 
-if ( *DeltaCout > Delta ) {
-  *DeltaCout = *DeltaCout + 1.e-8; 
+if ( *DeltaCout > Delta + MARGE_SUR_DELTA_POUR_LE_REDUCED_COST_FIXING ) {
+  *DeltaCout = *DeltaCout + MARGE_SUR_DELTA_POUR_LE_REDUCED_COST_FIXING;
 	*Arret = OUI_PNE;
   return;
 }
@@ -77,6 +61,8 @@ Adjacent = ConflictGraph->Adjacent;
 Next = ConflictGraph->Next;
 First = ConflictGraph->First;
 Pivot = ConflictGraph->Pivot;
+
+TypeDeBorneTrav = Pne->TypeDeBorneTravSv;
 
 Noeud = VariableFixee;
 Complement = VariableFixee + Pivot;
@@ -94,18 +80,36 @@ while ( Edge >= 0 ) {
 	if ( Nv < Pivot ) {
 	  /* La valeur 1 de Nv est interdite on doit la passer a 0 et on regarde son impact avec le cout reduit */
 	  VariableFixee = Nv;
-    ValeurVariableFixee = Xmin[VariableFixee];		
-    PNE_ReducedCostFixingConflictGraph( Pne, VariableFixee, ValeurVariableFixee, DeltaCout, Delta, CoutsReduits, Xmin, Xmax,
-		                                    PositionDeLaVariable, Nb, T, Num, Arret );
-	  if ( *Arret == OUI_PNE ) break;
+	  if ( Xmin[VariableFixee] == 1 ) {
+      *DeltaCout = Delta + 10; /* Pour fixer la variable etudiee */		   
+	    *Arret = OUI_PNE;			
+      return;			
+		}		
+		if ( TypeDeBorneTrav[VariableFixee] != VARIABLE_FIXE ) {		
+		  if ( PositionDeLaVariable[VariableFixee] == HORS_BASE_SUR_BORNE_SUP ) {		
+        ValeurVariableFixee = Xmin[VariableFixee];		
+        PNE_ReducedCostFixingConflictGraph( Pne, VariableFixee, ValeurVariableFixee, DeltaCout, Delta, CoutsReduits, Xmin, Xmax,
+		                                        PositionDeLaVariable, Nb, T, Num, Arret );
+	      if ( *Arret == OUI_PNE ) break;
+		  }
+		}		
 	}
 	else {
 	  /* La valeur 0 de Nv est interdite on doit la passer a 1 et on regarde son impact avec le cout reduit */
-    VariableFixee = Nv - Pivot;	
-    ValeurVariableFixee = Xmax[VariableFixee];		
-    PNE_ReducedCostFixingConflictGraph( Pne, VariableFixee, ValeurVariableFixee, DeltaCout, Delta, CoutsReduits, Xmin, Xmax,
-		                                    PositionDeLaVariable, Nb, T, Num, Arret );
-	  if ( *Arret == OUI_PNE ) break;
+    VariableFixee = Nv - Pivot;
+	  if ( Xmax[VariableFixee] == 0 ) {
+      *DeltaCout = Delta + 10; /* Pour fixer la variable etudiee */		   
+	    *Arret = OUI_PNE;			
+      return;			
+		}
+		if ( TypeDeBorneTrav[VariableFixee] != VARIABLE_FIXE ) {		
+		  if ( PositionDeLaVariable[VariableFixee] == HORS_BASE_SUR_BORNE_INF ) {		
+        ValeurVariableFixee = Xmax[VariableFixee];		
+        PNE_ReducedCostFixingConflictGraph( Pne, VariableFixee, ValeurVariableFixee, DeltaCout, Delta, CoutsReduits, Xmin, Xmax,
+		                                        PositionDeLaVariable, Nb, T, Num, Arret );
+	      if ( *Arret == OUI_PNE ) break;
+		  }
+		}		
 	}	
   NextEdge:
   Edge = Next[Edge];

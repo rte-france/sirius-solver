@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: On etudie les domaines de variation des variables entieres
@@ -38,6 +22,8 @@
 
 # define VERBOSE_FIXATIONS_DE_VARIABLES NON_PNE
 # define ZERO 1.e-10
+
+# define TRACES_CONTRAINTES_DE_BORNE_VARIABLE NON_PNE
   
 # define EPSILON_FORCING_CONSTRAINT 1.e-8 /*1.e-7*/
 # define FORCING_BMIN 1
@@ -192,6 +178,7 @@ double * ValeurDeBorneInf; double * ValeurDeBorneSup; char BorneMiseAJour;
 char UneVariableAEteFixee; double NouvelleValeur; int * TypeDeVariable; char CodeRet;
 
 TypeDeForcing = PAS_DE_FORCING;
+
 if ( BmnValide == OUI_PNE ) {	
 	if ( fabs( Bmn - BCnt ) < EPSILON_FORCING_CONSTRAINT ) {
 		/*
@@ -238,6 +225,7 @@ while ( il < ilMax ) {
 	if ( Ai == 0.0 ) goto NextIlDoForcing;
 		
   UneVariableAEteFixee = NON_PNE;
+  BorneMiseAJour = NON_PNE;
 	
 	if ( TypeDeForcing == FORCING_BMIN ) {
     if ( Ai > 0.0 ) {
@@ -281,52 +269,296 @@ return( CodeRet );
 
 void PNE_InitBorneInfBorneSupDesVariables( PROBLEME_PNE * Pne )
 {
-int NombreDeVariablesTrav; int Var; int TypeBorne;
-int * TypeDeBorneTrav; double * UminTrav; double * UmaxTrav; double * UTrav;
-char * BorneSupConnue; char * BorneInfConnue; double * ValeurDeBorneInf;
-double * ValeurDeBorneSup;
+int NombreDeVariables; int Var; int TypeBorne; int * TypeDeBorne; double * Xmin;
+double * Xmax; double * X; char * BorneSupConnue; char * BorneInfConnue;
+double * ValeurDeBorneInf; double * ValeurDeBorneSup;
  
 BorneSupConnue = Pne->ProbingOuNodePresolve->BorneSupConnue;
 BorneInfConnue = Pne->ProbingOuNodePresolve->BorneInfConnue;
 ValeurDeBorneInf = Pne->ProbingOuNodePresolve->ValeurDeBorneInf;
 ValeurDeBorneSup = Pne->ProbingOuNodePresolve->ValeurDeBorneSup;
 
-NombreDeVariablesTrav = Pne->NombreDeVariablesTrav;
-TypeDeBorneTrav = Pne->TypeDeBorneTrav;  
-UTrav = Pne->UTrav;
-UminTrav = Pne->UminTrav;
-UmaxTrav = Pne->UmaxTrav;
+NombreDeVariables = Pne->NombreDeVariablesTrav;
+TypeDeBorne = Pne->TypeDeBorneTrav;  
+X = Pne->UTrav;
 
-for ( Var = 0 ; Var < NombreDeVariablesTrav ; Var++ ) {
+# if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+  Xmin = Pne->XminPourLeCalculDeBminBmax;
+  Xmax = Pne->XmaxPourLeCalculDeBminBmax;
+# else
+  Xmin = Pne->UminTrav;
+  Xmax = Pne->UmaxTrav;
+# endif
+
+for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
   BorneInfConnue[Var] = NON_PNE;
   BorneSupConnue[Var] = NON_PNE;
 	ValeurDeBorneInf[Var] = -LINFINI_PNE;
 	ValeurDeBorneSup[Var] = LINFINI_PNE;
-  TypeBorne = TypeDeBorneTrav[Var];	
+  TypeBorne = TypeDeBorne[Var];	
 	if ( TypeBorne == VARIABLE_FIXE ) {
     BorneInfConnue[Var] = FIXE_AU_DEPART;
     BorneSupConnue[Var] = FIXE_AU_DEPART;		
-	  ValeurDeBorneInf[Var] = UTrav[Var];
-	  ValeurDeBorneSup[Var] = UTrav[Var];
+	  ValeurDeBorneInf[Var] = X[Var];
+	  ValeurDeBorneSup[Var] = X[Var];
 		continue;
 	}
-  if ( UminTrav[Var] == UmaxTrav[Var] ) {
+  if ( Xmin[Var] == Xmax[Var] ) {
     BorneInfConnue[Var] = FIXE_AU_DEPART;
     BorneSupConnue[Var] = FIXE_AU_DEPART;		
-	  ValeurDeBorneInf[Var] = UminTrav[Var];
-	  ValeurDeBorneSup[Var] = UminTrav[Var];
+	  ValeurDeBorneInf[Var] = Xmin[Var];
+	  ValeurDeBorneSup[Var] = Xmin[Var];
 		continue;
 	}	
 	if ( TypeBorne == VARIABLE_BORNEE_DES_DEUX_COTES || TypeBorne == VARIABLE_BORNEE_SUPERIEUREMENT ) {
 	  BorneSupConnue[Var] = OUI_PNE;
-		ValeurDeBorneSup[Var] = UmaxTrav[Var];
+		ValeurDeBorneSup[Var] = Xmax[Var];		
 	}		
   if ( TypeBorne == VARIABLE_BORNEE_DES_DEUX_COTES || TypeBorne == VARIABLE_BORNEE_INFERIEUREMENT ) {
 	  BorneInfConnue[Var] = OUI_PNE;
-		ValeurDeBorneInf[Var] = UminTrav[Var];
+		ValeurDeBorneInf[Var] = Xmin[Var];		
 	}		
 }
 
+PNE_AppliquerToutesLesContraintesDeBorneVariable( Pne );
+
+return;
+}
+
+/*----------------------------------------------------------------------------*/
+
+void PNE_AppliquerToutesLesContraintesDeBorneVariable( PROBLEME_PNE * Pne )
+{
+int Cnt; int * First; double Xborne; int * Colonne; double * SecondMembre; double * Coefficient;
+char * LaContrainteDeBorneVariableEstDansLePool; CONTRAITES_DE_BORNE_VARIABLE * ContraintesDeBorneVariable;
+int NombreDeContraintesDeBorne; char * BorneSupConnue; double * ValeurDeBorneInf; char * BorneInfConnue;
+double * ValeurDeBorneSup; char BrnInfConnue; int ilVarCont; int ilVarBin; int VarCont; int VarBin;
+double B; double MargeSurNouvellesBornes; char * AppliquerUneMargeEventuelle;
+
+/*return;*/ /* Inutilise pour l'instant car il semble, d'apres les essais numeriques, que ca n'apporte rien */
+/* Finalement de nouveaux jeux de donnees ont montre que c'etait utile */
+
+/* On peut accelerer le calcul car seules sont utiles les contraintes de bornes variables
+   dans lesquelles figurent des variables entieres qui ont ete fixees */
+
+if ( Pne->ContraintesDeBorneVariable == NULL ) return;
+ContraintesDeBorneVariable = Pne->ContraintesDeBorneVariable;
+
+BorneSupConnue = Pne->ProbingOuNodePresolve->BorneSupConnue;
+BorneInfConnue = Pne->ProbingOuNodePresolve->BorneInfConnue;
+ValeurDeBorneInf = Pne->ProbingOuNodePresolve->ValeurDeBorneInf;
+ValeurDeBorneSup = Pne->ProbingOuNodePresolve->ValeurDeBorneSup;
+
+NombreDeContraintesDeBorne = ContraintesDeBorneVariable->NombreDeContraintesDeBorne;
+First = ContraintesDeBorneVariable->First;
+LaContrainteDeBorneVariableEstDansLePool = ContraintesDeBorneVariable->LaContrainteDeBorneVariableEstDansLePool;
+SecondMembre = ContraintesDeBorneVariable->SecondMembre;
+Colonne = ContraintesDeBorneVariable->Colonne;
+Coefficient = ContraintesDeBorneVariable->Coefficient;
+AppliquerUneMargeEventuelle = ContraintesDeBorneVariable->AppliquerUneMargeEventuelle;
+
+MargeSurNouvellesBornes = 1.e-2;
+
+/* La variable continue est toujours en premier */
+
+/* Peut etre ameliore: on met des marges pour les imprecisions numeriques mais ce n'est pas completement satifaisant.
+   En effet, s'il existe 2 contraintes qui fixent une variable, on risque de ne pas le voir a cause de la marge ajoutee.
+	 Pour pallier a ce manque je fais un test sur l'integralite de la borne en me disant que si on fixe une variable meme
+	 continue, la borne sera plutot une valeur entiere qu'une valeur avec plein de decimale.
+	 Ce qu'il faudrait faire c'est, dans une premiere passe identifer les contraintes qui fixent une variable.
+	 Puis dans une 2eme passe mettre des marges sur les autres bornes */
+
+for ( Cnt = 0 ; Cnt < NombreDeContraintesDeBorne ; Cnt++ ) {
+  if ( LaContrainteDeBorneVariableEstDansLePool[Cnt] == OUI_PNE ) continue;	
+  if ( First[Cnt] < 0 ) continue;	
+  ilVarCont = First[Cnt];
+	ilVarBin = ilVarCont + 1;	
+	VarBin = Colonne[ilVarBin];	
+	VarCont = Colonne[ilVarCont];
+	BrnInfConnue = BorneInfConnue[VarBin];
+	B = SecondMembre[Cnt];	
+	/* Dans le cas ou la variable a ete fixee, BorneInfConnue et BorneSupConnue ont la meme valeur */		
+	if ( BrnInfConnue == FIXE_AU_DEPART || BrnInfConnue == FIXATION_SUR_BORNE_INF ||
+		   BrnInfConnue == FIXATION_SUR_BORNE_SUP || BrnInfConnue == FIXATION_A_UNE_VALEUR ) {
+	  BrnInfConnue = BorneInfConnue[VarCont];
+	  if ( BrnInfConnue == FIXE_AU_DEPART || BrnInfConnue == FIXATION_SUR_BORNE_INF ||
+		     BrnInfConnue == FIXATION_SUR_BORNE_SUP || BrnInfConnue == FIXATION_A_UNE_VALEUR ) continue;  
+		Xborne = ( B - ( Coefficient[ilVarBin] * ValeurDeBorneInf[VarBin] ) ) / Coefficient[ilVarCont];		
+		if ( Coefficient[ilVarCont] > 0 ) {
+      /* Contrainte de borne sup */
+			
+			if ( AppliquerUneMargeEventuelle[Cnt] == OUI_PNE ) {
+			  if ( PNE_LaValeurEstEntiere( &Xborne ) == NON_PNE ) Xborne += MargeSurNouvellesBornes;
+			}
+			
+			if ( Xborne < ValeurDeBorneSup[VarCont] ) {
+        if ( Xborne < ValeurDeBorneInf[VarCont] - MARGE_INITIALE_VARIABLES_CONTINUES  /******************************************************/  ) {
+          # if TRACES_CONTRAINTES_DE_BORNE_VARIABLE == OUI_PNE
+            printf("Pas de solution a cause de la contrainte de borne sup variable %d: Nouvelle borne sup = %e ValeurDeBorneInf %e ValeurDeBorneSup %e\n",
+						        Cnt,Xborne,ValeurDeBorneInf[VarCont],ValeurDeBorneSup[VarCont]);
+          # endif					
+          /* Pas de solution */
+          Pne->ProbingOuNodePresolve->Faisabilite = NON_PNE;
+          return;						
+				}
+
+        # if TRACES_CONTRAINTES_DE_BORNE_VARIABLE == OUI_PNE
+          printf("Contrainte de borne sup variable %d: VarCont %d Nouvelle borne sup = %e  ValeurDeBorneSup %e\n",Cnt,VarCont,Xborne,ValeurDeBorneSup[VarCont]);
+        # endif
+				
+				BorneSupConnue[VarCont] = OUI_PNE;
+
+	      if ( fabs( Xborne - ValeurDeBorneInf[VarCont] ) < 1.e-8 ) {
+		      ValeurDeBorneSup[VarCont] = 0.5 * ( Xborne + ValeurDeBorneInf[VarCont] );			
+			    ValeurDeBorneInf[VarCont] = ValeurDeBorneSup[VarCont];
+		    	BorneSupConnue[VarCont] = FIXATION_A_UNE_VALEUR;
+			    BorneInfConnue[VarCont] = FIXATION_A_UNE_VALEUR;
+          # if TRACES_CONTRAINTES_DE_BORNE_VARIABLE == OUI_PNE
+            printf("VarCont %d fixee a %e grace aux contraintes de bornes variables\n",VarCont,ValeurDeBorneInf[VarCont]);
+			    # endif			
+		    }
+				else {				
+				  ValeurDeBorneSup[VarCont] = Xborne;
+				}
+				continue;
+      }
+		}
+		else if ( Coefficient[ilVarCont] < 0 ) {
+      /* Contrainte de borne inf */
+
+			if ( AppliquerUneMargeEventuelle[Cnt] == OUI_PNE ) {
+			  if ( PNE_LaValeurEstEntiere( &Xborne ) == NON_PNE ) Xborne -= MargeSurNouvellesBornes;
+			}
+			
+			if ( Xborne > ValeurDeBorneInf[VarCont] ) {
+        if ( Xborne > ValeurDeBorneSup[VarCont] + MARGE_INITIALE_VARIABLES_CONTINUES  /******************************************************/  ) {
+          # if TRACES_CONTRAINTES_DE_BORNE_VARIABLE == OUI_PNE
+            printf("Pas de solution a cause de la contrainte de borne inf variable %d: Nouvelle borne inf = %e ValeurDeBorneInf %e ValeurDeBorneSup %e\n",
+						        Cnt,Xborne,ValeurDeBorneInf[VarCont],ValeurDeBorneSup[VarCont]);
+          # endif        															
+          /* Pas de solution */
+          Pne->ProbingOuNodePresolve->Faisabilite = NON_PNE;
+          return;						
+				}			
+        # if TRACES_CONTRAINTES_DE_BORNE_VARIABLE == OUI_PNE
+          printf("Contrainte de borne inf variable %d: VarCont %d Nouvelle borne inf = %e  ValeurDeBorneInf %e\n",Cnt,VarCont,Xborne,ValeurDeBorneInf[VarCont]);
+        # endif
+
+				BorneInfConnue[VarCont] = OUI_PNE;
+				
+	      if ( fabs( ValeurDeBorneSup[VarCont] - Xborne ) < 1.e-8 ) {
+		      ValeurDeBorneSup[VarCont] = 0.5 * ( ValeurDeBorneSup[VarCont] + Xborne );			
+			    ValeurDeBorneInf[VarCont] = ValeurDeBorneSup[VarCont];
+			    BorneSupConnue[VarCont] = FIXATION_A_UNE_VALEUR;
+			    BorneInfConnue[VarCont] = FIXATION_A_UNE_VALEUR;
+          # if TRACES_CONTRAINTES_DE_BORNE_VARIABLE == OUI_PNE
+            printf("VarCont %d fixee a %e grace aux contraintes de bornes variables\n",VarCont,ValeurDeBorneInf[VarCont]);
+			    # endif			
+		    }
+        else {				
+				  ValeurDeBorneInf[VarCont] = Xborne;
+				}
+				continue;				
+			}
+		}		
+	}	
+}
+				 
+return;
+}
+
+/*----------------------------------------------------------------------------*/
+/* Ce module ne peut etre appele qui si a ete fixee VariableEntiere */
+
+void PNE_AppliquerToutesLesContraintesDeBorneVariablePourUneVariableEntiere( PROBLEME_PNE * Pne, int VariableEntiere )
+{
+int Cnt; int * First; double Xborne; int * Colonne; double * SecondMembre; double * Coefficient;
+char * LaContrainteDeBorneVariableEstDansLePool; CONTRAITES_DE_BORNE_VARIABLE * ContraintesDeBorneVariable;
+int NombreDeContraintesDeBorne; char * BorneSupConnue; double * ValeurDeBorneInf; char * BorneInfConnue;
+double * ValeurDeBorneSup; char BrnInfConnue; int ilVarcont; int ilVarBin; int VarCont; int VarBin;
+char UneVariableAEteFixee; char BorneMiseAJour; double NouvelleValeur;
+
+if ( Pne->ContraintesDeBorneVariable == NULL ) return;
+ContraintesDeBorneVariable = Pne->ContraintesDeBorneVariable;
+
+printf("AppliquerToutesLesContraintesDeBorneVariablePourUneVariableEntiere attention, il faut aussi modifier ce sp pour tenir compte de AppliquerUneMargeEventuelle\n");
+printf("Donc exit tant que c'est pas fait\n");
+exit(0);
+
+BorneSupConnue = Pne->ProbingOuNodePresolve->BorneSupConnue;
+BorneInfConnue = Pne->ProbingOuNodePresolve->BorneInfConnue;
+ValeurDeBorneInf = Pne->ProbingOuNodePresolve->ValeurDeBorneInf;
+ValeurDeBorneSup = Pne->ProbingOuNodePresolve->ValeurDeBorneSup;
+
+NombreDeContraintesDeBorne = ContraintesDeBorneVariable->NombreDeContraintesDeBorne;
+First = ContraintesDeBorneVariable->First;
+LaContrainteDeBorneVariableEstDansLePool = ContraintesDeBorneVariable->LaContrainteDeBorneVariableEstDansLePool;
+SecondMembre = ContraintesDeBorneVariable->SecondMembre;
+Colonne = ContraintesDeBorneVariable->Colonne;
+Coefficient = ContraintesDeBorneVariable->Coefficient;
+
+/* La variable continue est toujours en premier */
+ 
+UneVariableAEteFixee = NON_PNE; /* Pour eviter les warning de compilation */
+BorneMiseAJour = MODIF_BORNE_SUP; /* Pour eviter les warning de compilation */
+NouvelleValeur = 0; /* Pour eviter les warning de compilation */
+
+for ( Cnt = 0 ; Cnt < NombreDeContraintesDeBorne ; Cnt++ ) {
+  if ( LaContrainteDeBorneVariableEstDansLePool[Cnt] == OUI_PNE ) continue;	
+  if ( First[Cnt] < 0 ) continue;	
+  ilVarcont = First[Cnt];
+	ilVarBin = ilVarcont + 1;	
+	VarBin = Colonne[ilVarBin];
+	
+  if ( VarBin != VariableEntiere ) continue;
+				 
+	VarCont = Colonne[ilVarcont];
+	BrnInfConnue = BorneInfConnue[VarCont];
+	if ( BrnInfConnue == FIXE_AU_DEPART || BrnInfConnue == FIXATION_SUR_BORNE_INF ||
+		   BrnInfConnue == FIXATION_SUR_BORNE_SUP || BrnInfConnue == FIXATION_A_UNE_VALEUR ) continue;
+	Xborne = ( SecondMembre[Cnt] - ( Coefficient[ilVarBin] * ValeurDeBorneInf[VarBin] ) ) / Coefficient[ilVarcont];		
+	if ( Coefficient[ilVarcont] > 0 ) {
+    /* Contrainte de borne sup */
+		if ( Xborne < ValeurDeBorneSup[VarCont] - MARGE_INITIALE_VARIABLES_CONTINUES ) {
+      if ( Xborne < ValeurDeBorneInf[VarCont] - MARGE_INITIALE_VARIABLES_CONTINUES ) {
+        /* Pas de solution */
+        Pne->ProbingOuNodePresolve->Faisabilite = NON_PNE;
+        return;						
+			}
+		  UneVariableAEteFixee = NON_PNE;
+      BorneMiseAJour = MODIF_BORNE_SUP;
+			NouvelleValeur = Xborne;
+			if ( NouvelleValeur == ValeurDeBorneInf[VarCont] ) UneVariableAEteFixee = FIXATION_SUR_BORNE_INF;
+			goto MajBminBmaxEtIndicateurs;
+    }
+	}
+	else if ( Coefficient[ilVarcont] < 0 ) {
+    /* Contrainte de borne inf */
+		if ( Xborne > ValeurDeBorneInf[VarCont] + MARGE_INITIALE_VARIABLES_CONTINUES ) {
+      if ( Xborne > ValeurDeBorneSup[VarCont] + MARGE_INITIALE_VARIABLES_CONTINUES ) {
+        /* Pas de solution */
+        Pne->ProbingOuNodePresolve->Faisabilite = NON_PNE;
+        return;						
+			}			
+		  UneVariableAEteFixee = NON_PNE;
+      BorneMiseAJour = MODIF_BORNE_INF;
+			NouvelleValeur = Xborne;
+			if ( NouvelleValeur == ValeurDeBorneSup[VarCont] ) UneVariableAEteFixee = FIXATION_SUR_BORNE_SUP;
+			goto MajBminBmaxEtIndicateurs;								
+		}
+	}
+  continue;
+	MajBminBmaxEtIndicateurs:
+
+  PNE_InitListeDesContraintesAExaminer( Pne, VarCont, NouvelleValeur, BorneMiseAJour );
+	
+  /*PNE_ProbingMajBminBmax( Pne, VarCont, NouvelleValeur, BorneMiseAJour );*/
+  if ( Pne->ProbingOuNodePresolve->Faisabilite == NON_PNE ) return;
+  	
+  PNE_MajIndicateursDeBornes( Pne, ValeurDeBorneInf, ValeurDeBorneSup, BorneInfConnue, BorneSupConnue,
+                              NouvelleValeur, VarCont, UneVariableAEteFixee, BorneMiseAJour );					
+}
+				 
 return;
 }
 
@@ -364,13 +596,13 @@ return;
 
 /*----------------------------------------------------------------------------*/
 /* Remarque: dans le calcul des bornes, on ajuste Bmin Bmax avec les bornes de
-la variable. */
+la variable. Rq: plus iutilise. */
 
 void PNE_CalculXiXs( PROBLEME_PNE * Pne, double Ai, int Var, int Cnt, 
                      char * XiValide, char * XsValide, double * Xi , double * Xs ) 
 {
 double BminNew; double BmaxNew; double S; char * BminValide; double * Bmin;
-char * BmaxValide; double * Bmax; double * B; 
+char * BmaxValide; double * Bmax; double * B;
 
 BminValide = Pne->ProbingOuNodePresolve->BminValide;
 Bmin = Pne->ProbingOuNodePresolve->Bmin;
@@ -476,9 +708,10 @@ void PNE_MajIndicateursDeBornes( PROBLEME_PNE * Pne,
 																 double NouvelleValeur, int Var, char UneVariableAEteFixee,
 																 char BorneMiseAJour )
 {
-PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve;
+PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve; int * TypeDeVariable;
 
 ProbingOuNodePresolve = Pne->ProbingOuNodePresolve;
+TypeDeVariable = Pne->TypeDeVariableTrav;
 
 if ( ProbingOuNodePresolve->VariableModifiee[Var] == NON_PNE ) {
   ProbingOuNodePresolve->NumeroDeVariableModifiee[ProbingOuNodePresolve->NbVariablesModifiees] = Var;
@@ -486,7 +719,7 @@ if ( ProbingOuNodePresolve->VariableModifiee[Var] == NON_PNE ) {
 	ProbingOuNodePresolve->VariableModifiee[Var] = OUI_PNE;
 }
 
-if ( Pne->TypeDeVariableTrav[Var] == ENTIER ) {
+if ( TypeDeVariable[Var] == ENTIER ) {
   /* Pour les variables entieres on incremente le compteur sauf si la variable est fixe au depart car alors
 	   cela correspond a une arete existante et si on le prenait en compte on creerait un arete contradictoire ! */
   if ( UneVariableAEteFixee != FIXE_AU_DEPART ) {		 
@@ -536,6 +769,8 @@ else if ( BorneMiseAJour == MODIF_BORNE_SUP ) {
 }
 else {
   printf("Bug dans PNE_MajIndicateursDeBornes, indicateur UneVariableAEteFixee ou BorneMiseAJour incorrects\n");
+  printf("Variable %d UneVariableAEteFixee = %d   BorneMiseAJour = %d\n",Var,UneVariableAEteFixee,BorneMiseAJour);
+	exit(0);
 }
 return;
 }
@@ -547,7 +782,7 @@ void PNE_ModifierLaBorneDUneVariable( PROBLEME_PNE * Pne, int Var, char SensCont
                                       double * NouvelleValeur, char * BorneMiseAJour,
 																			char * VariableFixee, int * Faisabilite )
 {
-int TypeDeVariable; char BorneInfConnue; double Marge; double ValeurDeBorneInf;
+int TypeDeVariable; char BorneInfConnue; double Marge; double ValeurDeBorneInf; double InfaisabiliteVariableContinue;
 char BorneSupConnue; double ValeurDeBorneSup; double MargeBorneVariableContinue; char Sens;
 
 /* Remarque: NombreDeVariablesFixees ne concerne que les variables entieres */
@@ -561,9 +796,21 @@ ValeurDeBorneSup = Pne->ProbingOuNodePresolve->ValeurDeBorneSup[Var];
 
 TypeDeVariable = Pne->TypeDeVariableTrav[Var];
 
-Marge = MARGE_INITIALE;
-if ( TypeDeVariable == ENTIER ) Marge = VALEUR_DE_FRACTIONNALITE_NULLE * 10.;
+Marge = MARGE_INITIALE_VARIABLES_CONTINUES /*MARGE_INITIALE*/;
+if ( TypeDeVariable == ENTIER ) Marge = MARGE_INITIALE_VARIABLES_ENTIERES /*VALEUR_DE_FRACTIONNALITE_NULLE * 10.*/;
+
+/*
 MargeBorneVariableContinue = 0.1;
+if ( BorneInfConnue != NON_PNE && BorneSupConnue != NON_PNE ) {
+  if ( 0.1 * (ValeurDeBorneSup - ValeurDeBorneInf) < MargeBorneVariableContinue ) MargeBorneVariableContinue = 0.1 * (ValeurDeBorneSup - ValeurDeBorneInf);
+}
+*/
+
+InfaisabiliteVariableContinue = 1.e-7;
+MargeBorneVariableContinue = 1.0;
+if ( BorneInfConnue != NON_PNE && BorneSupConnue != NON_PNE ) {
+  if ( 0.1 * (ValeurDeBorneSup - ValeurDeBorneInf) < MargeBorneVariableContinue ) MargeBorneVariableContinue = 0.1 * (ValeurDeBorneSup - ValeurDeBorneInf);
+}
 
 /* Si c'est une variable entiere elle ne peut pas etre entre les 2 bornes */
 if ( XsValide == OUI_PNE ) {
@@ -631,9 +878,25 @@ if ( XsValide == OUI_PNE && XiValide == OUI_PNE ) {
       # if VERBOSE_FIXATIONS_DE_VARIABLES == OUI_PNE
 			  printf("Fixation de la variable continue %d a %e ValeurDeBorneInf %e ValeurDeBorneSup %e par contrainte d'egalite\n",Var,Xi,
 			          ValeurDeBorneInf,ValeurDeBorneSup);					
-		  # endif											
-			if ( Xi < ValeurDeBorneInf ) Xi = ValeurDeBorneInf;
-			if ( Xi > ValeurDeBorneSup ) Xi = ValeurDeBorneSup;
+		  # endif
+			
+			if ( BorneInfConnue != NON_PNE && Xi < ValeurDeBorneInf - InfaisabiliteVariableContinue ) { 
+		    *Faisabilite = NON_PNE;
+        # if VERBOSE_FIXATIONS_DE_VARIABLES == OUI_PNE
+		      printf("Non realisable variable %d On vaut la fixer a %e or ValeurDeBorneInf = %e\n",Var,Xi,ValeurDeBorneInf);
+		    # endif					
+		    return;
+			}
+			else if ( BorneSupConnue != NON_PNE && Xi > ValeurDeBorneSup + InfaisabiliteVariableContinue ) {
+		    *Faisabilite = NON_PNE;
+        # if VERBOSE_FIXATIONS_DE_VARIABLES == OUI_PNE
+		      printf("Non realisable variable %d On vaut la fixer a %e or ValeurDeBorneSup = %e\n",Var,Xi,ValeurDeBorneSup);
+		    # endif					
+		    return;
+			}
+			if ( BorneInfConnue != NON_PNE && Xi < ValeurDeBorneInf ) Xi = ValeurDeBorneInf;
+		  if ( BorneSupConnue != NON_PNE && Xi > ValeurDeBorneSup ) Xi = ValeurDeBorneSup;
+
 			/* Fixation de la variable a une valeur */				
 			*NouvelleValeur = Xi;				
 			*VariableFixee = FIXATION_A_UNE_VALEUR;						
@@ -665,14 +928,35 @@ if ( XsValide == OUI_PNE ) {
     /* Tentative de fixation */
 	  if ( fabs( Xs - ValeurDeBorneInf ) < ZERO_NP_PROB ) {
 		  Xi = 0.5 * ( Xs + ValeurDeBorneInf );
-			if ( Xi < ValeurDeBorneInf ) Xi = ValeurDeBorneInf;
-			if ( Xi > ValeurDeBorneSup ) Xi = ValeurDeBorneSup;
+			
+			if ( BorneInfConnue != NON_PNE && Xi < ValeurDeBorneInf - InfaisabiliteVariableContinue ) { 
+		    *Faisabilite = NON_PNE;
+        # if VERBOSE_FIXATIONS_DE_VARIABLES == OUI_PNE
+		      printf("Non realisable variable %d On vaut la fixer a %e or ValeurDeBorneInf = %e\n",Var,Xi,ValeurDeBorneInf);
+		    # endif					
+		    return;
+			}
+			else if ( BorneSupConnue != NON_PNE && Xi > ValeurDeBorneSup + InfaisabiliteVariableContinue ) {
+		    *Faisabilite = NON_PNE;
+        # if VERBOSE_FIXATIONS_DE_VARIABLES == OUI_PNE
+		      printf("Non realisable variable %d On vaut la fixer a %e or ValeurDeBorneSup = %e\n",Var,Xi,ValeurDeBorneSup);
+		    # endif					
+		    return;
+			}
+			if ( BorneInfConnue != NON_PNE && Xi < ValeurDeBorneInf ) Xi = ValeurDeBorneInf;
+		  if ( BorneSupConnue != NON_PNE && Xi > ValeurDeBorneSup ) Xi = ValeurDeBorneSup;
+						
 			/* Fixation de la variable a une valeur */				
 			*NouvelleValeur = Xi;				
 			*VariableFixee = FIXATION_A_UNE_VALEUR;
       # if VERBOSE_FIXATIONS_DE_VARIABLES == OUI_PNE
-        printf("Fixation d'une variable continue sur une borne %d  %e  Umin %e  Umax %e\n",Var,Xi,Pne->UminTrav[Var],Pne->UmaxTrav[Var]);		
-		  # endif			
+        # if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+          printf("Fixation d'une variable continue sur une borne %d  %e  Umin %e  Umax %e\n",Var,Xi,
+					        Pne->XminPourLeCalculDeBminBmax[Var],Pne->XmaxPourLeCalculDeBminBmax[Var]);					
+			  # else 
+          printf("Fixation d'une variable continue sur une borne %d  %e  Umin %e  Umax %e\n",Var,Xi,Pne->UminTrav[Var],Pne->UmaxTrav[Var]);
+				# endif
+		  # endif		
 			return;			
 		}		
 		/* Tentative d'amelioration de borne sup */		
@@ -683,7 +967,8 @@ if ( XsValide == OUI_PNE ) {
       # if VERBOSE_FIXATIONS_DE_VARIABLES == OUI_PNE
 			  printf("On abaisse la borne sup de la variable continue %d de %e a %e (borne inf = %e connue %d)\n",
 					      Var,ValeurDeBorneSup,Xs,ValeurDeBorneInf,BorneInfConnue);							
-		  # endif				
+		  # endif
+			
 			*NouvelleValeur = Xs;			
 			*BorneMiseAJour = MODIF_BORNE_SUP;
 			return;
@@ -707,13 +992,34 @@ if ( XiValide == OUI_PNE ) {
     /* Tentative de fixation */
 	  if ( fabs( ValeurDeBorneSup - Xi ) < ZERO_NP_PROB ) {
 		  Xi = 0.5 * ( ValeurDeBorneSup + Xi );
-			if ( Xi < ValeurDeBorneInf ) Xi = ValeurDeBorneInf;
-			if ( Xi > ValeurDeBorneSup ) Xi = ValeurDeBorneSup;
+			
+			if ( BorneInfConnue != NON_PNE && Xi < ValeurDeBorneInf - InfaisabiliteVariableContinue ) { 
+		    *Faisabilite = NON_PNE;
+        # if VERBOSE_FIXATIONS_DE_VARIABLES == OUI_PNE
+		      printf("Non realisable variable %d On vaut la fixer a %e or ValeurDeBorneInf = %e\n",Var,Xi,ValeurDeBorneInf);
+		    # endif					
+		    return;
+			}
+			else if ( BorneSupConnue != NON_PNE && Xi > ValeurDeBorneSup + InfaisabiliteVariableContinue ) {
+		    *Faisabilite = NON_PNE;
+        # if VERBOSE_FIXATIONS_DE_VARIABLES == OUI_PNE
+		      printf("Non realisable variable %d On vaut la fixer a %e or ValeurDeBorneSup = %e\n",Var,Xi,ValeurDeBorneSup);
+		    # endif					
+		    return;
+			}
+			if ( BorneInfConnue != NON_PNE && Xi < ValeurDeBorneInf ) Xi = ValeurDeBorneInf;
+		  if ( BorneSupConnue != NON_PNE && Xi > ValeurDeBorneSup ) Xi = ValeurDeBorneSup;
+									
 			/* Fixation de la variable a une valeur */				
 			*NouvelleValeur = Xi;				
 			*VariableFixee = FIXATION_A_UNE_VALEUR;
       # if VERBOSE_FIXATIONS_DE_VARIABLES == OUI_PNE
-        printf("Fixation d'une variable continue sur une borne %d  %e  Umin %e  Umax %e\n",Var,Xi,Pne->UminTrav[Var],Pne->UmaxTrav[Var]);				
+        # if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+          printf("Fixation d'une variable continue sur une borne %d  %e  Umin %e  Umax %e\n",Var,Xi,
+					        Pne->XminPourLeCalculDeBminBmax[Var],Pne->XmaxPourLeCalculDeBminBmax[Var]);
+			  # else				
+          printf("Fixation d'une variable continue sur une borne %d  %e  Umin %e  Umax %e\n",Var,Xi,Pne->UminTrav[Var],Pne->UmaxTrav[Var]);				
+		    # endif			
 		  # endif			
 			return;			
 	  }

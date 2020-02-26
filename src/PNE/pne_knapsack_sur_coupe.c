@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Calcul d'une couope de knapsack sur une coupe de Gomory
@@ -72,11 +56,15 @@ Mixed_0_1_Knapsack = NON_PNE;
 Kpossible = OUI_PNE;
 NbT = 0;
 Coeff = Pne->ValeurLocale;
-Variable = Pne->IndiceLocal;
+Variable = Pne->IndiceLocal;   
 TypeDeBorneTrav = Pne->TypeDeBorneTrav;
 TypeDeVariableTrav = Pne->TypeDeVariableTrav;
-UminTrav = Pne->UminTrav;
-UmaxTrav = Pne->UmaxTrav;
+UminTrav = Pne->UminTravSv; /* RG: correction 11/2016 c'est par precaution mais je pense que ca ne posait pas de probleme */
+UmaxTrav = Pne->UmaxTravSv; /* RG: correction 11/2016 c'est par precaution mais je pense que ca ne posait pas de probleme */
+
+# if BORNES_INF_AUXILIAIRES == OUI_PNE
+  UminTrav = Pne->XminAuxiliaire;
+# endif
 
 /* Si les Gomory et les coupes d'intersection sont normalisees, on revient aux valeurs initiales */
 # if NORMALISER_LES_COUPES_SUR_LES_G_ET_I == OUI_PNE
@@ -89,11 +77,13 @@ UmaxTrav = Pne->UmaxTrav;
 CoeffMx = -LINFINI_PNE;
 CoeffMn =  LINFINI_PNE;
 
-for ( i = 0 ; i < NombreDeTermes ; i++ ) {		
+
+for ( i = 0 ; i < NombreDeTermes ; i++ ) {
+
   Var = IndiceDeLaVariable_CG[i];
 	Coefficient = Coefficient_CG[i];
-  if ( TypeDeVariableTrav[Var] == ENTIER ) {
-	
+		
+  if ( TypeDeVariableTrav[Var] == ENTIER ) {	
     /* Attention a cause des bornes variables il faut verifier que la variable n'y est pas deja. Peut etre ameliore */
 	  Found = 0;
 		/*
@@ -121,42 +111,39 @@ for ( i = 0 ; i < NombreDeTermes ; i++ ) {
 	
   if ( Coefficient < 0.0 ) {
     /* Il faut monter la variable au max */
-
- 
-
-        /* S'il y a une borne sup variable on remplace la variable par sa borne sup variable */
-	      if ( Pne->CntDeBorneSupVariable != NULL && 0 ) {
-          if ( Pne->CntDeBorneSupVariable[Var] >= 0 ) {
-		        Cnt1 = Pne->CntDeBorneSupVariable[Var];
-	          i1 = Pne->MdebTrav[Cnt1];
-			      bBorne = Pne->BTrav[Cnt1];
-			      SecondMembre -= Coefficient * bBorne ;								
-		        VarBin = Pne->NuvarTrav[i1];
+    /* S'il y a une borne sup variable on remplace la variable par sa borne sup variable */
+	  if ( Pne->CntDeBorneSupVariable != NULL && 0 ) {
+      if ( Pne->CntDeBorneSupVariable[Var] >= 0 ) {
+		    Cnt1 = Pne->CntDeBorneSupVariable[Var];
+	      i1 = Pne->MdebTrav[Cnt1];
+			  bBorne = Pne->BTrav[Cnt1];
+			  SecondMembre -= Coefficient * bBorne ;								
+		    VarBin = Pne->NuvarTrav[i1];
 						
-	          u = -Pne->ATrav[i1];
-						/* Peut etre ameliore */
-						Found = 0;
-						for ( i1 = 0 ; i1 < NbT ; i1++ ) {
-						  if ( Variable[i1] == VarBin ) {
-							  Found = 1;
-                Coeff[i1] += Coefficient * u;
-		            if ( fabs( Coeff[i1] ) > CoeffMx ) CoeffMx = fabs( Coeff[i1] );
-		            else if ( fabs( Coeff[i1] ) < CoeffMn ) CoeffMn = fabs( Coeff[i1] );									
-								break;
-							}
-						}
-						if ( Found == 0 ) {
-              Coeff[NbT] = Coefficient * u;														
-			        Variable[NbT] = VarBin;
-		          if ( fabs( Coeff[NbT] ) > CoeffMx ) CoeffMx = fabs( Coeff[NbT] );
-		          else if ( fabs( Coeff[NbT] ) < CoeffMn ) CoeffMn = fabs( Coeff[NbT] );											
-				      NbT++;							
-            }
-						/*printf("Variable bound ajoute\n");*/						
-				    continue;				
-	        }
-	      }
-        /* Fin borne sup variable */
+	      u = -Pne->ATrav[i1];
+				/* Peut etre ameliore */
+				Found = 0;
+				for ( i1 = 0 ; i1 < NbT ; i1++ ) {
+					if ( Variable[i1] == VarBin ) {
+						Found = 1;
+            Coeff[i1] += Coefficient * u;
+		        if ( fabs( Coeff[i1] ) > CoeffMx ) CoeffMx = fabs( Coeff[i1] );
+		        else if ( fabs( Coeff[i1] ) < CoeffMn ) CoeffMn = fabs( Coeff[i1] );									
+						break;
+					}
+				}
+				if ( Found == 0 ) {
+          Coeff[NbT] = Coefficient * u;														
+			    Variable[NbT] = VarBin;
+		      if ( fabs( Coeff[NbT] ) > CoeffMx ) CoeffMx = fabs( Coeff[NbT] );
+		      else if ( fabs( Coeff[NbT] ) < CoeffMn ) CoeffMn = fabs( Coeff[NbT] );											
+				  NbT++;							
+        }
+				/*printf("Variable bound ajoute\n");*/						
+				continue;				
+	    }
+	  }
+    /* Fin borne sup variable */
 		
     if ( TypeDeBorneTrav[Var] == VARIABLE_BORNEE_DES_DEUX_COTES || TypeDeBorneTrav[Var] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
 		  SecondMembre -= Coefficient * UmaxTrav[Var];			
@@ -168,36 +155,34 @@ for ( i = 0 ; i < NombreDeTermes ; i++ ) {
 	}
   else {
 	  /* Il faut baisser la variable au min */
-
-
-        /* S'il y a une borne sup variable on remplace la variable par sa borne sup variable */
-        if ( Pne->CntDeBorneInfVariable != NULL && 0 ) {
-          if ( Pne->CntDeBorneInfVariable[Var] >= 0 ) {
-					  Cnt1 = Pne->CntDeBorneInfVariable[Var];
-		        i1 = Pne->MdebTrav[Cnt1];
-			      bBorne = -Pne->BTrav[Cnt1];
-			      SecondMembre -= Coefficient * bBorne ;								
-		        VarBin = Pne->NuvarTrav[i1];
-	          l = Pne->ATrav[i1];
-						/* Peut etre ameliore */
-						Found = 0;
-						for ( i1 = 0 ; i1 < NbT ; i1++ ) {
-						  if ( Variable[i1] == VarBin ) {
-							  Found = 1;
-                Coeff[i1] += Coefficient * l;
-								break;
-							}
-						}						
-						if ( Found == 0 ) {
-              Coeff[NbT] = Coefficient * l;
-			        Variable[NbT] = VarBin;
-				      NbT++;
-            }
-						/*printf("Variable bound ajoute\n");*/						
-				    continue;			
-	        } 		
+    /* S'il y a une borne sup variable on remplace la variable par sa borne sup variable */
+    if ( Pne->CntDeBorneInfVariable != NULL && 0 ) {
+      if ( Pne->CntDeBorneInfVariable[Var] >= 0 ) {
+				Cnt1 = Pne->CntDeBorneInfVariable[Var];
+		    i1 = Pne->MdebTrav[Cnt1];
+			  bBorne = -Pne->BTrav[Cnt1];
+			  SecondMembre -= Coefficient * bBorne ;								
+		    VarBin = Pne->NuvarTrav[i1];
+	      l = Pne->ATrav[i1];
+				/* Peut etre ameliore */
+				Found = 0;
+				for ( i1 = 0 ; i1 < NbT ; i1++ ) {
+					if ( Variable[i1] == VarBin ) {
+						Found = 1;
+            Coeff[i1] += Coefficient * l;
+						break;
+					}
+				}						
+				if ( Found == 0 ) {
+          Coeff[NbT] = Coefficient * l;
+			    Variable[NbT] = VarBin;
+				  NbT++;
         }
-        /* Fin borne inf variable */
+				/*printf("Variable bound ajoute\n");*/						
+				continue;			
+	    } 		
+    }
+    /* Fin borne inf variable */
 		
 	  if ( TypeDeBorneTrav[Var] == VARIABLE_BORNEE_DES_DEUX_COTES || TypeDeBorneTrav[Var] == VARIABLE_BORNEE_INFERIEUREMENT ) {
 		  SecondMembre -= Coefficient * UminTrav[Var];			
@@ -205,7 +190,7 @@ for ( i = 0 ; i < NombreDeTermes ; i++ ) {
 		else {
 		  Kpossible = NON_PNE;		
 		  break;
-		}
+		} 
   }											
 }
 
@@ -233,18 +218,21 @@ if ( Kpossible == OUI_PNE && NbT >= MIN_TERMES_POUR_KNAPSACK && NbT <= MAX_TERME
 	
 	if ( fabs( SecondMembre ) > CoeffMx ) CoeffMx = fabs( SecondMembre );
 	else if ( fabs( SecondMembre ) < CoeffMn ) CoeffMn = fabs( SecondMembre );
-	
+		
 	RendreLesCoeffsEntiers = NON_PNE;
 	if ( CoeffMn > ZERO_COEFFMN ) {
 	  if ( CoeffMx / CoeffMn < RAPPORT_MAX ) RendreLesCoeffsEntiers = OUI_PNE;
-	} 
-	
+	}
+
+  /* Pour tenir compte d'une certaine imprecision sur les coeffs de variables */
+  SecondMembre += 1.e-4 * NbT;
+
 	CouvertureTrouvee = NON_PNE;						  
   PNE_GreedyCoverKnapsack( Pne, 0, NbT, Variable, Coeff, SecondMembre, RendreLesCoeffsEntiers, &CouvertureTrouvee,
-													 Mixed_0_1_Knapsack, 0.0, 0, NULL, NULL, NULL );							
-  /*
+													 Mixed_0_1_Knapsack, 0.0, 0, NULL, NULL, NULL );													
+	/*	
 	if ( CouvertureTrouvee == OUI_PNE ) {
-	  printf("   K trouvee sur Gomory ou coupe d'intersection !!!!!!!!!!!!!!\n");
+	  printf("K trouvee sur Gomory ou coupe d'intersection\n");
 	}
 	*/
 }

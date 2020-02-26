@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Reduced cost fixing (necessite d'avoir obtenu une premiere
@@ -46,7 +30,7 @@ NOEUD * Noeud; int * NumeroDeLaVariableModifiee; char * TypeDeBorneModifiee;
 double *NouvelleValeurDeBorne ; int NombreDeBornesModifiees; int NbModifs;
 BB * Bb; char * T; int * TGraph; int Nb; int * Num; int j; int Arret;
 int NombreDeVariablesNonFixes; int * NumeroDesVariablesNonFixes;
-int NombreDeVariables; int Var; 
+int NombreDeVariables; int Var; PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve;
 
 RelancerUnSimplexe = NON_PNE;
 
@@ -94,6 +78,16 @@ if ( Delta < 0. ) Delta = 0.; /* Car le cout entier est toujours superieur ou eg
 
 NbModifs = 0;
 
+ProbingOuNodePresolve = Pne->ProbingOuNodePresolve;
+if ( ProbingOuNodePresolve != NULL ) {
+  ProbingOuNodePresolve->Faisabilite = OUI_PNE;
+  ProbingOuNodePresolve->VariableInstanciee = -1;
+  ProbingOuNodePresolve->NbVariablesModifiees = 0;
+  ProbingOuNodePresolve->NbContraintesModifiees = 0;
+  ProbingOuNodePresolve->NombreDeContraintesAAnalyser = 0;
+  ProbingOuNodePresolve->IndexLibreContraintesAAnalyser = 0;
+}
+
 /* Premier passage: decompte des modifs de borne */
 for( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 
@@ -109,7 +103,7 @@ for( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 	h = 0.0;
 	Nb = 0;
 	
-  if( PositionDeLaVariable[Var] == HORS_BASE_SUR_BORNE_SUP ) {
+  if( PositionDeLaVariable[Var] == HORS_BASE_SUR_BORNE_SUP ) {	
 	  /* On regarde ce qu'il se passe si la variable passe a 0 */
 		Arret = NON_PNE;
     PNE_ReducedCostFixingConflictGraph( Pne, Var, Umin[Var], &h, Delta, CoutsReduits, Umin, Umax, PositionDeLaVariable, &Nb, TGraph, Num, &Arret );		
@@ -119,11 +113,11 @@ for( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 			NbModifs++;
 		}
 	}
-  else if( PositionDeLaVariable[Var] == HORS_BASE_SUR_BORNE_INF ) {
+  else if( PositionDeLaVariable[Var] == HORS_BASE_SUR_BORNE_INF ) {	
 	  /* On regarde ce qu'il se passe si la variable passe a 1 */
 		Arret = NON_PNE;
     PNE_ReducedCostFixingConflictGraph( Pne, Var, Umax[Var], &h, Delta, CoutsReduits, Umin, Umax, PositionDeLaVariable, &Nb, TGraph, Num, &Arret );
-    for ( j = 0 ; j < Nb ; j++ ) TGraph[Num[j]] = 0;		
+		for ( j = 0 ; j < Nb ; j++ ) TGraph[Num[j]] = 0;		
     if ( h > Delta ) {		
 			/* Mise a jour des bornes des contraintes */			
 			NbModifs++;
@@ -170,7 +164,7 @@ for( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 
   Var = NumeroDesVariablesNonFixes[i];
 
-  /* On ne peut pas modifier les bornes des variables continues si on est amenes calculer des coupes
+  /* On ne peut pas modifier les bornes des variables continues si on est amenes a calculer des coupes
 	   qui se servent des bornes min et max de ces variables car alors elle ne seront plus valables
 		 pour tout l'arbre */
 	/* On pourrait autoriser les modifs de bornes des variables continues a condition de marquer le noeud
@@ -199,8 +193,8 @@ for( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
       NumeroDeLaVariableModifiee[NombreDeBornesModifiees] = Var;
       TypeDeBorneModifiee[NombreDeBornesModifiees] = BORNE_INF;
       NouvelleValeurDeBorne[NombreDeBornesModifiees] = Umin[Var];
-			NombreDeBornesModifiees++;      
-    }
+			NombreDeBornesModifiees++;			
+    }	
 	}
   else if( PositionDeLaVariable[Var] == HORS_BASE_SUR_BORNE_INF ) {
 	  /* On regarde ce qu'il se passe si la variable passe a 1 */
@@ -223,6 +217,19 @@ for( i = 0 ; i < NombreDeVariablesNonFixes ; i++ ) {
 Noeud->NombreDeBornesModifiees = NombreDeBornesModifiees;
 
 FinReducedCostFixing:
+
+
+
+# if UTILISER_LES_COUPES_DE_COUTS_REDUITS == OUI_PNE
+  /*printf("Attention PNE_ReducedCostFixing appel de PNE_EmpilementDesCoutsReduitsDesVariablesBinairesNonFixees\n");*/
+  
+	PNE_EmpilementDesCoutsReduitsDesVariablesBinairesNonFixees( Pne, CoutsReduits, Umin, Umax,
+																				                      PositionDeLaVariable, Pne->Critere );
+																															
+# endif
+
+
+
 free( T );
 free( TGraph );
 free( Num );

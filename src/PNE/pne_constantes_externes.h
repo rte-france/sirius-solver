@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 # ifndef CONSTANTES_EXTERNES_PNE_DEJA_DEFINIES
 /*******************************************************************************************/
 /* Coix de l'algorithme */
@@ -41,7 +25,7 @@
 # define VARIABLE_NON_BORNEE     	  5
 
 # define REEL    1
-# define ENTIER  2  /* Uniquement variables 0 1 pour l'instant */
+# define ENTIER  2  /* Uniquement variables 1 2 pour l'instant */
 
 # define LINFINI_PNE      1.e+75 
 

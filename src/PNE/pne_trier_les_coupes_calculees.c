@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Calcul des coupes 
@@ -51,8 +35,9 @@ void PNE_TrierLesCoupesCalculees( PROBLEME_PNE * Pne,
                                   char * CoupeSatureeADroite
                                  )
 {
-int i; int j  ; int jMax; int IndiceDeCoupe; int * ConserverLaContrainte; int IndexCnt; 
-int NbCoupesConservees; char ArchiverToutesLesCoupes; 
+int i; int j  ; int jMax; int IndiceDeCoupe; int * ConserverLaContrainte; int IndexCnt; int Var;
+int NbCoupesConservees; char ArchiverToutesLesCoupes; char PresenceDeVariableEntiereDansLaCoupe;
+int * TypeDeVariable; 
 
 int  NombreDeTermes; double * Coefficient_CG; int * IndiceDeLaVariable_CG; double SecondMembre;
 COUPE_CALCULEE ** Coupe; char Type; BB * Bb;
@@ -65,6 +50,8 @@ Pne->NbKDuCycle = 0;
 Pne->NbGInsere = 0; 
 Pne->NbIInsere = 0;
 Pne->NbKInsere = 0;
+
+TypeDeVariable = Pne->TypeDeVariableTrav;
 
 Bb = (BB *) Pne->ProblemeBbDuSolveur;
 
@@ -191,7 +178,7 @@ if ( Pne->ResolutionDuNoeudReussie == OUI_PNE ) {
     if ( Type == 'G' ) Pne->NbGInsere++;
 		else if ( Type == 'K' ) Pne->NbKInsere++;
 		else if ( Type == 'I' ) Pne->NbIInsere++;
-
+  
     # if UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE
 		  if ( Pne->Cliques != NULL ) {
 		    i = Pne->CoupesCalculees[IndiceDeCoupe]->IndexDansCliques;
@@ -201,14 +188,24 @@ if ( Pne->ResolutionDuNoeudReussie == OUI_PNE ) {
 		    i = Pne->CoupesCalculees[IndiceDeCoupe]->IndexDansCoupesDeProbing;
 		    if ( i >= 0 && i < Pne->CoupesDeProbing->NombreDeCoupesDeProbing ) Pne->CoupesDeProbing->LaCoupDeProbingEstDansLePool[i] = OUI_PNE;
       }
-		 
+      # if UTILISER_LES_ODD_HOLES == OUI_PNE
+        if ( Pne->OddCycles != NULL ) {			
+		      i = Pne->CoupesCalculees[IndiceDeCoupe]->IndexDansOddHole;
+		      if ( i >= 0 && i < Pne->OddCycles->NombreDeOddCycles ) Pne->OddCycles->LeOddCycleEstDansLePool[i] = OUI_PNE;
+				}
+			# endif		 
       # if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
       if ( Pne->ContraintesDeBorneVariable != NULL ) {
 		    i = Pne->CoupesCalculees[IndiceDeCoupe]->IndexDansContraintesDeBorneVariable;				
 		    if ( i >= 0 && i < Pne->ContraintesDeBorneVariable->NombreDeContraintesDeBorne ) Pne->ContraintesDeBorneVariable->LaContrainteDeBorneVariableEstDansLePool[i] = OUI_PNE;
       }
 			# endif
-			
+      # if RELATION_DORDRE_DANS_LE_PROBING == OUI_PNE
+      if ( Pne->ContraintesDOrdre != NULL ) {
+		    i = Pne->CoupesCalculees[IndiceDeCoupe]->IndexDansCoupesContraintesDOrdre;				
+		    if ( i >= 0 && i < Pne->ContraintesDOrdre->NombreDeContraintes ) Pne->ContraintesDOrdre->LaContrainteEstDansLePool[i] = OUI_PNE;
+      }
+			# endif						
     # endif
 		
     if ( Pne->CoupesKNegligees != NULL ) {
@@ -218,14 +215,19 @@ if ( Pne->ResolutionDuNoeudReussie == OUI_PNE ) {
     if ( Pne->CoupesGNegligees != NULL ) {
 		  i = Pne->CoupesCalculees[IndiceDeCoupe]->IndexDansGNegligees;
 		  if ( i >= 0 && i <  Pne->CoupesGNegligees->NombreDeCoupes ) Pne->CoupesGNegligees->LaCoupeEstDansLePool[i] = OUI_PNE;
-    }		
+    }
+
+    PresenceDeVariableEntiereDansLaCoupe = NON_PNE;
+    for ( i = 0 ; i < NombreDeTermes ; i++ ) {
+      Var = IndiceDeLaVariable_CG[i];
+      if ( TypeDeVariable[Var] == ENTIER ) {
+			  PresenceDeVariableEntiereDansLaCoupe = OUI_PNE;
+				break;
+			}
+		}		
 		  
-    BB_StockerUneCoupeGenereeAuNoeud( Bb,
-                                      NombreDeTermes, 
-                                      Coefficient_CG, 
-                                      IndiceDeLaVariable_CG, 
-                                      SecondMembre, 
-                                      Type );
+    BB_StockerUneCoupeGenereeAuNoeud( Bb, NombreDeTermes, Coefficient_CG, IndiceDeLaVariable_CG, SecondMembre, 
+                                      Type, PresenceDeVariableEntiereDansLaCoupe );
 		
     if ( BasesFilsDisponibles == NON_PNE ) {
       CoupeSaturee[jMax + NbCoupesConservees] = OUI_PNE;
@@ -308,7 +310,7 @@ return;
    on ne mette pas trop de temps de calcul inutilement. Pour inhiber, on
    met a 0 le nombre de termes de la coupe.
    Attention cela n'est prevu que pour fonctionner au noeud racine car il
-   n'y a que la qu'on un grand nombre de round de coupes. */
+   n'y a que la qu'on a un grand nombre de round de coupes. */
 
 void PNE_ActualiserLesCoupesAPrendreEnCompte( PROBLEME_PNE * Pne )
 {
@@ -342,7 +344,8 @@ if ( NbSat > Seuil ) {
   for ( j = 0 ; j < jMax ; j++ ) {
     if ( Pne->Coupes.NbTerm[j] <= 0 ) continue;
     /* Si la contrainte n'est pas saturee, on ne la conserve pas */		
-    if ( Pne->Coupes.PositionDeLaVariableDEcart[j] != EN_BASE ) continue;	
+    if ( Pne->Coupes.PositionDeLaVariableDEcart[j] != EN_BASE ) continue;
+		
     Pne->Coupes.NbTerm[j] = 0;
 
 		/* Les coupes qui ont ete mises ici ne sont jamais des coupes negligees qu'on a essaye de remettre dans le circuit */
@@ -357,9 +360,11 @@ else {
   for ( j = 0 ; j < jMax ; j++ ) {
     if ( Pne->Coupes.NbTerm[j] <= 0 ) continue;	  
     if ( Pne->Coupes.PositionDeLaVariableDEcart[j] != EN_BASE ) continue;
+				
     /* La contrainte n'est pas saturee */
     if ( NbConserve > Seuil ) {
       /* On ne la conserve pas */
+			
       Pne->Coupes.NbTerm[j] = 0;
 
 		  /* Les coupes qui ont ete mises ici ne sont jamais des coupes negligees qu'on a essaye de remettre dans le circuit */

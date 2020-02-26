@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Detection des coupes de probing violees.
@@ -48,11 +32,13 @@ int * Colonne; char * LaCoupDeProbingEstDansLePool; double * SecondMembre;
 double * Coefficient; COUPES_DE_PROBING * CoupesDeProbing; double Marge;
 int * TypeDeBorne; BB * Bb;
 
+/*
 # if UTILISER_LE_GRAPHE_DE_CONFLITS == OUI_PNE
   # if PROBING_JUSTE_APRES_LE_PRESOLVE == OUI_PNE
     return;
   # endif
 # endif
+*/
 
 if ( Pne->CoupesDeProbing == NULL ) return;
 
@@ -104,7 +90,7 @@ for ( Cnt = 0 ; Cnt < CoupesDeProbing->NombreDeCoupesDeProbing ; Cnt++ ) {
       break;			
 		}		
 		il++;
-	}
+	}	
   if ( S > B + Marge && NbT > 0 ) {
     /*
     printf("NbT %d depassement %e\n",NbT,S-B);
@@ -113,6 +99,9 @@ for ( Cnt = 0 ; Cnt < CoupesDeProbing->NombreDeCoupesDeProbing ; Cnt++ ) {
 		}
 		printf("< %e\n",B);
 	  */
+
+    if ( PNE_LaCoupeEstColineaire( Pne, Coeff, Indice, B, NbT ) == OUI_PNE ) continue;
+		
 	  E = S - B;
 	  NormeV += E;
     /* On Stocke la coupe */

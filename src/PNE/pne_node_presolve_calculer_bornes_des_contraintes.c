@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Appele par le node presolve, on y calcule les min et max
@@ -88,6 +72,13 @@ UmaxSv = Pne->UmaxTravSv;
 
 Umin = Pne->UminTrav;
 Umax = Pne->UmaxTrav;
+
+/*
+# if BORNES_INF_AUXILIAIRES == OUI_PNE
+  UminSv = Pne->XminAuxiliaire;
+  Umin = Pne->XminAuxiliaire;
+# endif
+*/
 
 NumeroDeLaVariableModifiee = Noeud->NumeroDeLaVariableModifiee;
 TypeDeBorneModifiee  = Noeud->TypeDeBorneModifiee;
@@ -257,13 +248,19 @@ SensContrainte = Pne->SensContrainteTrav;
 BmaxValide = Pne->ProbingOuNodePresolve->BmaxValide;
 B = Pne->BTrav;
 
+/* On n'a pas besoin de tenir compte de Pne->CorrectionSurUmin et Pne->CorrectionSurUmax car pour les
+   variable entieres ces quantittes sont toujours nulles */
+
 ic = Cdeb[Var];
 while ( ic >= 0 ) {
   Ai = A[ic];	
   Cnt = NumContrainte[ic];		
   if ( BorneMiseAJour == MODIF_BORNE_INF ) {
 		/* C'est une modification de borne inf */		
-		if ( Ai > 0 ) { Bmin[Cnt] -= Ai * UminSv[Var]; Bmin[Cnt] += Ai * ValeurDeVar; }
+		if ( Ai > 0 ) {
+		  Bmin[Cnt] -= Ai * UminSv[Var];
+			Bmin[Cnt] += Ai * ValeurDeVar;
+		}
 		else {
 		  Bmax[Cnt] -= Ai * UminSv[Var];
 			Bmax[Cnt] += Ai * ValeurDeVar;       
@@ -271,7 +268,10 @@ while ( ic >= 0 ) {
 	}
 	else {
 		/* C'est une modification de borne sup */
-		if ( Ai < 0 ) { Bmin[Cnt] -= Ai * UmaxSv[Var]; Bmin[Cnt] += Ai * ValeurDeVar; }
+		if ( Ai < 0 ) {
+		  Bmin[Cnt] -= Ai * UmaxSv[Var];
+			Bmin[Cnt] += Ai * ValeurDeVar;
+		}
 		else {
 		  Bmax[Cnt] -= Ai * UmaxSv[Var];
 			Bmax[Cnt] += Ai * ValeurDeVar;      			

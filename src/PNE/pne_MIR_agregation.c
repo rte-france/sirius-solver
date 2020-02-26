@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Heuristique Marchand-Wolsey pour faire des MIR sur des
@@ -29,6 +13,7 @@
 # include "pne_define.h"
 
 # include "spx_define.h"
+# include "spx_fonctions.h"
 
 # include "bb_define.h"
 # include "bb_fonctions.h"
@@ -37,25 +22,33 @@
   # include "pne_memoire.h"
 # endif
 
-# define TROP_DE_VARIABLES_ENTIERES  100
-
-# define MAX_FOIS_SUCCESS_MIR 2
+# define MAX_FOIS_SUCCESS_MIR 10
 
 # define Z0 1.e-7
 # define Z1 0.9999999
 
 # define VALEUR_NULLE_DUN_COEFF 1.e-15 /*1.e-12*/
 
-# define MAX_AGREG 3 /*5*/ /*3*/
+# define RAPPORT_MAX_POUR_AGREGATION 1.e+4 /*1.e+4*/ 
 
-# define MAX_CYCLES_SUR_CONTRAINTES 5 /*10*/
-# define MAX_CYCLES_SUR_VARIABLES 5 /*10*/
+# define MAX_AGREG_AU_NOEUD_RACINE   10 /*5*/    
+# define MAX_AGREG_AU_NIVEAU_UN      5 /*5*/   
+# define MAX_AGREG_AU_AUTRES_NIVEAU  5 /*5*/   
+# define MAX_AGREG_SI_BEAUCOUP_DE_TERMES 2
 		
 # define LOW_VARBIN   1
 # define HIGH_VARBIN  2
 # define LOW   3
 # define HIGH  4
 
+/*
+# undef BORNES_INF_AUXILIAIRES
+# define BORNES_INF_AUXILIAIRES  NON_PNE ***  11/2016: on prefere laisser la valeur de constantes_internes car l'avantage ou le desavantage de faire cela n'est pas net.
+*/
+
+void PNE_VariableAvecContrainteSelectionnable ( PROBLEME_PNE * , int , double , int * , int * , int * , char * , double * , char * , char * , int * , 
+                                                char , int * , double * , int );
+																																										
 /*----------------------------------------------------------------------------*/
 double PNE_G_de_D( double d, double f )
 { double X; double fd;
@@ -63,7 +56,7 @@ X = floor( d );
 /*fd = d - floor( d );*/
 fd = d - X;
 if ( fd > f ) {
-  X += ( fd - f ) / ( 1. - f ) ;
+  X += ( fd - f ) / ( 1. - f );
 }
 return( X );
 }
@@ -356,27 +349,34 @@ if ( MIRviolee == OUI_PNE ) {
 return( MIRviolee );
 }
 /*----------------------------------------------------------------------------*/
-void PNE_SyntheseEtStockageMIR( PROBLEME_PNE * Pne, int NombreDeVariablesBinaires, int * NumeroDeLaVariableBinaire,
-                                double * CoeffDeLaVariableBinaire, double b, double CoeffDeLaVariableContinue,
-																int NombreDeVariablesSubstituees, int * NumeroDesVariablesSubstituees,
-														    char * TypeDeSubsitution, double * CoefficientDeLaVariableSubstituee )																
+void PNE_SyntheseEtStockageMIR_New( PROBLEME_PNE * Pne, int NombreDeVariablesBinaires, int * NumeroDeLaVariableBinaire,
+                                    double * CoeffDeLaVariableBinaire, double b, double CoeffDeLaVariableContinue,
+															    	int NombreDeVariablesSubstituees, int * NumeroDesVariablesSubstituees,
+														        char * TypeDeSubsitution, double * CoefficientDeLaVariableSubstituee, char * MirAcceptee )																
 {
 int i; int Var; int il; int VarBin; int * NuVarCoupe; double * CoeffCoupe; int NbTermes; char TypeSubst;
 double Violation; double * Umax; double * Umin; int * Mdeb; double * A; int * Nuvar; double l; double u;
 int * CntDeBorneInfVariable; int * CntDeBorneSupVariable; double * U; double bBorne; double S; double * B;
-int * TypeDeBorne;
+int * TypeDeBorne; double Cmin; double Cmax; double SeuilZero; double SeuilInvalidation; int NbGarbage;
 
 /*
 printf(" Synthese de la MIR \n");
 printf(" b = %e  CoeffDeLaVariableContinue = %e\n",b,CoeffDeLaVariableContinue);
 */
 
+*MirAcceptee = NON_PNE;
+ 
 Mdeb = Pne->MdebTrav;
 B = Pne->BTrav;
 A = Pne->ATrav;
 Nuvar = Pne->NuvarTrav;
 Umax = Pne->UmaxTravSv;
 Umin = Pne->UminTravSv;
+
+# if BORNES_INF_AUXILIAIRES == OUI_PNE
+  Umin = Pne->XminAuxiliaire;
+# endif
+
 U = Pne->UTrav;
 CntDeBorneInfVariable = Pne->CntDeBorneInfVariable;
 CntDeBorneSupVariable = Pne->CntDeBorneSupVariable;
@@ -432,37 +432,82 @@ for ( i = 0 ; i < NombreDeVariablesSubstituees ; i++ ) {
 }
 
 S = 0.;
+Cmin = LINFINI_PNE;
+Cmax = -LINFINI_PNE;
+SeuilZero = 1.e-12;
+
+if ( Pne->PlusPetitTerme > 1.e-2 ) SeuilInvalidation = 1.e-4;
+else if ( Pne->PlusPetitTerme > 1.e-3 ) SeuilInvalidation = 1.e-5;
+else if ( Pne->PlusPetitTerme > 1.e-4 ) SeuilInvalidation = 1.e-6;
+else SeuilInvalidation = 1.e-7;
+
+NbGarbage = 0;
+
 for ( Var = 0 ; Var < Pne->NombreDeVariablesTrav ; Var++ ) {
   if ( CoeffCoupe[Var] != 0.0 ) {
-	
-	  S+= CoeffCoupe[Var] * U[Var];
-		
+		if ( fabs( CoeffCoupe[Var] ) <  VALEUR_NULLE_DUN_COEFF && 0 ) {
+			NbGarbage++;			
+			continue;
+		}
+		if ( fabs( CoeffCoupe[Var] ) < SeuilInvalidation ) {
+		  if ( CoeffCoupe[Var] > 0 ) {
+        /* On supprime la variable et on fait comme ci la variable etait sur borne inf */
+		    if ( TypeDeBorne[Var] == VARIABLE_BORNEE_DES_DEUX_COTES || TypeDeBorne[Var] == VARIABLE_BORNEE_INFERIEUREMENT ) {				
+          b -= CoeffCoupe[Var] * Umin[Var];
+				}
+				else goto FinSyntheseEtStockageMIR;
+			}
+			else {
+        /* On supprime la variable et on fait comme ci la variable etait sur borne sup */
+		    if ( TypeDeBorne[Var] == VARIABLE_BORNEE_DES_DEUX_COTES || TypeDeBorne[Var] == VARIABLE_BORNEE_SUPERIEUREMENT ) {				
+          b -= CoeffCoupe[Var] * Umax[Var];
+				}
+				else goto FinSyntheseEtStockageMIR;
+			}		
+			continue;
+		}
+				
 	  NuVarCoupe[NbTermes] = Var;
 	  CoeffCoupe[NbTermes] = CoeffCoupe[Var];
+  
+		if ( fabs( CoeffCoupe[NbTermes] ) > Cmax ) Cmax =  fabs( CoeffCoupe[NbTermes] );
+		if ( fabs( CoeffCoupe[NbTermes] ) < Cmin ) Cmin =  fabs( CoeffCoupe[NbTermes] );
+		
+	  S += CoeffCoupe[NbTermes] * U[NuVarCoupe[NbTermes]];
+		
 		NbTermes++;
-		/*printf(" %e (%d) ",CoeffCoupe[Var],Var);*/
-	}
+	}	
 }
-/*printf(" < %e  NbTermes %d\n",b,NbTermes);*/
 
-/*
-if ( S < b ) {
-  printf("MIR Marchand Wolsey la coupe respecte la contrainte ... bizarre ... S = %e respecte inferieur b = %e\n",S,b);
-}
-else {
-  printf("Apres synthese de la coupe Violation = %e  S = %e  b = %e\n\n\n\n",S-b,S,b); 
-}
-*/
-
-Violation = S-b;
-
-if ( Violation < Pne->SeuilDeViolationMIR_MARCHAND_WOLSEY ) {
+if ( NbGarbage >= 10 /*|| NbGarbage > ceil( 0.1 * NbTermes ) + 1*/ ) {
+	printf("             3- MIR refusee\n");
   goto FinSyntheseEtStockageMIR;
 }
 
-/* printf("MIR Marchand Wolsey apres synthese de la coupe Violation = %e NbTermes = %d\n",Violation,NbTermes); */
+if ( Cmax / Cmin > Pne->PlusGrandTerme / Pne->PlusPetitTerme ) {
+	/*printf("4- MIR refusee\n");*/
+  goto FinSyntheseEtStockageMIR;
+}
 
-PNE_EnrichirLeProblemeCourantAvecUneCoupe( Pne, 'K', NbTermes, b, Violation, CoeffCoupe, NuVarCoupe );
+Violation = S-b;  
+
+if ( Violation < Pne->SeuilDeViolationMIR_MARCHAND_WOLSEY || NbTermes <= 0 ) {
+  goto FinSyntheseEtStockageMIR;
+}
+
+if ( PNE_LaCoupeEstColineaire( Pne, CoeffCoupe, NuVarCoupe, b, NbTermes ) == OUI_PNE ) goto FinSyntheseEtStockageMIR;
+/*
+printf("MIR Marchand Wolsey Violation = %e NbTermes = %d  b = %e Cmin %e Cmax %e PlusPetitTerme %e PlusGrandTerme %e NbGarbage %d\n",
+        Violation,NbTermes,b,Cmin,Cmax,Pne->PlusPetitTerme,Pne->PlusGrandTerme,NbGarbage);
+*/
+
+/*printf("                 MIR acceptee NbTermes %d\n",NbTermes);*/
+
+/* Le 31/08/2015 on change le type de coupe: K devient G */
+/* Mais attention car dans SPX_CalculMIRPourCoupeDeGomoryOuIntersection cela risque d'invalider des
+   coupes de gomory. Pour e pas risque d'invalider il faut mettre K */
+*MirAcceptee = OUI_PNE;
+PNE_EnrichirLeProblemeCourantAvecUneCoupe( Pne, 'G', NbTermes, b, Violation, CoeffCoupe, NuVarCoupe );
 
 FinSyntheseEtStockageMIR:
 
@@ -484,11 +529,11 @@ char PNE_BoundSubstitution( PROBLEME_PNE * Pne,int NbVarContinues, int NbVarEnti
 														char * YaUneVariableS )
 {
 int i; int Var; int il; double Beta; int * CntDeBorneInfVariable; int * CntDeBorneSupVariable;
-char l_valide; char u_valide; char VarEstSurBorneInf; char VarEstSurBorneSup; int VarBin;
- double AlphaJ; int * Mdeb; int * Nuvar; int Nb; int * T; double bBorne; char CodeRet;
-double * A; double * U; double * Umin; double * Umax; double l; double u;
- int TypeBorne; int * TypeDeBorne; int Index; int IndexFin; double ValeurDeS; double * B;
-double DeltaJ; double ValeurDeTJ; int NbVarB; int NbVarBinaires; int NombreDeVariables;
+char l_valide; char u_valide; char VarEstSurBorneInf; char VarEstSurBorneSup; int VarBin_u; int VarBin_l;
+double AlphaJ; int * Mdeb; int * Nuvar; int Nb; int * T; char CodeRet;	double bBorne_l; double	bBorne_u;
+double * A; double * U; double * Umin; double * Umax; double l; double u; int TypeBorne; int * TypeDeBorne;
+int Index; int IndexFin; double ValeurDeS; double * B; double DeltaJ; double ValeurDeTJ; int NbVarB;
+int NbVarBinaires; int NombreDeVariables; int VarBin;
 
 CntDeBorneInfVariable = Pne->CntDeBorneInfVariable;
 CntDeBorneSupVariable = Pne->CntDeBorneSupVariable;
@@ -499,6 +544,11 @@ Nuvar = Pne->NuvarTrav;
 U = Pne->UTrav;
 Umin = Pne->UminTravSv;
 Umax = Pne->UmaxTravSv;
+
+# if BORNES_INF_AUXILIAIRES == OUI_PNE
+  Umin = Pne->XminAuxiliaire;
+# endif
+
 TypeDeBorne = Pne->TypeDeBorneTrav;
 ValeurDeS = 0.0;
 *NombreDeVariablesSubstituees = 0;
@@ -520,13 +570,15 @@ CodeRet = NON_PNE;
 l = 0.0;
 u = 0.0;
 
+/* Remarque: telles que sont construits CntDeBorneInfVariable et CntDeBorneSupVariable, bBorne_l et bBorne_u ne peuvent etre que nulles */
+
 NbVarBinaires = 0;
 for ( i = 0 ; i < NbVarContinues ; i++ ) {
   Var = NumeroDesVariables[i];
 	AlphaJ = CoeffDesVariables[i];
   TypeBorne	= TypeDeBorne[Var];
 
-	if ( TypeDeBorne[Var] == VARIABLE_FIXE ) {
+	if ( TypeBorne == VARIABLE_FIXE ) {
 	  /* La variable continue est fixe: on la passe dans le second membre */
     Beta -= CoeffDesVariables[i] * U[Var]; 
 		continue;		
@@ -547,19 +599,24 @@ for ( i = 0 ; i < NbVarContinues ; i++ ) {
 	u_valide = NON_PNE;
 	VarEstSurBorneInf = NON_PNE;
 	VarEstSurBorneSup = NON_PNE;
-	VarBin = -1;
-	bBorne = 0.0;
+
+	/* 29/9/2016: on separe VarBin et bBorne en VarBin_l VarBin_u bBorne_l bBorne_u */
+	VarBin_l = -1;
+	VarBin_u = -1;
+	bBorne_l = 0.0;
+	bBorne_u = 0.0;
+
   if ( CntDeBorneInfVariable != NULL ) {
     if ( CntDeBorneInfVariable[Var] >= 0 ) {				
 		  il = Mdeb[CntDeBorneInfVariable[Var]];
-			bBorne = -B[CntDeBorneInfVariable[Var]];
-		  VarBin = Nuvar[il];
+			bBorne_l = -B[CntDeBorneInfVariable[Var]];
+		  VarBin_l = Nuvar[il];
 	    l = A[il];
 		  l_valide = OUI_PNE;
-		  if ( fabs( U[Var] - ( l * U[VarBin] ) ) < 1.e-9 ) VarEstSurBorneInf = OUI_PNE;
-			if ( TypeDeBorne[VarBin] == VARIABLE_FIXE ) {			
+		  if ( fabs( U[Var] - ( l * U[VarBin_l] ) ) < 1.e-9 ) VarEstSurBorneInf = OUI_PNE;
+			if ( TypeDeBorne[VarBin_l] == VARIABLE_FIXE ) {			
 			  l_valide = NON_PNE; 
-				l = bBorne + ( l * U[VarBin] );
+				l = bBorne_l + ( l * U[VarBin_l] );
 			}
 	  }
 	}
@@ -568,14 +625,14 @@ for ( i = 0 ; i < NbVarContinues ; i++ ) {
   if ( CntDeBorneSupVariable != NULL ) {
     if ( CntDeBorneSupVariable[Var] >= 0 ) {		
 		  il = Mdeb[CntDeBorneSupVariable[Var]];
-			bBorne = B[CntDeBorneSupVariable[Var]];
-		  VarBin = Nuvar[il];
+			bBorne_u = B[CntDeBorneSupVariable[Var]];
+		  VarBin_u = Nuvar[il];
 	    u = -A[il];
 		  u_valide = OUI_PNE;
-		  if ( fabs( U[Var] - ( u * U[VarBin] ) ) < 1.e-9 ) VarEstSurBorneSup = OUI_PNE;
-			if ( TypeDeBorne[VarBin] == VARIABLE_FIXE ) {			
+		  if ( fabs( U[Var] - ( u * U[VarBin_u] ) ) < 1.e-9 ) VarEstSurBorneSup = OUI_PNE;
+			if ( TypeDeBorne[VarBin_u] == VARIABLE_FIXE ) {			
 			  u_valide = NON_PNE; 
-				u = bBorne + ( u * U[VarBin] );
+				u = bBorne_u + ( u * U[VarBin_u] );
 			}			
 	  }
 	}
@@ -588,20 +645,20 @@ for ( i = 0 ; i < NbVarContinues ; i++ ) {
     if ( l_valide == OUI_PNE ) {
 		  /* On fait x = l * y + t */
 						
-      if ( T[VarBin] == 0 ) {
-			  NumeroDeLaVariableBinaire[NbVarBinaires] = VarBin;
+      if ( T[VarBin_l] == 0 ) {
+			  NumeroDeLaVariableBinaire[NbVarBinaires] = VarBin_l;
 		    CoeffDeLaVariableBinaire[NbVarBinaires] = AlphaJ * l;
-        T[VarBin] = NombreDeVariables + NbVarBinaires;
+        T[VarBin_l] = NombreDeVariables + NbVarBinaires;
         NbVarBinaires++;
 			}
       else {
-			  Nb = T[VarBin] - NombreDeVariables;
+			  Nb = T[VarBin_l] - NombreDeVariables;
 		    CoeffDeLaVariableBinaire[Nb] += AlphaJ * l;
 			}
 
-			Beta -= AlphaJ * bBorne;
+			Beta -= AlphaJ * bBorne_l;
 			
-		  ValeurDeTJ = U[Var] - ( l * U[VarBin] ) - bBorne;						
+		  ValeurDeTJ = U[Var] - ( l * U[VarBin_l] ) - bBorne_l;						
 		}
 		else {
 		  /* Pas de borne inf variable */
@@ -625,20 +682,20 @@ for ( i = 0 ; i < NbVarContinues ; i++ ) {
     if ( u_valide == OUI_PNE ) {
 		  /* On fait x = u * y - t */
 						
-      if ( T[VarBin] == 0 ) {
-			  NumeroDeLaVariableBinaire[NbVarBinaires] = VarBin;
+      if ( T[VarBin_u] == 0 ) {
+			  NumeroDeLaVariableBinaire[NbVarBinaires] = VarBin_u;
 		    CoeffDeLaVariableBinaire[NbVarBinaires] = AlphaJ * u;
-        T[VarBin] = NombreDeVariables + NbVarBinaires;
+        T[VarBin_u] = NombreDeVariables + NbVarBinaires;
         NbVarBinaires++;
 			}
       else {
-			  Nb = T[VarBin] - NombreDeVariables;
+			  Nb = T[VarBin_u] - NombreDeVariables;
 		    CoeffDeLaVariableBinaire[Nb] += AlphaJ * u;
 			}
 			
-			Beta -= AlphaJ * bBorne;
+			Beta -= AlphaJ * bBorne_u;
 									
-		  ValeurDeTJ = bBorne + ( u * U[VarBin] ) - U[Var];			
+		  ValeurDeTJ = bBorne_u + ( u * U[VarBin_u] ) - U[Var];			
 		}
 		else {
 		  /* Pas de borne sup variable */
@@ -662,20 +719,20 @@ for ( i = 0 ; i < NbVarContinues ; i++ ) {
     if ( u_valide == OUI_PNE ) {
 		  /* On fait x = u * y - t */
 						
-      if ( T[VarBin] == 0 ) {
-			  NumeroDeLaVariableBinaire[NbVarBinaires] = VarBin;
+      if ( T[VarBin_u] == 0 ) {
+			  NumeroDeLaVariableBinaire[NbVarBinaires] = VarBin_u;
 		    CoeffDeLaVariableBinaire[NbVarBinaires] = AlphaJ * u;
-        T[VarBin] = NombreDeVariables + NbVarBinaires;
+        T[VarBin_u] = NombreDeVariables + NbVarBinaires;
         NbVarBinaires++;
 			}
       else {
-			  Nb = T[VarBin] - NombreDeVariables;
+			  Nb = T[VarBin_u] - NombreDeVariables;
 		    CoeffDeLaVariableBinaire[Nb] += AlphaJ * u;
 			}
 			
-			Beta -= AlphaJ * bBorne;
+			Beta -= AlphaJ * bBorne_u;
 			
-		  ValeurDeTJ = bBorne + ( u * U[VarBin] ) - U[Var];						
+		  ValeurDeTJ = bBorne_u + ( u * U[VarBin_u] ) - U[Var];						
 		}
 		else {  
 		  /* Pas de borne sup variable */
@@ -683,7 +740,7 @@ for ( i = 0 ; i < NbVarContinues ; i++ ) {
 		  ValeurDeTJ = Umax[Var] - U[Var];			
 		}
 		DeltaJ = -AlphaJ;
-		if ( DeltaJ < 0 ) {
+		if ( DeltaJ < 0 ) { /* Mais la c'est jamais negatif puisque AlphaJ est negatif */
 		  ValeurDeS += -DeltaJ * ValeurDeTJ;
       *YaUneVariableS = OUI_PNE;			 						
 			NumeroDesVariablesSubstituees[*NombreDeVariablesSubstituees] = Var;
@@ -695,24 +752,24 @@ for ( i = 0 ; i < NbVarContinues ; i++ ) {
 		continue;
 	}
   else {
-    /* Si AlphaJ < 0 on remplace par l'expression de sa borne inf */
+    /* Si AlphaJ > 0 on remplace par l'expression de sa borne inf */
     if ( l_valide == OUI_PNE ) {
 		  /* On fait x = l * y + t */
 						
-      if ( T[VarBin] == 0 ) {
-			  NumeroDeLaVariableBinaire[NbVarBinaires] = VarBin;
+      if ( T[VarBin_l] == 0 ) {
+			  NumeroDeLaVariableBinaire[NbVarBinaires] = VarBin_l;
 		    CoeffDeLaVariableBinaire[NbVarBinaires] = AlphaJ * l;
-        T[VarBin] = NombreDeVariables + NbVarBinaires;
+        T[VarBin_l] = NombreDeVariables + NbVarBinaires;
         NbVarBinaires++;
 			}
       else {
-			  Nb = T[VarBin] - NombreDeVariables;
+			  Nb = T[VarBin_l] - NombreDeVariables;
 		    CoeffDeLaVariableBinaire[Nb] += AlphaJ * l;
 			}
 			
-			Beta -= AlphaJ * bBorne;
+			Beta -= AlphaJ * bBorne_l;
 					 					
-		  ValeurDeTJ = U[Var] - ( l * U[VarBin] ) - bBorne;
+		  ValeurDeTJ = U[Var] - ( l * U[VarBin_l] ) - bBorne_l;
 		}
 		else {
 		  /* Pas de borne inf variable */
@@ -720,7 +777,7 @@ for ( i = 0 ; i < NbVarContinues ; i++ ) {
 		  ValeurDeTJ = U[Var] - Umin[Var];			
 		}
 		DeltaJ = AlphaJ;
-		if ( DeltaJ < 0 ) {
+		if ( DeltaJ < 0 ) { /* Mais la c'est jamais negatif puisque AlphaJ est positif */
 		  ValeurDeS += -DeltaJ * ValeurDeTJ;
       *YaUneVariableS = OUI_PNE;			 									
 			NumeroDesVariablesSubstituees[*NombreDeVariablesSubstituees] = Var;
@@ -766,47 +823,171 @@ return( CodeRet );
 
 /*----------------------------------------------------------------------------*/
 
+void PNE_VariableAvecContrainteSelectionnable ( PROBLEME_PNE * Pne, int Kappa, double AlfaJ, int * Cdeb, int * Csui, int * NumContrainte, char * SensContrainte,
+                                                double * A, char * ContrainteMixte, char * ContrainteAgregee, int * ContrainteSaturee, 
+                                                char NUtiliserQueLesContraintesSaturees, int * CntChoix, double * AlfaKappaChoix, int MxSelections )
+{
+int Cnt; int Cont; double AlfaKappa; int ic; int NbSelections; int NbVisites; int MxVisites; double a; int ic0;
+char * ContrainteActivable;
+
+ContrainteActivable = Pne->ContrainteActivable;
+MxVisites = Pne->CNbTermTrav[Kappa];
+ic0 = 0;
+/*
+if ( MxVisites > 10 ) {
+  Pne->A1 = PNE_Rand( Pne->A1 );
+  MxVisites = (int) floor( Pne->A1 * Pne->CNbTermTrav[Kappa] );
+  if ( MxVisites > Pne->CNbTermTrav[Kappa] ) MxVisites = Pne->CNbTermTrav[Kappa];
+  if ( MxVisites <= 0 ) MxVisites = 1;
+}
+*/
+
+/*
+Pne->A1 = PNE_Rand( Pne->A1 );
+MxSelections = (int) floor( Pne->A1 * 10 );
+if ( MxSelections > 10 ) MxSelections = 10;
+if ( MxSelections <= 0 ) MxSelections = 1;
+*/
+
+NbVisites = 0;
+NbSelections = 0;
+Cnt = -1;
+AlfaKappa = 0.;
+
+ic = Cdeb[Kappa];
+while ( ic >= 0 ) {
+  if ( ic0 == 0 ) break;
+	ic0--;
+  ic = Csui[ic];	
+}
+
+if ( NUtiliserQueLesContraintesSaturees == OUI_PNE ) {
+  while ( ic >= 0 ) {
+	  if ( NbVisites >= MxVisites ) break;
+	  if ( A[ic] != 0.0 && ContrainteActivable[NumContrainte[ic]] == OUI_PNE ) {
+	    Cont = NumContrainte[ic];
+	    if ( SensContrainte[Cont] == '=' ) {
+        if ( ContrainteMixte[Cont] == OUI_PNE || 1 /*********/ ) {
+				  if ( ContrainteAgregee[Cont] == NON ) {
+					  if ( fabs( AlfaJ / A[ic] ) < RAPPORT_MAX_POUR_AGREGATION ) {
+	            Cnt = Cont;
+              AlfaKappa = A[ic];
+					    NbSelections++;
+		          if ( NbSelections >= MxSelections ) break;
+            }
+					}
+				}
+	    }    
+		  else if ( ContrainteSaturee[Cont] == OUI_PNE ) {
+        /* Dans le cas d'une contrainte d'inegalite le produit AlfaJ * AlfaKappa doit etre negatif */
+				a = AlfaJ / A[ic];
+        if ( a < 0.0 ) { 
+          if ( ContrainteMixte[Cont] == OUI_PNE || 1 /*********/ ) {
+					  if ( ContrainteAgregee[Cont] == NON ) {
+						  if ( fabs( a ) < RAPPORT_MAX_POUR_AGREGATION ) {	
+	              Cnt = Cont;
+                AlfaKappa = A[ic];			
+                NbSelections++;
+		            if ( NbSelections >= MxSelections ) break;
+							}
+						}
+          }
+        }
+      }
+		  NbVisites++;
+	  }
+    ic = Csui[ic];
+	}
+}
+else {
+  while ( ic >= 0 ) {
+	  if ( NbVisites >= MxVisites ) break;
+	  if ( A[ic] != 0.0  && ContrainteActivable[NumContrainte[ic]] == OUI_PNE ) {
+	    Cont = NumContrainte[ic];			
+	    if ( SensContrainte[Cont] == '=' ) {
+        if ( ContrainteMixte[Cont] == OUI_PNE || 1 /*********/ ) {
+				  if ( ContrainteAgregee[Cont] == NON ) {
+					  if ( fabs( AlfaJ / A[ic] ) < RAPPORT_MAX_POUR_AGREGATION ) {
+	            Cnt = Cont;
+              AlfaKappa = A[ic];
+					    NbSelections++;
+		          if ( NbSelections >= MxSelections ) break;
+						}
+					}
+        }   
+	    }   
+	    else {
+				a = AlfaJ / A[ic];
+        if ( a < 0.0 ) {     
+          if ( ContrainteMixte[Cont] == OUI_PNE || 1 /*********/ ) {
+					  if ( ContrainteAgregee[Cont] == NON ) {
+						  if ( fabs( a ) < RAPPORT_MAX_POUR_AGREGATION ) {	
+	              Cnt = Cont;
+                AlfaKappa = A[ic];
+						    NbSelections++;
+		            if ( NbSelections >= MxSelections ) break;
+							}
+						}
+					}
+        }
+      }
+		  NbVisites++;
+    }
+    ic = Csui[ic];
+  }
+}
+
+*CntChoix = Cnt;
+*AlfaKappaChoix = AlfaKappa;
+ 
+return;
+}
+
+/*----------------------------------------------------------------------------*/
+
 char PNE_Agregation( PROBLEME_PNE * Pne, char * VariableDansContrainteMixte, int * NbVarCont, int * NbVarEnt,
                      int * NumeroDesVariables, double * CoeffDesVariables,
 										 double * SecondMembreContrainteAgregee, char * ContrainteAgregee,
 										 char * VariableSelectionable, int * NbV, int * NumV, int * NbC, int * NumC	)
 {
-int IndexFin; int NombreDeVariablesTrav; int i; int Var; int * CntDeBorneSupVariable; int * CntDeBorneInfVariable;
-double * UTrav; char * ContrainteMixte; double B; double * BTrav; int NbCSv;
-int Cont; int * MdebTrav; int * NbTermTrav; double * ATrav; double * UminTrav; double * UmaxTrav;
-int * NuvarTrav; double f; int VarBin; int il; int ilMax; double Fmax; int Kappa; double AlfaKappa;
-int * CdebTrav; int * CsuiTrav; int * NumContrainteTrav; int ic; int Cnt; double AlfaJ;
-double Gamma; double * V; int * T; int Index; int * TypeDeVariableTrav; double l; double u; char l_valide; char u_valide;
-int * TypeDeBorneTrav; int TypeBorne; char * SensContrainteTrav; double bBorne; 
-int NbVarContinues; int NbVarEntieres; int Nn; int j; int NbTestAggregCnt; int NbTestAggregVar;
-int Nb; int * ContrainteSaturee; char NUtiliserQueLesContraintesSaturees;
+int IndexFin; int NombreDeVariables; int i; int Var; int * CntDeBorneSupVariable; int * CntDeBorneInfVariable;
+double * X; char * ContrainteMixte; double b; double * B; int * Mdeb; int * NbTerm; double * A; 
+double * Xmin; double * Xmax; int * Nuvar; double f; int VarBin; int il; int ilMax; double Fmax; int Kappa; double AlfaKappa;
+int * Cdeb; int * Csui; int * NumContrainte; int Cnt; double AlfaJ; double AlfaKappaChoisi;
+double Gamma; double * V; int * T; int Index; int * TypeDeVariable; double l; double u; char l_valide; char u_valide;
+int * TypeDeBorne; int TypeBorne; char * SensContrainte; double bBorne; int CntChoisie; int NbVarContinues;
+int NbVarEntieres; int Nn; int j; int * ContrainteSaturee; char NUtiliserQueLesContraintesSaturees;
+int MxSelections; int NbSelections; int NbVisites; int MxVisites; int Offset; int Nselect; int Nvisites;
 
 NbVarContinues = *NbVarCont;
 NbVarEntieres = *NbVarEnt;
 
-if ( NbVarEntieres == 0 && 0 ) return( NON_PNE ); /* J'ai rajoute ca le 24/10/2014 */
-
 /* Attention a la restriction: pour l'instant on a 1 seule variable bound par variable */
 
-NombreDeVariablesTrav = Pne->NombreDeVariablesTrav;
-IndexFin = NombreDeVariablesTrav - 1;
+NombreDeVariables = Pne->NombreDeVariablesTrav;
+IndexFin = NombreDeVariables - 1;
 CntDeBorneSupVariable = Pne->CntDeBorneSupVariable;
 CntDeBorneInfVariable = Pne->CntDeBorneInfVariable;
-UTrav = Pne->UTrav;
-UminTrav = Pne->UminTravSv;
-UmaxTrav = Pne->UmaxTravSv;
-SensContrainteTrav = Pne->SensContrainteTrav;
+X = Pne->UTrav;
+Xmin = Pne->UminTravSv;
+Xmax = Pne->UmaxTravSv;
 
-BTrav = Pne->BTrav;
-MdebTrav = Pne->MdebTrav;
-NbTermTrav = Pne->NbTermTrav;
-ATrav = Pne->ATrav;   
-NuvarTrav = Pne->NuvarTrav;
-CdebTrav = Pne->CdebTrav;
-CsuiTrav = Pne->CsuiTrav;
-NumContrainteTrav = Pne->NumContrainteTrav;
-TypeDeVariableTrav = Pne->TypeDeVariableTrav;
-TypeDeBorneTrav = Pne->TypeDeBorneTrav;
+# if BORNES_INF_AUXILIAIRES == OUI_PNE
+  Xmin = Pne->XminAuxiliaire;
+# endif
+
+SensContrainte = Pne->SensContrainteTrav;
+
+B = Pne->BTrav;
+Mdeb = Pne->MdebTrav;
+NbTerm = Pne->NbTermTrav;
+A = Pne->ATrav;   
+Nuvar = Pne->NuvarTrav;
+Cdeb = Pne->CdebTrav;
+Csui = Pne->CsuiTrav;
+NumContrainte = Pne->NumContrainteTrav;
+TypeDeVariable = Pne->TypeDeVariableTrav;
+TypeDeBorne = Pne->TypeDeBorneTrav;
 ContrainteMixte = Pne->ContrainteMixte;
 
 ContrainteSaturee = Pne->ContrainteSaturee;
@@ -818,16 +999,42 @@ else NUtiliserQueLesContraintesSaturees = NON_PNE;
    Pour les variables continues on commence a 0. Pour les variables entieres on commence
 	 a NombreDeVariablesTrav - 1 */
 
-NbTestAggregVar = 0;
-
-
 /* A essayer:
 balayer les variables du graphe de conflit reliees aux variables entieres de la contrainte
 on ne choisi les contraintes a concatener que parmi ces contraintes
 */
 
-VARTEST:
-	 
+/*
+Pne->A1 = PNE_Rand( Pne->A1 );
+MxVisites = (int) floor( Pne->A1 * NbVarContinues );
+if ( MxVisites > NbVarContinues ) MxVisites = NbVarContinues;
+if ( MxVisites <= 0 ) MxVisites = 1;
+*/
+
+MxVisites = NbVarContinues;
+
+Offset = 0;
+Nvisites = 100;
+if ( MxVisites > Nvisites ) {
+  Offset = (int) floor( Pne->A1 * NbVarContinues );
+  if ( Offset > NbVarContinues - Nvisites ) Offset = NbVarContinues - Nvisites;
+  if ( Offset <= 0 ) Offset = 0;
+  /*MxVisites	= Nvisites;*/
+}
+
+Nselect = 10;
+/*
+Pne->A1 = PNE_Rand( Pne->A1 );
+MxSelections = (int) floor( Pne->A1 * Nselect );
+if ( MxSelections > Nselect ) MxSelections = Nselect;
+if ( MxSelections <= 0 ) MxSelections = 1;
+*/
+
+MxSelections = 1;
+
+NbVisites = 0;
+NbSelections = 0;
+
 Fmax = -1.;
 Kappa = -1;
 AlfaJ = 0.0;
@@ -835,68 +1042,71 @@ l = 0.0;
 u = 0.0;
 f = 0.0;
 
+CntChoisie = -1;
+AlfaKappaChoisi = VALEUR_NON_INITIALISEE;
+
 /* Choix de la variable continue P* et de la contrainte a ajouter */
 
-for ( i = 0 ; i < NbVarContinues ; i++ ) {
+for ( i = Offset ; i < NbVarContinues ; i++ ) {
   Var = NumeroDesVariables[i];
 
   if ( VariableSelectionable[Var] == NON_PNE ) continue;
 	
 	/* Remarque: la seule contrainte mixte de la variable a pu etre agregee mais comme
 	   c'est long a tester on ne le fait pas */
-	if ( VariableDansContrainteMixte[Var] == 0 ) continue;
+	if ( VariableDansContrainteMixte[Var] == 0 && 0 ) continue;
 
-  if ( UminTrav[Var] == UmaxTrav[Var] ) continue;	
+  if ( Xmin[Var] == Xmax[Var] ) continue;
+
+	if ( NbVisites >= MxVisites ) break;	
 	
 	/* Presence d'une borne inf ou sup variable */
-	TypeBorne = TypeDeBorneTrav[Var];		
+	TypeBorne = TypeDeBorne[Var];		
 	l_valide = NON_PNE;
 	u_valide = NON_PNE;  
 	bBorne = 0.0;	
 	if ( CntDeBorneInfVariable != NULL ) {
     if ( CntDeBorneInfVariable[Var] >= 0 ) {
 		  Cnt = CntDeBorneInfVariable[Var];			
-			bBorne = -BTrav[Cnt];			
-		  il = MdebTrav[Cnt];
-		  VarBin = NuvarTrav[il]; /* Ne sert plus a rien */
-	    l = ATrav[il];
+			bBorne = -B[Cnt];			
+		  il = Mdeb[Cnt];
+		  VarBin = Nuvar[il]; /* Ne sert plus a rien */
+	    l = A[il];
 		  l_valide = OUI_PNE;
 	  }
 	}
 	if ( CntDeBorneSupVariable != NULL ) {
     if ( CntDeBorneSupVariable[Var] >= 0 ) {
 		  Cnt = CntDeBorneSupVariable[Var];			
-			bBorne = BTrav[Cnt];
-		  il = MdebTrav[Cnt];			
-	    u = -ATrav[il];
+			bBorne = B[Cnt];
+		  il = Mdeb[Cnt];			
+	    u = -A[il];
 		  u_valide = OUI_PNE;
 	  }  
 	}
   if ( l_valide == NON_PNE ) {
     if ( TypeBorne == VARIABLE_BORNEE_INFERIEUREMENT || TypeBorne == VARIABLE_BORNEE_DES_DEUX_COTES ) {
-	    l = UminTrav[Var];
+	    l = Xmin[Var];
 		  l_valide = OUI_PNE;
 		}
 	}
   if ( u_valide == NON_PNE ) {
     if ( TypeBorne == VARIABLE_BORNEE_SUPERIEUREMENT || TypeBorne == VARIABLE_BORNEE_DES_DEUX_COTES ) {
-	    u = UmaxTrav[Var];
+	    u = Xmax[Var];
 		  u_valide = OUI_PNE;
 	  }
   }
 	
-	/* Remarque: les contraintes d'egalite sont classees en premier */
-
 	if ( u_valide == NON_PNE && l_valide == NON_PNE ) {
     f = LINFINI_PNE;
   }	
 	else if ( u_valide == OUI_PNE ) {
-	  f = fabs( u - UTrav[Var] );
+	  f = fabs( u - X[Var] );
     if ( l_valide ) {
-	    if ( f > fabs( UTrav[Var] - l ) ) f = fabs( UTrav[Var] - l );
+	    if ( f > fabs( X[Var] - l ) ) f = fabs( X[Var] - l );
 		}
 	}
-	else if ( l_valide == OUI_PNE ) f = fabs( UTrav[Var] - l );
+	else if ( l_valide == OUI_PNE ) f = fabs( X[Var] - l );
 	
 	/* La variable ne doit pas etre sur borne */
 	if ( f < Z0 ) {
@@ -908,146 +1118,68 @@ for ( i = 0 ; i < NbVarContinues ; i++ ) {
 		continue;
 	}
 	if ( f > Fmax ) {
-    Fmax = f;
-		Kappa = Var;
-		AlfaJ = CoeffDesVariables[i];		
+
+	  NbVisites++;
+	
+    PNE_VariableAvecContrainteSelectionnable ( Pne, Var, CoeffDesVariables[i], Cdeb, Csui, NumContrainte, SensContrainte,
+                                               A, ContrainteMixte, ContrainteAgregee , ContrainteSaturee, 
+                                               NUtiliserQueLesContraintesSaturees, &Cnt, &AlfaKappa, MxSelections );  
+    if ( Cnt >= 0 ) {		
+      Fmax = f;
+		  Kappa = Var;
+		  AlfaJ = CoeffDesVariables[i]; 
+      CntChoisie = Cnt;
+      AlfaKappaChoisi = AlfaKappa;
+      NbSelections++;
+			if ( NbSelections >= MxSelections ) break;
+    }  
+	  else {
+	    VariableSelectionable[Var] = NON_PNE;
+		  NumV[*NbV] = Var;
+		  *NbV = *NbV + 1;
+		}   
 	}
 }
 
-if ( Kappa < 0 ) {
+if ( Kappa < 0 || CntChoisie < 0 || AlfaKappaChoisi == VALEUR_NON_INITIALISEE ) {
   /* Rien a agreger */
 	return( NON_PNE );
 }
 
-/* Choix de la contrainte */
+Cnt = CntChoisie;
+AlfaKappa = AlfaKappaChoisi;
 
-NbTestAggregCnt = 0;
-NbCSv = *NbC;
+VariableSelectionable[Kappa] = NON_PNE;
+NumV[*NbV] = Kappa;
+*NbV = *NbV + 1;	 
 
-CNTTEST:
-
-Cnt = -1;
-Nb = -1;
-Nn = 0;
-
-/* Les contraintes d'egalite sont classees en premier */
-
-AlfaKappa = 0.;
-ic = CdebTrav[Kappa];
-while ( ic >= 0 ) {
-	Cont = NumContrainteTrav[ic];	
-	if ( SensContrainteTrav[Cont] != '=' ) break;
-	if ( ATrav[ic] != 0.0 ) {
-    if ( ContrainteMixte[Cont] == OUI_PNE && ContrainteAgregee[Cont] == NON && fabs( AlfaJ / ATrav[ic] ) < 1.e+9 ) {
-	    Cnt = Cont;
-      AlfaKappa = ATrav[ic];			
-		  break;
-    }
-	}
-  ic = CsuiTrav[ic];
-}
-if ( Cnt >= 0 ) goto ContrainteChoisie;
-
-/* Le cas echeant on continue et alors il s'agit de contraintes d'inegalite */
-/* Peut-etre serait-il plus rapide de ne prendre en compte que les contraintes d'inegalite qui sont saturees */
-if ( NUtiliserQueLesContraintesSaturees == OUI_PNE ) {
-  while ( ic >= 0 ) {
-	  Cont = NumContrainteTrav[ic];		
-	  if ( ContrainteSaturee[Cont] == OUI_PNE ) {
-	    if ( ATrav[ic] != 0.0 ) {
-        if ( ContrainteMixte[Cont] == OUI_PNE && ContrainteAgregee[Cont] == NON && fabs( AlfaJ / ATrav[ic] ) < 1.e+9 ) {	
-	        Cnt = Cont;
-          AlfaKappa = ATrav[ic];			
-		      break;
-        }
-      }
-	  }
-    ic = CsuiTrav[ic];
-	}
-}
-else {
-  while ( ic >= 0 ) {
-	  Cont = NumContrainteTrav[ic];		
-	  if ( ATrav[ic] != 0.0 ) {
-      if ( ContrainteMixte[Cont] == OUI_PNE && ContrainteAgregee[Cont] == NON && fabs( AlfaJ / ATrav[ic] ) < 1.e+9 ) {	
-	      Cnt = Cont;
-        AlfaKappa = ATrav[ic];			
-		    break;
-      }
-    }
-    ic = CsuiTrav[ic];
-  }
-}
-
-ContrainteChoisie:
-if ( Cnt < 0 ) {
-	NbTestAggregVar++;
-  if ( NbTestAggregVar <= MAX_CYCLES_SUR_VARIABLES ) {
-	  if ( VariableSelectionable[Kappa] == OUI_PNE ) {
-	    VariableSelectionable[Kappa] = NON_PNE;
-		  NumV[*NbV] = Kappa;
-		  *NbV = *NbV + 1;
-		}
-		goto VARTEST;
-	}	
-  return( NON_PNE );
-}
-
-if ( ContrainteAgregee[Cnt] == NON_PNE ) {
-  ContrainteAgregee[Cnt] = OUI_PNE;	
-  NumC[*NbC] = Cnt;
-  *NbC = *NbC + 1;
-}
-
-if ( AlfaKappa == 0. ) return( NON_PNE );
+ContrainteAgregee[Cnt] = OUI_PNE;	
+NumC[*NbC] = Cnt;
+*NbC = *NbC + 1;
 
 Gamma = -( AlfaJ / AlfaKappa );
-
-/* S'il decoule de la nouvelle contrainte agregee une variable d'ecart qui prend un coeff negatif on
-   refuse l'agregation */
-if ( SensContrainteTrav[Cnt] == '<' ) {
-  if ( Gamma < 0.0 ) {   
-	  NbTestAggregCnt++;
-	  if ( NbTestAggregCnt <= MAX_CYCLES_SUR_CONTRAINTES ) {
-      /*ContrainteAgregee[Cnt] = NON_PNE;*/ /* Non: il ne faut plus la prendre en compte pour la variable Kappa */		
-		  goto CNTTEST;
-		}
-	  NbTestAggregVar++;
-	  if ( NbTestAggregVar <= MAX_CYCLES_SUR_VARIABLES ) {
-		  if ( VariableSelectionable[Kappa] == OUI_PNE ) {			
-		    VariableSelectionable[Kappa] = NON_PNE;
-		    NumV[*NbV] = Kappa;
-		    *NbV = *NbV + 1;
-			}
-      for ( i = NbCSv; i < *NbC ; i++ ) ContrainteAgregee[NumC[i]] = NON_PNE;				
-			*NbC = NbCSv;
-			goto VARTEST;
-		}						
-		return( NON_PNE );
-  }
-}
 
 V = (double *) Pne->Coefficient_CG;
 T = (int *) Pne->IndiceDeLaVariable_CG;
 
 /* Expand de la contrainte dans V */
-B = BTrav[Cnt];
-il = MdebTrav[Cnt];
-ilMax = il + NbTermTrav[Cnt];
+b = B[Cnt];
+il = Mdeb[Cnt];
+ilMax = il + NbTerm[Cnt];
 while ( il < ilMax ) {
-  Var = NuvarTrav[il];
-  if ( TypeDeBorneTrav[Var] == VARIABLE_FIXE ) {
-    B -= ATrav[il] * UTrav[Var];
+  Var = Nuvar[il];
+  if ( TypeDeBorne[Var] == VARIABLE_FIXE ) {
+    b -= A[il] * X[Var];
 	}	
   else {
-	  if ( ATrav[il] != 0.0 ) {
-      V[Var] = Gamma * ATrav[il];
+	  if ( A[il] != 0.0 ) {
+      V[Var] = Gamma * A[il];
 	    T[Var] = 1;
 		}
 	}	
   il++;
 }
-B *= Gamma;
+b *= Gamma;
 
 /* Combinaision avec l'existant */
 for ( i = 0 ; i < NbVarContinues ; i++ ) {
@@ -1068,12 +1200,12 @@ for ( i = 0 , Index = IndexFin ; i < NbVarEntieres ; i++ , Index-- ) {
 }
 
 /* On complete avec la partie de la contrainte ajoutee qui n'a pas pu etre prise en compte */
-il = MdebTrav[Cnt];
-ilMax = il + NbTermTrav[Cnt];
+il = Mdeb[Cnt];
+ilMax = il + NbTerm[Cnt];
 while ( il < ilMax ) {
-  Var = NuvarTrav[il];		
+  Var = Nuvar[il];		
 	if ( T[Var] != 0 ) {
-    if ( TypeDeVariableTrav[Var] == ENTIER ) {
+    if ( TypeDeVariable[Var] == ENTIER ) {
       CoeffDesVariables[Index] = V[Var];
 		  NumeroDesVariables[Index] = Var;
       Index--;
@@ -1114,7 +1246,7 @@ Nn = 0;
 for ( i = 0 , Index = IndexFin ; i < NbVarEntieres ; i++ , Index-- ) {
 	if ( fabs( CoeffDesVariables[Index] ) < VALEUR_NULLE_DUN_COEFF ) {	
 	  for ( j = Index - 1 ; j >= IndexFin - NbVarEntieres + 1 ; j-- ) {		
-	    if ( fabs( CoeffDesVariables[j] ) >= VALEUR_NULLE_DUN_COEFF ) {
+	    if ( fabs( CoeffDesVariables[j] ) >= VALEUR_NULLE_DUN_COEFF ) { 
 		    CoeffDesVariables[Index] = CoeffDesVariables[j];
 				CoeffDesVariables[j] = 0.0;
 			  NumeroDesVariables[Index] = NumeroDesVariables[j];
@@ -1127,7 +1259,7 @@ for ( i = 0 , Index = IndexFin ; i < NbVarEntieres ; i++ , Index-- ) {
 }
 NbVarEntieres = Nn;
 
-*SecondMembreContrainteAgregee = *SecondMembreContrainteAgregee + B;  
+*SecondMembreContrainteAgregee = *SecondMembreContrainteAgregee + b;  
 
 *NbVarCont = NbVarContinues;
 *NbVarEnt = NbVarEntieres;
@@ -1142,104 +1274,89 @@ void PNE_MIRMarchandWolsey( PROBLEME_PNE * Pne )
 {
 int Cnt; int Var; char * ContrainteMixte; int il; int ilMax; int * Mdeb; int * NbTerm;
 int * NumeroDesVariables; double * CoeffDesVariables; int NbVarContinues; int NbVarEntieres;
-double * A; int * Nuvar; int IndexFin; int Index; char * ContrainteAgregee;
-int * TypeDeVariable; char Agreg; char OK; double * B; double * X;
-int NombreDeVariablesBinaires; int * NumeroDeLaVariableBinaire; double * CoeffDeLaVariableBinaire;
-double b; double CoeffDeLaVariableContinue; double ValeurDeLaVariableContinue;
+double * A; int * Nuvar; int IndexFin; int Index; char * ContrainteAgregee; int * TypeDeVariable; 
+char Agreg; char OK; double * B; double * X; int NombreDeVariablesBinaires; int * NumeroDeLaVariableBinaire; 
+double * CoeffDeLaVariableBinaire; double b; double CoeffDeLaVariableContinue; double ValeurDeLaVariableContinue;
 double SecondMembreContrainteAgregee; int NbAgr; char MIRviolee; int NombreDeVariablesSubstituees;
-int * NumeroDesVariablesSubstituees; double * CoefficientDeLaVariableSubstituee;
-char * TypeDeSubsitution; int NombreDeVariables; int NombreDeContraintes;
-int * TypeDeBorne; char * TasPourKnapsack; char * pt; int LallocTas; 
-char * VariableDansContrainteMixte; int NbMIRCreees; char YaUneVariableS; double * L; BB * Bb;
-char * VariableSelectionable; double * Xmin; double * Xmax;
-int NbV; int * NumV; int NbC; int * NumC;
+int * NumeroDesVariablesSubstituees; double * CoefficientDeLaVariableSubstituee; char * TypeDeSubsitution; 
+int NombreDeVariables; int NombreDeContraintes; int * TypeDeBorne; int * TesterMirMarchandWolseySurLaContrainte;
+char * VariableDansContrainteMixte; int NbMIRCreees; char YaUneVariableS; double * L; BB * Bb; 
+char * VariableSelectionable; double * Xmin; double * Xmax; int NbV; int * NumV; int NbC; 
+int * NumC; int NbCntTestees; int MaxAgreg; char MirSurLaContrainte; char MirAcceptee;
+int * Cdeb; int * Csui; int * NumContrainte;  int * Ic; int Nb; int i; int ic; char OnReboucle;
+int ProfondeurDuNoeud; char * ContrainteActivable;
+
+
+/******************** test 31/05/2016 ***********************/
+/*
+Bb = (BB *) Pne->ProblemeBbDuSolveur;
+if ( Pne->YaUneSolutionEntiere == NON_PNE ) {
+  if ( Bb->NoeudEnExamen != Bb->NoeudRacine ) return;
+}
+else if ( Bb->EcartBorneInf > 2 ) return;
+*/
+/********************* fin test et ca marche pas mal d'apres les essais **********************/
+
 
 if ( Pne->ContrainteMixte == NULL ) return;
-
-/* L'agregation est couteuse en temps */
-/*
-if ( Pne->CalculDeMIRmarchandWolsey == NON_PNE ) {
-  Pne->NbEvitementsDeCalculsMIRmarchandWolsey++;
-	if ( Pne->NbEvitementsDeCalculsMIRmarchandWolsey >= SEUIL_EVITEMENT_MIR_MARCHAND_WOLSEY ) { 
-    Pne->NbEvitementsDeCalculsMIRmarchandWolsey = 0;
-	  Pne->CalculDeMIRmarchandWolsey = OUI_PNE;
-		Pne->NbEchecsConsecutifsDeCalculsMIRmarchandWolsey = 0;
-	}
-	else {
-	  return;
-	}
-}
-*/
+/*printf("     PNE_MIRMarchandWolsey\n");*/
 
 Bb = (BB *) Pne->ProblemeBbDuSolveur;
 
-if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > 20 ) return;
+if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > 100 && Pne->YaUneSolutionEntiere == OUI_PNE ) return; 
 
-if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > Pne->ProfondeurMirMarchandWolseTrouvees ) return;
+ProfondeurDuNoeud = Bb->NoeudEnExamen->ProfondeurDuNoeud;
+
+if ( ProfondeurDuNoeud > 1 ) MaxAgreg = MAX_AGREG_AU_AUTRES_NIVEAU;
+else if ( ProfondeurDuNoeud == 1 ) MaxAgreg = MAX_AGREG_AU_NIVEAU_UN;
+else MaxAgreg = MAX_AGREG_AU_NOEUD_RACINE;
 
 NbMIRCreees = 0;
 
 NombreDeVariables = Pne->NombreDeVariablesTrav;
 NombreDeContraintes = Pne->NombreDeContraintesTrav;
+
+CoefficientDeLaVariableSubstituee = Pne->FlottantBanaliseEnNombreDeVariables_1;
+CoeffDeLaVariableBinaire = Pne->FlottantBanaliseEnNombreDeVariables_2;
+
+NumeroDesVariablesSubstituees = Pne->EntierBanaliseEnNombreDeVariables_1;
+NumeroDeLaVariableBinaire = Pne->EntierBanaliseEnNombreDeVariables_2;
+NumV = Pne->EntierBanaliseEnNombreDeVariables_3;
+
+TypeDeSubsitution = Pne->CharBanaliseEnNombreDeVariables_1;
+VariableDansContrainteMixte = Pne->CharBanaliseEnNombreDeVariables_2;
+VariableSelectionable = Pne->CharBanaliseEnNombreDeVariables_3;
+
+NumC = Pne->EntierBanaliseEnNombreDeContraintes_1;
+
+ContrainteAgregee = Pne->CharBanaliseEnNombreDeContraintes_1;
+
 L = Pne->LTrav;
+X = Pne->UTrav;
+Xmin = Pne->UminTravSv;
+Xmax = Pne->UmaxTravSv;
 
-CoeffDesVariables  = Pne->ValeurLocale;
-NumeroDesVariables = Pne->IndiceLocal;
+# if BORNES_INF_AUXILIAIRES == OUI_PNE
+  Xmin = Pne->XminAuxiliaire;
+# endif
 
-LallocTas  = 0; 
-LallocTas += NombreDeVariables * sizeof( int ); /* Pour NumeroDesVariablesSubstituees */
-LallocTas += NombreDeVariables * sizeof( double ); /* Pour CoefficientDeLaVariableSubstituee */
-LallocTas += NombreDeVariables * sizeof( int ); /* Pour NumeroDeLaVariableBinaire */
-LallocTas += NombreDeVariables * sizeof( double ); /* Pour CoeffDeLaVariableBinaire */
-LallocTas += NombreDeVariables * sizeof( char ); /* Pour TypeDeSubsitution */
-LallocTas += NombreDeContraintes * sizeof( char ); /* Pour ContrainteAgregee */
-LallocTas += NombreDeVariables * sizeof( char ); /* Pour VariableDansContrainteMixte */
-LallocTas += NombreDeVariables * sizeof( char ); /* Pour VariableSelectionable */
+TypeDeVariable = Pne->TypeDeVariableTrav;
+TypeDeBorne = Pne->TypeDeBorneTrav;
 
-LallocTas += NombreDeVariables * sizeof( int ); /* Pour NumV */
-LallocTas += NombreDeContraintes * sizeof( int ); /* Pour NumC */
-
-TasPourKnapsack = (char *) malloc( LallocTas );
-if ( TasPourKnapsack == NULL ) {
-  printf(" Solveur PNE , memoire insuffisante. Sous-programme: PNE_MIRMarchandWolsey \n");
-	return;
-}
-
-pt = TasPourKnapsack;
-NumeroDesVariablesSubstituees = (int *) pt;
-pt += NombreDeVariables * sizeof( int );
-CoefficientDeLaVariableSubstituee = (double *) pt;
-pt += NombreDeVariables * sizeof( double );
-NumeroDeLaVariableBinaire = (int *) pt;
-pt += NombreDeVariables * sizeof( int );
-CoeffDeLaVariableBinaire = (double *) pt;
-pt += NombreDeVariables * sizeof( double );
-TypeDeSubsitution = (char *) pt;
-pt += NombreDeVariables * sizeof( char );
-ContrainteAgregee = (char *) pt;
-pt += NombreDeContraintes * sizeof( char );
-VariableDansContrainteMixte = (char *) pt;
-pt += NombreDeVariables * sizeof( char );
-VariableSelectionable = (char *) pt;
-pt += NombreDeVariables * sizeof( char );
-
-NumV = (int *) pt;
-pt += NombreDeVariables * sizeof( int );
-NumC = (int *) pt;
-pt += NombreDeContraintes * sizeof( int );
-
+ContrainteActivable = Pne->ContrainteActivable;
 ContrainteMixte = Pne->ContrainteMixte;
 B = Pne->BTrav;
 Mdeb = Pne->MdebTrav;
 NbTerm = Pne->NbTermTrav;
 A = Pne->ATrav;
 Nuvar = Pne->NuvarTrav;
-X = Pne->UTrav;
-Xmin = Pne->UminTravSv;
-Xmax = Pne->UmaxTravSv;
-TypeDeVariable = Pne->TypeDeVariableTrav;
-TypeDeBorne = Pne->TypeDeBorneTrav;
-IndexFin = Pne->NombreDeVariablesTrav - 1;
+
+TesterMirMarchandWolseySurLaContrainte = Pne->TesterMirMarchandWolseySurLaContrainte;
+  
+CoeffDesVariables  = Pne->ValeurLocale;
+NumeroDesVariables = Pne->IndiceLocal;
+
+IndexFin = NombreDeVariables - 1;
 
 memset( (char *) VariableDansContrainteMixte, 0, NombreDeVariables * sizeof( char ) );
 
@@ -1251,6 +1368,69 @@ memset( (char *) VariableSelectionable, OUI_PNE, NombreDeVariables * sizeof( cha
 memset( (char *) Pne->Coefficient_CG, 0, NombreDeVariables * sizeof( double ) );
 memset( (char *) Pne->IndiceDeLaVariable_CG, 0, NombreDeVariables * sizeof( int ) );
 
+/* Classement du chainage des colonnes dans l'ordre croissant du nombre de termes des contraintes.
+   On le fait seulement au noeud racine et c'est valable pour toute la suite.
+	 De cet fait on n'impose plus d'avoir les contraintes egalite en premier */	 
+if ( Bb->NoeudEnExamen->ProfondeurDuNoeud == 0 && 0 ) {
+  /* On pourra tranferer ca dans le calcul du stockage par colonne car ici on le fait intulement plusieurs fois */
+  Cdeb = Pne->CdebTrav;
+  Csui = Pne->CsuiTrav;
+  NumContrainte = Pne->NumContrainteTrav;
+
+  Ic = (int *) malloc( NombreDeContraintes * sizeof( int ) );
+  if ( Ic == NULL ) {
+      printf(" Solveur PNE , memoire insuffisante. Sous-programme: PNE_MIRMarchandWolsey \n");
+      Pne->AnomalieDetectee = OUI_PNE;
+      longjmp( Pne->Env , Pne->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
+  }
+
+  for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
+    ic = Cdeb[Var];
+	  Nb = 0;
+	  while ( ic >= 0 ) {
+	    Cnt = NumContrainte[ic];
+      NumC[Nb] = NumContrainte[ic];
+		  Ic[Nb] = ic;
+		  Nb++;
+		  ic = Csui[ic];
+	  }
+    /* Tri bulle (c'est pas le plus rapide mais on ne le fera pas a chaque fois */
+    OnReboucle = OUI_PNE;
+    while ( OnReboucle == OUI_PNE ) {
+      OnReboucle = NON_PNE;
+      for ( i = 0 ; i < Nb - 1 ; i++ ) {
+        if ( NbTerm[NumC[i]] > NbTerm[NumC[i+1]] ) {
+          OnReboucle = OUI_PNE;
+          ic = NumC[i+1];
+			    NumC[i+1] = NumC[i];
+			    NumC[i] = ic;
+		      ic = Ic[i+1];
+			    Ic[i+1] = Ic[i];
+			    Ic[i] = ic;						
+		    }
+	    }
+    }
+	  /* On refait le chainage */
+    Cdeb[Var] = -1;
+	  if ( Nb > 0 ) {
+	    i = 0;
+      ic = Ic[i];
+		  Cnt = NumC[i];
+		  Cdeb[Var] = ic;
+		  NumContrainte[ic] = Cnt;
+		  i++;
+		  for ( ; i < Nb ; i++ ) {
+        Csui[ic] = Ic[i];
+			  ic = Ic[i];
+		    Cnt = NumC[i];
+		    NumContrainte[ic] = Cnt;
+		  }
+		  Csui[ic] = -1;
+	  }	
+  }
+  free( Ic );
+}
+
 for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   if ( ContrainteMixte[Cnt] == NON_PNE ) continue;
   il = Mdeb[Cnt];
@@ -1261,17 +1441,17 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   }	
 }
 
-/*
-goto TestGrapheDeConflits;
-*/
-
 /* Choix d'une contrainte mixte pour demarrer le processus d'agregation */
+NbCntTestees = 0;
+for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 
-for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) { 
+  if ( ContrainteActivable[Cnt] == NON_PNE ) continue;
+	
+  if ( TesterMirMarchandWolseySurLaContrainte[Cnt] <= 0 && 0 ) continue;
 
   if ( ContrainteMixte[Cnt] == NON_PNE && 0 ) continue;
 
-  if ( Pne->FoisCntSuccesMirMarchandWolseyTrouvees[Cnt] > MAX_FOIS_SUCCESS_MIR ) continue;
+  if ( Pne->FoisCntSuccesMirMarchandWolseyTrouvees[Cnt] > MAX_FOIS_SUCCESS_MIR && 0 ) continue;	
 	
 	/* On tente Marchand-Wolsey */
   /*
@@ -1279,14 +1459,25 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 	*/
 	NbVarContinues = 0;
 	NbVarEntieres = 0; 
-	il = Mdeb[Cnt];
 	
 	if ( NbTerm[Cnt] > 10000 ) { 
-	  /*printf(" Tentative Marchand Wolsey rejetee car NbTermTrav %d \n",NbTermTrav[Cnt]);*/
+	  /*printf(" Tentative Marchand Wolsey rejetee car NbTerm %d \n",Pne->NbTermTrav[Cnt]);*/	
 	  continue;
 	}
+  else if ( ProfondeurDuNoeud > 0 ) {
+	  if ( NbTerm[Cnt] > 1000 ) { 
+	    /* Lorsque la contrainte a trop de termes le calcul peut etre tres couteux */	
+	    continue;
+    }
+    else if ( ProfondeurDuNoeud > 1 ) {
+      if ( NbTerm[Cnt] > 100 ) {
+        MaxAgreg = MAX_AGREG_SI_BEAUCOUP_DE_TERMES;
+      }
+    }
+  }
 	
 	SecondMembreContrainteAgregee = B[Cnt];
+	il = Mdeb[Cnt];
   ilMax = il + NbTerm[Cnt];
 	Index = IndexFin;
   while ( il < ilMax ) {
@@ -1300,13 +1491,13 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
       SecondMembreContrainteAgregee -= A[il] * Xmin[Var];
 			goto NextIl;
 		}		
-    if ( TypeDeVariable[Var] == ENTIER ) {			
+    if ( TypeDeVariable[Var] == ENTIER ) {		
 	    CoeffDesVariables[Index] = A[il];
 		  NumeroDesVariables[Index] = Var;
 		  Index--;
 		  NbVarEntieres++;
     }
-	  else {
+	  else {		
 	    CoeffDesVariables[NbVarContinues] = A[il];
 		  NumeroDesVariables[NbVarContinues] = Var;
 		  NbVarContinues++;	
@@ -1314,8 +1505,10 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 		NextIl:
 		il++;
 	}
-	 
-	NbAgr = 1;
+
+/*if ( NbVarContinues == 0 || NbVarEntieres == 0 ) continue;*/ /* Si que des variables entieres alors on a essaye une knapsack dessus */
+
+  NbAgr = 1;
 	NbC = 0;
 	NbV = 0;
 
@@ -1323,10 +1516,11 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   NumC[NbC] = Cnt;
   NbC = NbC + 1;
 
+  NbCntTestees++;
+	MirSurLaContrainte = NON_PNE;
+	
   DEBUT_MIR:
-	
-  /*printf("1- NbAgr %d Cnt %d Avant BoundSubstitution NbVarContinues %d NbVarEntieres %d \n",NbAgr,Cnt,NbVarContinues,NbVarEntieres);*/
-	
+		
 	if ( NbVarContinues + NbVarEntieres == 0 ) goto RAZ;
 		
   OK = PNE_BoundSubstitution( Pne, NbVarContinues, NbVarEntieres, NumeroDesVariables, CoeffDesVariables,
@@ -1341,54 +1535,51 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 	if ( OK == OUI_PNE && NombreDeVariablesBinaires >= 1 ) {
 	  /* Si la valeur de la variable continue est negative, c'est a cause des imprecisions et on evite de faire un calcul */
 		if ( ValeurDeLaVariableContinue < 0.0 ) goto RAZ;
-	
-    # if CALCULS_SUR_MIXED_0_1_KNAPSACK == OUI_PNE
-			if ( YaUneVariableS == OUI_PNE && ValeurDeLaVariableContinue != 0.0 ) {
-        PNE_Knapsack_0_1_AvecVariableContinue( Pne,
-                                               NombreDeVariablesBinaires, NumeroDeLaVariableBinaire, CoeffDeLaVariableBinaire,
-                                               b, ValeurDeLaVariableContinue,
-												                       NombreDeVariablesSubstituees, NumeroDesVariablesSubstituees,
-												                       TypeDeSubsitution, CoefficientDeLaVariableSubstituee
-																						 );					
-      }
-			goto RAZ;			
-		# endif
-	
+ 	
     /* cMIR separation */		
 	  /*printf("2- Avant CMIR NombreDeVariablesBinaires %d b = %e ValeurDeLaVariableContinue = %e\n",NombreDeVariablesBinaires,b,ValeurDeLaVariableContinue);*/		
 		
-    MIRviolee= PNE_C_MIR( Pne, NombreDeVariablesBinaires, NumeroDeLaVariableBinaire,
-                          CoeffDeLaVariableBinaire, &b, &CoeffDeLaVariableContinue,
-							            ValeurDeLaVariableContinue );
+    MIRviolee = PNE_C_MIR( Pne, NombreDeVariablesBinaires, NumeroDeLaVariableBinaire,
+                           CoeffDeLaVariableBinaire, &b, &CoeffDeLaVariableContinue,
+							             ValeurDeLaVariableContinue );
 
     if ( MIRviolee == OUI_PNE ) {      
-		  /*printf("MIR violee, contrainte de depart: %d - nb termes de la contrainte: %d - NbAgr: %d\n",Cnt,NbTerm[Cnt],NbAgr);*/
-			
-		  NbMIRCreees++;
-			if ( NbAgr == 1 ) Pne->FoisCntSuccesMirMarchandWolseyTrouvees[Cnt]++;
-			
-	    PNE_SyntheseEtStockageMIR( Pne, NombreDeVariablesBinaires, NumeroDeLaVariableBinaire,
-                                 CoeffDeLaVariableBinaire, b, CoeffDeLaVariableContinue,
-								                 NombreDeVariablesSubstituees,
-																 NumeroDesVariablesSubstituees, TypeDeSubsitution, 
-																 CoefficientDeLaVariableSubstituee );													
+		  /*
+      printf("MIR violee, contrainte de depart: %d - nb termes de la contrainte: %d - NbAgr: %d FoisCntSuccesMirMarchandWolseyTrouvees %d\n",
+              Cnt,NbTerm[Cnt],NbAgr,Pne->FoisCntSuccesMirMarchandWolseyTrouvees[Cnt]);
+			*/
+      			
+	    PNE_SyntheseEtStockageMIR_New( Pne, NombreDeVariablesBinaires, NumeroDeLaVariableBinaire,
+                                     CoeffDeLaVariableBinaire, b, CoeffDeLaVariableContinue,
+								                     NombreDeVariablesSubstituees,
+																     NumeroDesVariablesSubstituees, TypeDeSubsitution, 
+																     CoefficientDeLaVariableSubstituee, &MirAcceptee );
+
+      if ( MirAcceptee == OUI_PNE ) {
+		    NbMIRCreees++;
+    	  MirSurLaContrainte = OUI_PNE;
+/*
+printf("Contrainte MIR sur contrainte %d avec %d termes NbVarEntieres %d\n",Cnt,Pne->NbTermTrav[Cnt],NbVarEntieres);
+*/
+			  if ( NbAgr == 1 ) Pne->FoisCntSuccesMirMarchandWolseyTrouvees[Cnt]++;
+			}	
+																 
 		  goto RAZ;
 	  }
 	}
 		
 	/*printf("3- Avant Agregation\n");*/
-	if ( NbVarEntieres > TROP_DE_VARIABLES_ENTIERES && 0 ) goto RAZ;
-	
+
 	/* Attention. Dans l'article Marchand-Wolsey il est dit qu'on peut aller jusqu'a 5. Mais experimentalement
 	   on constate qu'il ne faut aller aussi loin a cause des imprecisions */
-	if ( NbAgr < MAX_AGREG ) {
+	if ( NbAgr < MaxAgreg ) {
     /* memset( (char *) VariableSelectionable, OUI_PNE, NombreDeVariables * sizeof( char ) ); */	
 	  /*printf("3- PNE_Agregation\n");*/		
     Agreg = PNE_Agregation( Pne, VariableDansContrainteMixte, &NbVarContinues, &NbVarEntieres, NumeroDesVariables,
 		                        CoeffDesVariables, &SecondMembreContrainteAgregee, ContrainteAgregee, VariableSelectionable,
 														&NbV, NumV, &NbC, NumC );														
 		if ( Agreg == NON_PNE || NbVarContinues + NbVarEntieres == 0 ) {
-		  /*printf("Echec agregation \n");*/		
+		  /*printf("Echec agregation NbAgr %d\n",NbAgr);*/		
 		  goto RAZ;
 		}		
 	  NbAgr++;
@@ -1401,6 +1592,9 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 
 	RAZ:
 
+  if ( MirSurLaContrainte == NON_PNE ) TesterMirMarchandWolseySurLaContrainte[Cnt] -= 1;
+  else TesterMirMarchandWolseySurLaContrainte[Cnt] = NOMBRE_MAX_ECHECS_MIR_MARCHAND_WOLSEY_SUR_UNE_CONTRAINTE;
+
   for ( il = 0 ; il < NbV ; il++ ) VariableSelectionable[NumV[il]] = OUI_PNE;
   for ( il = 0 ; il < NbC ; il++ ) {
 	  if ( NumC[il] < 0 || NumC[il] >= NombreDeContraintes ) {
@@ -1411,20 +1605,6 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 	}
 	
 }
-
-/*
-TestGrapheDeConflits:
-*/
-/* Ca sert a rien alors j'ai mis un return dedans */
-/*PNE_MIRMarchandWolseySurContrainteConcateeGrapheDeConflits( Pne, CoeffDesVariables, NumeroDesVariables,
-																													 	ContrainteAgregee, VariableDansContrainteMixte,
-																												   	CoefficientDeLaVariableSubstituee, NumeroDesVariablesSubstituees,
-																													 	TypeDeSubsitution, CoeffDeLaVariableBinaire,
-																													 	NumeroDeLaVariableBinaire, VariableSelectionable, ContrainteMixte );
-*/
-/* Fin test avec graphes de conflits */
-
-free( TasPourKnapsack );
 
 if ( NbMIRCreees == 0 ) {	
   Pne->NbEchecsConsecutifsDeCalculsMIRmarchandWolsey++;
@@ -1440,11 +1620,15 @@ else {
   }
   if ( Pne->AffichageDesTraces == OUI_PNE ) {
 	  /*
-		printf("Mir cuts found %d at depth %d\n",NbMIRCreees,Bb->NoeudEnExamen->ProfondeurDuNoeud);
+		if ( NbMIRCreees != 0 )printf("Mir cuts found %d at depth %d\n",NbMIRCreees,Bb->NoeudEnExamen->ProfondeurDuNoeud);
 	  fflush( stdout );
 		*/
   }				
 }
+
+		/*
+		if ( NbMIRCreees != 0 ) printf("Mir cuts found %d at depth %d     NbCntTestees %d\n",NbMIRCreees,Bb->NoeudEnExamen->ProfondeurDuNoeud,NbCntTestees);
+    */
 
 return;
 }

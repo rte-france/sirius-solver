@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Resolution d'un probleme relaxe par le simplexe dual 
@@ -41,6 +25,8 @@
 
 # define SEUIL_POUR_PRIORITE_DANS_SPX_AUX_VARIABLES_SORTANTES_ENTIERES  0.75 /* 75% soit 3/4 */
 
+# define MARGE 1.e-6
+
 /*----------------------------------------------------------------------------*/
 
 void PNE_SolvePbRlxSpxDual( PROBLEME_PNE * Pne,
@@ -54,7 +40,7 @@ void PNE_SolvePbRlxSpxDual( PROBLEME_PNE * Pne,
                int    * Faisabilite 
                           )
 {
-int BaseDeDepartFournie; int LibererMemoireALaFin; int Contexte; int i; double S;
+int BaseDeDepartFournie; int LibererMemoireALaFin; int Contexte; int i; double S; double Marge;
 int ExistenceDUneSolution; int ChoixDeLAlgorithme; int NombreMaxDIterations;	 
 time_t HeureDeCalendrierDebut; time_t HeureDeCalendrierCourant; double TempsEcoule; int Nb;
 double * VariablesDualesDesContraintesTravEtDesCoupes; int * ContrainteSaturee;
@@ -116,7 +102,10 @@ if ( Contexte != BRANCH_AND_BOUND_OU_CUT_NOEUD ) {
    resolu. Dans ce cas, on impose une limitation du nombre d'iterations. */
 if ( Pne->NombreDeCoupesCalculees > 0 ) {
   NombreMaxDIterations = (int) (5. * Pne->NombreDeCoupesCalculees); 
-  if ( NombreMaxDIterations < 1000 ) NombreMaxDIterations = 1000;
+  /*if ( NombreMaxDIterations < 1000 ) NombreMaxDIterations = 1000;*/
+
+  if ( NombreMaxDIterations < 10000 ) NombreMaxDIterations = 10000;
+	
 }
 else {
   /* On met un nombre negatif pour que la donnee ne soit pas prise en compte */
@@ -155,8 +144,26 @@ Probleme.ComplementDeLaBase         = ComplementDeLaBase;
   
 Probleme.LibererMemoireALaFin  = LibererMemoireALaFin;	
 
+/* On peut abaisser Coutmax en fonction de la tolerance */
+Marge = 0;
 
-Probleme.CoutMax = CoutMax;
+/*
+if ( UtiliserCoutMax == OUI_SPX ) {
+  Bb = (BB *) Pne->ProblemeBbDuSolveur;  
+  if ( Bb != NULL ) Marge = Bb->ToleranceDOptimalite * 0.01 * fabs( Bb->CoutDeLaMeilleureSolutionEntiere ) * 0.1;
+ }
+*/
+
+/* Modif 6/10/2016 pour etre en accord avec la partie branch and bound on supprime le coeff 0.1 dans le calcul de Marge
+   et on fait CoutMax - Marge au lieu de CoutMax + Marge */
+if ( UtiliserCoutMax == OUI_SPX ) {
+  Bb = (BB *) Pne->ProblemeBbDuSolveur;  
+  if ( Bb != NULL ) Marge = Bb->ToleranceDOptimalite * 0.01 * fabs( Bb->CoutDeLaMeilleureSolutionEntiere );	
+  if ( Marge < 1.e-3 ) Marge = 1.e-3;
+}
+
+Probleme.CoutMax = CoutMax + Marge;
+	 
 Probleme.UtiliserCoutMax = UtiliserCoutMax;
 
 Probleme.NombreDeContraintesCoupes        = Pne->Coupes.NombreDeContraintes;
@@ -245,7 +252,55 @@ else {
   Pne->AnomalieDetectee = OUI_PNE;
   longjmp( Pne->Env , Pne->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
 }
-  
+
+
+/* On essaie de fixer des variables en analysant les contraintes d'inegalite */
+/*
+char SigneCoeff; char SensCnt; double CoutVar; double Ai; int ic; int Var; int Cnt;
+for ( i = 0 ; i < Pne->NombreDeVariablesNonFixes ; i++ ) {
+  Var = Pne->NumeroDesVariablesNonFixes[i];
+	if ( Pne->TypeDeVariableTrav[Var] != ENTIER ) continue; 
+	CoutVar = Pne->LTrav[Var];
+	SigneCoeff = '?';
+  ic = Pne->CdebTrav[Var];
+  while ( ic >= 0 ) {
+    Ai = Pne->ATrav[ic];
+    if ( Ai == 0.0 ) goto NextIc;		
+    Cnt = Pne->NumContrainteTrav[ic];
+    if ( Pne->ContrainteActivable[Cnt] == NON_PNE ) goto NextIc;		
+	  SensCnt = Pne->SensContrainteTrav[Cnt];
+    if ( SigneCoeff != 'X' ) {				 
+      if ( SensCnt == '=' ) SigneCoeff = 'X';
+			else {
+		    if ( Ai > 0.0 ) {
+          if ( SigneCoeff == '?' ) SigneCoeff = '+';
+			    else if ( SigneCoeff == '-' ) SigneCoeff = 'X';				
+			  }		  
+		    else {
+          if ( SigneCoeff == '?' ) SigneCoeff = '-';
+			    else if ( SigneCoeff == '+' ) SigneCoeff = 'X';
+			  }
+		  }		
+    }
+		else break;		
+	  NextIc:
+    ic = Pne->CsuiTrav[ic];
+	}	
+	if ( SigneCoeff == 'X' ) continue;	
+	if ( SigneCoeff == '+' ) {
+	  if ( CoutVar >= 0.0 ) Pne->UTrav[Var] = Pne->UminTrav[Var];		  
+	}	
+	else if ( SigneCoeff == '-' ) {
+	  if ( CoutVar <= 0.0 ) Pne->UTrav[Var] = Pne->UmaxTrav[Var];		
+	}
+	else if ( SigneCoeff == '?' ) {
+	  if ( CoutVar >= 0.0 ) Pne->UTrav[Var] = Pne->UminTrav[Var];		  
+		else Pne->UTrav[Var] = Pne->UmaxTrav[Var];		
+  }				
+}
+*/
+/* Fin du test */
+
 return;
 }
 

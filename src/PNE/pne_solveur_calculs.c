@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Solveur de PLNE 
@@ -31,13 +15,15 @@
 # include "bb_fonctions.h"
 
 # include "prs_define.h"
+# include "prs_fonctions.h"
 
 /*----------------------------------------------------------------------------*/
 
 void PNE_SolveurCalculs( PROBLEME_A_RESOUDRE * Probleme , PROBLEME_PNE * Pne )
 {
-int i; int NbVarLibres; int NbVarEntieresLibres; int ic; int Nz;
-
+int i; int NbVarLibres; int NbVarEntieresLibres; int ic; int Nz; int NbVarNonBornees;
+int	NbVarBorneesDesDeuxCotes; int	NbVarBorneesInferieurement; int	NbVarBorneesSuperieurement;	
+int NbCntEgal; int NbCntInferieur; int	NbCntSuperieur;
 /*                                      */ 
 int NombreDeVariables; int * TypeDeVariable; int * TypeDeBorneDeLaVariable; double * X;   
 double * Xmax; double * Xmin; double * CoutLineaire; int NombreDeContraintes;  
@@ -80,7 +66,7 @@ if ( Pne->AffichageDesTraces == OUI_PNE && Pne->Controls == NULL ) {
   printf("\n");
   printf(" ----------------------------------------------------------\n");
   printf("|                                                          |\n");
-  printf("|               Starting PNE_Solveur                       |\n");
+  printf("|                  Starting PNE_Solveur                    |\n");
   printf("|                                                          |\n"); 
   printf(" ---------------------------------------------------------- \n");
   printf("\n");
@@ -105,7 +91,7 @@ if ( Pne->YaUneSolution != OUI_PNE ) {
 
 if ( Pne->Controls != NULL ) {
   if ( Pne->Controls->PresolveUniquement == OUI_PNE ) {
-    if ( Pne->Controls->Presolve != NULL ) {
+    if ( Pne->Controls->Presolve != NULL && 0 ) {
       PNE_PostSolveSiUniquementPresolve( Pne, Probleme ); 
       PRS_LiberationStructure( (PRESOLVE *)	Pne->Controls->Presolve );
 	  }
@@ -198,10 +184,46 @@ if ( Pne->AffichageDesTraces == OUI_PNE ) {
 		}
   }
   printf("Non zeros             -> %d", Nz);
-  printf("\n\n");  
+  printf("\n");  
 }
 
-if ( NbVarLibres > 0 && Pne->NombreDeContraintesTrav > 0 ) { 
+if ( Pne->AffichageDesTraces == OUI_PNE ) {
+  NbVarNonBornees = 0;
+	NbVarBorneesDesDeuxCotes = 0;
+	NbVarBorneesInferieurement = 0;
+	NbVarBorneesSuperieurement = 0;	
+  for ( i = 0 ; i < Pne->NombreDeVariablesTrav ; i++ ) {
+    if ( Pne->TypeDeBorneTrav[i] == VARIABLE_FIXE ) continue;
+	  if ( Pne->TypeDeBorneTrav[i] == VARIABLE_NON_BORNEE ) NbVarNonBornees++;
+		else if ( Pne->TypeDeBorneTrav[i] == VARIABLE_BORNEE_DES_DEUX_COTES ) NbVarBorneesDesDeuxCotes++;
+		else if ( Pne->TypeDeBorneTrav[i] == VARIABLE_BORNEE_INFERIEUREMENT ) NbVarBorneesInferieurement++;
+		else if ( Pne->TypeDeBorneTrav[i] == VARIABLE_BORNEE_SUPERIEUREMENT ) NbVarBorneesSuperieurement++;
+  }
+	if ( NbVarNonBornees > 0 ) printf("free variable(s): %d  ",NbVarNonBornees);
+	if ( NbVarBorneesDesDeuxCotes > 0 ) printf("two side bounded variable(s): %d / ",NbVarBorneesDesDeuxCotes);
+	if ( NbVarBorneesInferieurement > 0 ) printf("bounded below variable(s): %d  / ",NbVarBorneesInferieurement);
+	if ( NbVarBorneesSuperieurement > 0 ) printf("bounded above variable(s): %d  / ",NbVarBorneesSuperieurement);
+  printf("\n");
+  NbCntEgal = 0;
+  NbCntInferieur = 0;
+	NbCntSuperieur = 0;
+  for ( i = 0 ; i < Pne->NombreDeContraintesTrav ; i++ ) {
+    if ( Pne->SensContrainteTrav[i] == '=' ) NbCntEgal++;
+    else if ( Pne->SensContrainteTrav[i] == '<' ) NbCntInferieur++;
+    else if ( Pne->SensContrainteTrav[i] == '>' ) NbCntSuperieur++;
+  }
+	if ( NbCntEgal > 0 ) printf("equality constraint(s): %d / ",NbCntEgal);
+	if ( NbCntInferieur > 0 ) printf("inequality constraint(s) of type <: %d / ",NbCntInferieur);
+	if ( NbCntSuperieur > 0 ) printf("inequality constraint(s) of type >: %d / ",NbCntSuperieur);
+  printf("\n\n");	
+}
+
+/*
+printf("Exit dans pne_solveur_calculs\n");
+exit(0);
+*/
+
+if ( NbVarLibres > 0 && Pne->NombreDeContraintesTrav > 0 ) {
   Pne->YaUneSolution = BB_BranchAndBound( Pne,
                                           Pne->TempsDExecutionMaximum,
                                           Pne->NombreMaxDeSolutionsEntieres,
@@ -222,6 +244,9 @@ else if ( Pne->YaUneSolution == ARRET_CAR_TEMPS_MAXIMUM_ATTEINT ) {
 }
 else if ( Pne->YaUneSolution == BB_ERREUR_INTERNE ) {
   Pne->YaUneSolution = ARRET_CAR_ERREUR_INTERNE; 
+}
+else if ( Pne->YaUneSolution == PROBLEME_INFAISABLE ) {
+  Pne->YaUneSolution = PROBLEME_INFAISABLE; /* On ne change pas le code */
 }
 else {
   Pne->YaUneSolution = PAS_DE_SOLUTION_TROUVEE;

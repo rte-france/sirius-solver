@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Main de la PNE pour le standalone
@@ -69,9 +53,9 @@ void * StandAloneLancerUnThread( void * Arg )
   Probleme.X                       = Mps.U;
   Probleme.Xmax                    = Mps.Umax;
   Probleme.Xmin                    = Mps.Umin;
-  Probleme.CoutLineaire            = Mps.CoefsObjectif;  
+  Probleme.CoutLineaire            = Mps.L;  
   Probleme.NombreDeContraintes                   = Mps.NbCnt;
-  Probleme.SecondMembre                          = Mps.Rhs;
+  Probleme.SecondMembre                          = Mps.B;
   Probleme.Sens                                  = Mps.SensDeLaContrainte;
   Probleme.IndicesDebutDeLigne                   = Mps.Mdeb;
   Probleme.NombreDeTermesDesLignes               = Mps.NbTerm;
@@ -197,14 +181,14 @@ printf("Fin de la lecture des donnees \n"); fflush(stdout);
 /* Mip: indicateur positionne a OUI_MPS si on veut optimiser en variables entieres 
         et positionne a NON_MPS si on veut juste faire un simplexe */
 
-Mip = NON_MPS;          	  			
+Mip = OUI_MPS;          	  			
 if ( Mip == NON_MPS ) {    
   for ( j = 0 ; j < Mps.NbVar ; j++ ) Mps.TypeDeVariable[j] = REEL;
 }
 
 /*
 printf("**********  Attention on fait une maximisation i.e Cout = -Cout ******************\n");
-for ( j = 0 ; j < Mps.NbVar ; j++ ) Mps.CoefsObjectif[j] = -Mps.CoefsObjectif[j];
+for ( j = 0 ; j < Mps.NbVar ; j++ ) Mps.L[j] = -Mps.L[j];
 */
 
 goto PasDeBruitage;
@@ -213,11 +197,11 @@ goto PasDeBruitage;
   Cout = 1;
   for ( j = 0 ; j < Mps.NbVar ; j++ ){
 	  /*if ( Mps.TypeDeVariable[j] == ENTIER ) {*/
-		if ( Mps.CoefsObjectif[j] != 0.0 ) {
+		if ( Mps.L[j] != 0.0 ) {
       S = (rand() * UnSurRAND_MAX ) - 0.5 ;
       S *= 0.9;
-			Mps.CoefsObjectif[j] += S;  
-			if ( Mps.CoefsObjectif[j] != 0 ) printf("Mps.CoefsObjectif[%d] = %e\n",j,Mps.CoefsObjectif[j]);
+			Mps.L[j] += S;  
+			if ( Mps.L[j] != 0 ) printf("Mps.L[%d] = %e\n",j,Mps.L[j]);
 		}
   }
 }
@@ -264,9 +248,9 @@ for ( j = 0 ; j < 1 ; j++ ) { /* Pour tester les fuites memoire on enchaine les 
   Probleme.X                       = Mps.U;
   Probleme.Xmax                    = Mps.Umax;
   Probleme.Xmin                    = Mps.Umin;
-  Probleme.CoutLineaire            = Mps.CoefsObjectif;  
+  Probleme.CoutLineaire            = Mps.L;  
   Probleme.NombreDeContraintes                   = Mps.NbCnt;
-  Probleme.SecondMembre                          = Mps.Rhs;
+  Probleme.SecondMembre                          = Mps.B;
   Probleme.Sens                                  = Mps.SensDeLaContrainte;
   Probleme.IndicesDebutDeLigne                   = Mps.Mdeb;
   Probleme.NombreDeTermesDesLignes               = Mps.NbTerm;
@@ -276,7 +260,7 @@ for ( j = 0 ; j < 1 ; j++ ) { /* Pour tester les fuites memoire on enchaine les 
   Probleme.SortirLesDonneesDuProbleme = NON_PNE;
   Probleme.AlgorithmeDeResolution     = SIMPLEXE; /* SIMPLEXE ou POINT_INTERIEUR */  
   Probleme.CoupesLiftAndProject       = NON_PNE; 
-  Probleme.AffichageDesTraces         = NON_PNE; 
+  Probleme.AffichageDesTraces         = OUI_PNE; 
   Probleme.FaireDuPresolve            = OUI_PNE /* OUI_PNE */;               
   if ( Probleme.FaireDuPresolve == NON_PNE ) printf("!!!!!!!!!!!!!!  Attention pas de presolve   !!!!!!!!!\n");
 
@@ -295,7 +279,7 @@ for ( j = 0 ; j < 1 ; j++ ) { /* Pour tester les fuites memoire on enchaine les 
 
 /*
 for ( j = 0 ; j < Mps.NbVar ; j++ ){
-  if ( Mps.TypeDeVariable[j] == ENTIER ) Mps.CoefsObjectif[j] = 0.0;
+  if ( Mps.TypeDeVariable[j] == ENTIER ) Mps.L[j] = 0.0;
 }
 */
 
@@ -303,7 +287,7 @@ Nbn = 0;
 printf("Dual variables count %d\n",Mps.NbCnt);
 for ( Cnt = 0 ; Cnt < Mps.NbCnt ; Cnt++ ) {
   goto ABS;
-	printf("Sense[%d] %c B = %e dual variable = %e\n",Cnt,Mps.SensDeLaContrainte[Cnt],Mps.Rhs[Cnt],
+	printf("Sense[%d] %c B = %e dual variable = %e\n",Cnt,Mps.SensDeLaContrainte[Cnt],Mps.B[Cnt],
 	        Mps.VariablesDualesDesContraintes[Cnt]);
 	ABS:
   if ( fabs( Mps.VariablesDualesDesContraintes[Cnt] ) < 1.e-8 ) Nbn++;
@@ -318,7 +302,7 @@ printf("Zero dual variables count %d over %d\n",Nbn,Mps.NbCnt);
   { int LgL; int Var; double * TA; double K; int Cnt; int il;  
 
   Critere = 0.;
-  for ( i = 0 ; i < Mps.NbVar ; i++ ) Critere+= Mps.CoefsObjectif[i] * Mps.U[i];
+  for ( i = 0 ; i < Mps.NbVar ; i++ ) Critere+= Mps.L[i] * Mps.U[i];
  
   if ( YaUneSolution == SOLUTION_OPTIMALE_TROUVEE ||  
        YaUneSolution == SOLUTION_OPTIMALE_TROUVEE_MAIS_QUELQUES_CONTRAINTES_SONT_VIOLEES ||  
@@ -335,7 +319,7 @@ printf("Zero dual variables count %d over %d\n",Nbn,Mps.NbCnt);
   LgL+= Mps.NbVar;
   
   Mps.NbCnt++;
-  Mps.Rhs                  = (double *) realloc( Mps.Rhs                  , Mps.NbCnt * sizeof( double ) );
+  Mps.B                  = (double *) realloc( Mps.B                  , Mps.NbCnt * sizeof( double ) );
   Mps.SensDeLaContrainte = ( char * ) realloc( Mps.SensDeLaContrainte , Mps.NbCnt * sizeof( char   ) );
   Mps.Mdeb               = ( int * ) realloc( Mps.Mdeb               , Mps.NbCnt * sizeof( int   ) );
   Mps.NbTerm             = ( int * ) realloc( Mps.NbTerm             , Mps.NbCnt * sizeof( int   ) );
@@ -348,14 +332,14 @@ printf("Zero dual variables count %d over %d\n",Nbn,Mps.NbCnt);
   TA = (double *) malloc( Mps.NbVar * sizeof( double ) );
   K = 1;
   Cnt = Mps.NbCnt - 1;
-  Mps.Rhs[Cnt] = K;
+  Mps.B[Cnt] = K;
   Mps.SensDeLaContrainte[Cnt] = '<';
   for ( Var = 0 ; Var < Mps.NbVar ; Var++ ) {
     TA[Var] = 0.0;
     if ( Mps.TypeDeVariable[Var] == ENTIER ) {
       TA[Var] = 1.;
       if ( Mps.U[Var] == 1.0 ) {
-        Mps.Rhs[Cnt]-= 1;
+        Mps.B[Cnt]-= 1;
         TA[Var] = -1.;
       } 
     }
@@ -406,7 +390,7 @@ if ( YaUneSolution == SOLUTION_OPTIMALE_TROUVEE ||
 	
   Critere = 0.;
   for ( i = 0 ; i < Mps.NbVar ; i++ ) {
-    Critere+= Mps.CoefsObjectif[i] * Mps.U[i];
+    Critere+= Mps.L[i] * Mps.U[i];
     if ( AfficherLesValeursDesVariables == OUI_PNE ) {
       printf("Variable number %d name %s value %lf ",i, Mps.LabelDeLaVariable[i], Mps.U[i]);
       if ( Mps.TypeDeBorneDeLaVariable[i] == VARIABLE_FIXE ) printf(" FIXED variable\n");
@@ -483,40 +467,40 @@ if ( YaUneSolution == SOLUTION_OPTIMALE_TROUVEE ||
       il++;
     }
     if ( Mps.SensDeLaContrainte[Cnt] == '=' ) {
-      EcMoy+= fabs( S - Mps.Rhs[Cnt] );
-      if ( fabs( S - Mps.Rhs[Cnt] ) > EcX ) {
-        EcX   = fabs( S - Mps.Rhs[Cnt] );
+      EcMoy+= fabs( S - Mps.B[Cnt] );
+      if ( fabs( S - Mps.B[Cnt] ) > EcX ) {
+        EcX   = fabs( S - Mps.B[Cnt] );
         Smx   = S;
         CntMx = Cnt;
-				printf("Cnt %d sens = : S %e B %e\n",Cnt,S,Mps.Rhs[Cnt]);
+				printf("Cnt %d sens = : S %e B %e\n",Cnt,S,Mps.B[Cnt]);
       }
     }
-    if ( Mps.SensDeLaContrainte[Cnt] == '>' && S < Mps.Rhs[Cnt] ) {
-      EcMoy+= fabs( S - Mps.Rhs[Cnt] );      
-      if ( fabs( S - Mps.Rhs[Cnt] ) > EcX ) {
-        EcX   = fabs( S - Mps.Rhs[Cnt] );
+    if ( Mps.SensDeLaContrainte[Cnt] == '>' && S < Mps.B[Cnt] ) {
+      EcMoy+= fabs( S - Mps.B[Cnt] );      
+      if ( fabs( S - Mps.B[Cnt] ) > EcX ) {
+        EcX   = fabs( S - Mps.B[Cnt] );
         Smx   = S;
         CntMx = Cnt;
-				printf("Cnt %d sens > : S %e B %e\n",Cnt,S,Mps.Rhs[Cnt]);
+				printf("Cnt %d sens > : S %e B %e\n",Cnt,S,Mps.B[Cnt]);
       }
     }
-    if ( Mps.SensDeLaContrainte[Cnt] == '<' && S > Mps.Rhs[Cnt] ) {
-      EcMoy+= fabs( S - Mps.Rhs[Cnt] );      
-      if ( fabs( S - Mps.Rhs[Cnt] ) > EcX ) {
-        EcX   = fabs( S - Mps.Rhs[Cnt] );
+    if ( Mps.SensDeLaContrainte[Cnt] == '<' && S > Mps.B[Cnt] ) {
+      EcMoy+= fabs( S - Mps.B[Cnt] );      
+      if ( fabs( S - Mps.B[Cnt] ) > EcX ) {
+        EcX   = fabs( S - Mps.B[Cnt] );
         Smx   = S;
         CntMx = Cnt;
-				printf("Cnt %d sens < : S %e B %e\n",Cnt,S,Mps.Rhs[Cnt]);
+				printf("Cnt %d sens < : S %e B %e\n",Cnt,S,Mps.B[Cnt]);
       }
     }
-		/*printf("cnt %ld S %e B %e\n",Cnt,S,Mps.Rhs[Cnt]);*/		
+		/*printf("cnt %ld S %e B %e\n",Cnt,S,Mps.B[Cnt]);*/		
   }
   if ( CntMx >= 0 ) {
     printf("Higher violation:\n");
     if ( Mps.SensDeLaContrainte[CntMx] == '=' ) printf("Cnt num %d - %s -- type = ",CntMx,Mps.LabelDeLaContrainte[CntMx]);
     if ( Mps.SensDeLaContrainte[CntMx] == '<' ) printf("Cnt num %d - %s -- type < ",CntMx,Mps.LabelDeLaContrainte[CntMx]);
     if ( Mps.SensDeLaContrainte[CntMx] == '>' ) printf("Cnt num %d - %s -- type > ",CntMx,Mps.LabelDeLaContrainte[CntMx]);
-    printf(" B %e computed %e violation %e\n",Mps.Rhs[CntMx],Smx,fabs(Smx-Mps.Rhs[CntMx]));
+    printf(" B %e computed %e violation %e\n",Mps.B[CntMx],Smx,fabs(Smx-Mps.B[CntMx]));
   }
   EcMoy/= Mps.NbCnt;
   printf("Violations average value: %e\n",EcMoy);

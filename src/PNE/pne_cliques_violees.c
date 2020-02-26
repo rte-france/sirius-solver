@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Detection des cliques violees.
@@ -36,6 +20,8 @@
   # include "pne_memoire.h"
 # endif
 
+# define TRACES 0
+
 # define PROFONDEUR_LIMITE_CLIQUES 1000000 /*10*/ 
 
 /*----------------------------------------------------------------------------*/
@@ -49,7 +35,7 @@ char ControleImplications; CONFLICT_GRAPH * ConflictGraph; int Noeud;
 int NbNoeudsDuGraphe; int Pivot; int * Adjacent; int * Next;  double S0; double B0;
 int Var; int Complement; int Edge; int Nv; char * LaCliqueEstDansLePool; double Sec;
 int * NoeudDeClique; int * TypeDeBorne; BB * Bb; int NbCliquesViolees; char Ok;
-char * CliqueDeTypeEgalite; int NbImplicationsViolees; double Seuil; 
+char * CliqueDeTypeEgalite; int NbImplicationsViolees; double Seuil; char CliqueViolee;
 
 if ( Pne->ConflictGraph == NULL ) return;
 if ( Pne->Cliques == NULL ) return;
@@ -97,48 +83,59 @@ for ( c = 0 ; c < Cliques->NombreDeCliques ; c++ ) {
 	Ok = OUI_PNE;
   while ( il < ilMax ) {
 	  if ( NoeudDeClique[il] < Pivot ) {
-	    if ( TypeDeBorne[NoeudDeClique[il]] == VARIABLE_FIXE ) {				
-				Ok = NON_PNE;
-			  break;
-			}			
-		  S += UTrav[NoeudDeClique[il]];
+	    if ( TypeDeBorne[NoeudDeClique[il]] == VARIABLE_FIXE ) Sec -= UTrav[NoeudDeClique[il]];					
+		  else S += UTrav[NoeudDeClique[il]];
 		}
 		else {
-	    if ( TypeDeBorne[NoeudDeClique[il]-Pivot] == VARIABLE_FIXE ) {				
-				Ok = NON_PNE;
-			  break;
-			}			
-		  S -= UTrav[NoeudDeClique[il]-Pivot];
+	    if ( TypeDeBorne[NoeudDeClique[il]-Pivot] == VARIABLE_FIXE ) Sec += UTrav[NoeudDeClique[il]-Pivot];					
+		  else S -= UTrav[NoeudDeClique[il]-Pivot];
 			Sec -= 1;
 		}
 	  il++;
 	}
 	if ( Ok == OUI_PNE ) {
-
-    if ( S - Sec > Seuil ) {
-      Pne->SommeViolationsCliques += S - Sec;
-      Pne->NombreDeCliques++;
+	  CliqueViolee = NON_PNE;	
+    if ( CliqueDeTypeEgalite[c] == NON_PNE ) {        	
+      if ( S - Sec > Seuil ) {
+        Pne->SommeViolationsCliques += S - Sec;
+        Pne->NombreDeCliques++;
+				CliqueViolee = OUI_PNE;
+      }
     }
-	
-    if ( S - Sec > Pne->SeuilDeViolationCliques ) {			 
+    else {		
+      if ( fabs( S - Sec ) > Seuil ) {
+        Pne->SommeViolationsCliques += fabs( S - Sec );
+        Pne->NombreDeCliques++;
+				CliqueViolee = OUI_PNE;
+			}
+		}
+		if ( CliqueViolee == OUI_PNE ) {
 	    X = fabs( S - Sec );
 	    NormeV += X;
-      /* On Stocke la coupe */
+      /* On Stocke la coupe */  
       il = First[c];
 		  NbT = 0;
       while ( il < ilMax ) {		
 	      if ( NoeudDeClique[il] < Pivot ) {
-		      Coeff[NbT] = 1;
-			    Indice[NbT] = NoeudDeClique[il];			
+	        if ( TypeDeBorne[NoeudDeClique[il]] != VARIABLE_FIXE ) {			
+		        Coeff[NbT] = 1;
+			      Indice[NbT] = NoeudDeClique[il];
+			      NbT++;
+					}
 			  }
 	 	    else {
-		      Coeff[NbT] = -1;
-			    Indice[NbT] = NoeudDeClique[il] - Pivot;		
+	        if ( TypeDeBorne[NoeudDeClique[il]-Pivot] != VARIABLE_FIXE ) {					
+		        Coeff[NbT] = -1;
+			      Indice[NbT] = NoeudDeClique[il] - Pivot;
+			      NbT++;
+ 					}
 		    }			
-			  NbT++;
 	      il++;
 	    }
-		  NbCliquesViolees++;
+
+      if ( PNE_LaCoupeEstColineaire( Pne, Coeff, Indice, Sec, NbT ) == OUI_PNE ) continue;
+			
+		  NbCliquesViolees++;			
       B = Sec;			
       PNE_EnrichirLeProblemeCourantAvecUneCoupe( Pne, 'K', NbT, B, X, Coeff , Indice );
       Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees-1]->IndexDansCliques = c;
@@ -147,11 +144,15 @@ for ( c = 0 ; c < Cliques->NombreDeCliques ; c++ ) {
 			  B *= -1;       
 				PNE_EnrichirLeProblemeCourantAvecUneCoupe( Pne, 'K', NbT, B, X, Coeff , Indice );
         Pne->CoupesCalculees[Pne->NombreDeCoupesCalculees-1]->IndexDansCliques = c;
-				/*printf("ajout clique egalite %d\n",c);*/
+				printf("ajout clique egalite %d\n",c);
 		  }			
 	  }
 	}
 }
+
+# if TRACES == 1
+  if ( NbCliquesViolees > 0 ) printf("Nombre de cliques violees %d\n",NbCliquesViolees);
+# endif
 
 if ( NbCliquesViolees <= 0 ) ControleImplications = OUI_PNE;
 
@@ -223,7 +224,10 @@ for ( Noeud = 0 ; Noeud < NbNoeudsDuGraphe ; Noeud++ ) {
       Pne->NombreDImplications++;
     }
 
-    if ( S - B > Pne->SeuilDeViolationCliques ) {			 
+    if ( S - B > Pne->SeuilDeViolationCliques ) {
+
+      if ( PNE_LaCoupeEstColineaire( Pne, Coeff, Indice, B, NbT ) == OUI_PNE ) goto NextEdge;
+		
 			/* 
 		  printf("Noeud=%d Implication violee %e (%d=%e) %e (%d=%e) < %e\n",
 			        Noeud,
@@ -242,7 +246,13 @@ for ( Noeud = 0 ; Noeud < NbNoeudsDuGraphe ; Noeud++ ) {
 	}
 }
 
+# if TRACES == 1
+  if ( NbImplicationsViolees > 0 ) printf("Nombre d'implications violees %d\n",NbImplicationsViolees);
+# endif
+
+
 FinControles:
+
 return;
 }   
 

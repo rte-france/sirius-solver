@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: On fixe des variables du conflict graph.  
@@ -41,7 +25,7 @@ void PNE_ConflictGraphFixerLesNoeudsVoisinsDunNoeud( PROBLEME_PNE * Pne, int Noe
 {
 int * Adjacent; int * Next; int * First; int Edge; int Nv; int Var; double * UminTrav;
 double * UmaxTrav; double * UTrav; int Pivot; int Complement; char BorneMiseAJour;
-char UneVariableAEteFixee; double ValeurDeVar;
+char UneVariableAEteFixee; double ValeurDeVar; int VarInstanciee;
 
 if ( Pne->ConflictGraph == NULL ) return;
 
@@ -61,7 +45,7 @@ if ( Noeud < Pivot ) {
   Var = Noeud;
   ValeurDeVar = UmaxTrav[Var];
 	UminTrav[Var] = ValeurDeVar;
-	UTrav[Var] = ValeurDeVar;
+	UTrav[Var] = ValeurDeVar;	
   UneVariableAEteFixee = FIXE_AU_DEPART;
 }
 else {
@@ -69,9 +53,10 @@ else {
   Var = Noeud - Pivot;
   ValeurDeVar = UminTrav[Var];	
 	UmaxTrav[Var] = ValeurDeVar ;
-	UTrav[Var] = ValeurDeVar;
+	UTrav[Var] = ValeurDeVar;	
   UneVariableAEteFixee = FIXE_AU_DEPART;
 }
+VarInstanciee = Var;
 
 BorneMiseAJour = NON_PNE;
 
@@ -81,7 +66,18 @@ if ( Pne->ProbingOuNodePresolve->Faisabilite == NON_PNE ) return;
 PNE_MajIndicateursDeBornes( Pne, Pne->ProbingOuNodePresolve->ValeurDeBorneInf, Pne->ProbingOuNodePresolve->ValeurDeBorneSup,
                             Pne->ProbingOuNodePresolve->BorneInfConnue, Pne->ProbingOuNodePresolve->BorneSupConnue,
                             ValeurDeVar, Var, UneVariableAEteFixee, BorneMiseAJour );
-														
+
+
+/* Mise a jour des indicateurs de variables a instancier a nouveau */
+PNE_ProbingMajFlagVariablesAInstancier( Pne, Var, ValeurDeVar );
+
+# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+  /* Appliquer les contraintes de bornes variables pour le variable entiere fixee et
+     inhiber les contraintes correspondantes */
+  PNE_ProbingAppliquerCntDeBornesVariablesSiVariableEntiereFixee( Pne, VarInstanciee );
+  if ( Pne->ProbingOuNodePresolve->Faisabilite == NON_PNE ) return;
+# endif
+
 if ( Noeud < Pivot ) Complement = Pivot + Noeud;
 else Complement = Noeud - Pivot;
 /* S'il y a des implications pour l'instanciation, on les applique */
@@ -96,7 +92,7 @@ while ( Edge >= 0 ) {
     /* La valeur borne sup est interdite pour la variable */
 		/* On doit donc fixer la variable a Umin et fixer les voisins de ce noeud */
 	  Nv = Pivot + Nv;
-		/* On fixe la variable correspondant a Nv */
+		/* On fixe la variable correspondant a Nv */		
     PNE_ConflictGraphFixerLesNoeudsVoisinsDunNoeud( Pne, Nv );
 		/* On redemarre au debut de Noeud car le chainage a pu changer */
 		Edge = First[Noeud];
@@ -108,7 +104,7 @@ while ( Edge >= 0 ) {
 	  Nv = Nv - Pivot;
 	  Var = Nv;		
 		if ( UminTrav[Var] == UmaxTrav[Var] ) goto NextEdge;		
-		/* On fixe la variable correspondant a Nv */
+		/* On fixe la variable correspondant a Nv */		
     PNE_ConflictGraphFixerLesNoeudsVoisinsDunNoeud( Pne, Nv );
 		Edge = First[Noeud];
 		continue; /* Pour ne pas faire Edge = Next[Edge] */		
@@ -121,6 +117,16 @@ PNE_ConflictGraphSupprimerUnNoeud( Noeud, First, Adjacent, Next );
 
 /* On elimine l'entree du complement */
 PNE_ConflictGraphSupprimerUnNoeud( Complement, First, Adjacent, Next );
+
+/* La variable devient de type fixe */
+/*
+Pne->ProbingOuNodePresolve->FlagVarAInstancier[VarInstanciee] = 0;
+Pne->TypeDeBorneTrav[VarInstanciee] = VARIABLE_FIXE;
+Pne->TypeDeVariableTrav[VarInstanciee] = REEL;
+# if CONSTRUIRE_BORNES_VARIABLES == OUI_PNE
+  PNE_ProbingSupprimerCntDeBornesVariablesSiVariableEntiereFixee( Pne );
+# endif
+*/
 
 return;
 }

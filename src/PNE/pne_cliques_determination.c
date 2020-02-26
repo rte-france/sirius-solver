@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Conflict graph et cliques.
@@ -43,15 +27,16 @@
 
 # define INCREMENT_ALLOC_CLIQUES 10000 /*1000*/
 # define INCREMENT_ALLOC_TAILLE_CLIQUES  (5*INCREMENT_ALLOC_CLIQUES)
-# define NOMBRE_MAX_DE_CLIQUES 100000 /*50000*/
-# define DIVISEUR_POUR_NOMBRE_MAX_DE_CLIQUES 4.
-# define MAX_LOCAL_EDGES 20000
+# define NOMBRE_MAX_DE_CLIQUES  150000 /*100000*/ /*50000*/
+# define MAX_LOCAL_EDGES  30000 /*20000*/
+
+# define TAILLE_MAX_CLIQUE  20 /*15*/ /* Mettre tres grand si pas de limite */  
 
 void PNE_AllocCliques( PROBLEME_PNE * );
 void PNE_ReallocNbCliques( PROBLEME_PNE * );
 void PNE_ReallocTailleCliques( PROBLEME_PNE * );
 void PNE_MaxClique( PROBLEME_PNE * , int * , int * , int * , int , int * , int , int * , int , int * , char * );
-										
+
 /*----------------------------------------------------------------------------*/
 
 void PNE_AllocCliques( PROBLEME_PNE * Pne )
@@ -237,7 +222,7 @@ void PNE_MaxClique( PROBLEME_PNE * Pne, int * First, int * Adjacent, int * NbEdg
 										int NbElemDansA, int * A, char * LeNoeudEstDansC )
 {
 int i; int j; int n; int k; int Edge; int NbDansC; int * Cbuff; int * Abuff;
-int u; int Maximal; int NbDansA; int EdgeMx;
+int u; int Maximal; int NbDansA; int EdgeMx; 
 
 if (Pne->Cliques != NULL ) {
   if ( Pne->Cliques->Full == OUI_PNE )  {		
@@ -246,7 +231,7 @@ if (Pne->Cliques != NULL ) {
 }
 
 /* Si C est vide on a une clique maximale */
-if ( NbElemDansC == 0 ) {
+if ( NbElemDansC == 0 || NbElemDansK > TAILLE_MAX_CLIQUE ) {
   /* On test si la clique est violee */
   PNE_ArchiverMaxClique( Pne, NbElemDansK, K );	
 	return;
@@ -264,9 +249,9 @@ for ( n = 0 ; n < NbElemDansC ; n++ ) {
 	NbDansC = 0;	
   Edge = First[i];
 	EdgeMx = Edge + NbEdges[i];	
-	while ( Edge < EdgeMx ) {
+	while ( Edge < EdgeMx ) {	
 		if ( LeNoeudEstDansC[Adjacent[Edge]] == OUI_PNE ) { NbDansC++; break; }
-	  Edge++;
+	  Edge++;				
   }
 	if ( NbDansC > Maximal ) {
 	  Maximal = NbDansC;  
@@ -364,9 +349,9 @@ return;
 
 void PNE_CliquesConflictGraph( PROBLEME_PNE * Pne )
 {
-int i; int NombreDeVariablesTrav; int * Adjacent; int * Next; int * First;
+int i; int NombreDeVariables; int * Adjacent; int * Next; int * First;
 CONFLICT_GRAPH * ConflictGraph; int * K; int * C; int * A; int NbElemDansK;
-int NbElemDansC; int NbElemDansA; PROBING_OU_NODE_PRESOLVE * Prb;
+int NbElemDansC; int NbElemDansA; char * NoeudDansLaComposanteEtudiee;
 int NbNoeudsDuGraphe; char * LeNoeudEstDansC; int * PremiereArete; int * NombreAretes;
 int * NoeudAdjacent; char * NoeudDejaExamine; int * NbEdgesParNoeud; int N; int NbN;
 int Node; int Cpt; int * NoeudLocal; int j; int * Pile; int NbAretes; int Nb; int Edge;
@@ -377,14 +362,13 @@ if ( Pne->Controls != NULL ) {
 	}
 }
 
-Prb = Pne->ProbingOuNodePresolve;
 ConflictGraph = Pne->ConflictGraph;
 if ( ConflictGraph == NULL ) return;
 
 if ( ConflictGraph->NbEdges <= ConflictGraph->NbEdgesLast ) return;
 ConflictGraph->NbEdgesLast = ConflictGraph->NbEdges;
 
-NombreDeVariablesTrav = Pne->NombreDeVariablesTrav;
+NombreDeVariables = Pne->NombreDeVariablesTrav;
 NbNoeudsDuGraphe = ConflictGraph->NbNoeudsDuGraphe;
 Adjacent = ConflictGraph->Adjacent;
 Next = ConflictGraph->Next;
@@ -397,7 +381,7 @@ if ( Pne->Cliques != NULL ) {
 	
   Pne->Cliques->NombreDeCliques = 0;
   Pne->Cliques->Full = NON_PNE;
-  for ( i = 0 ; i < 2 * Pne->NombreDeVariablesTrav ; i++ ) Pne->Cliques->NumeroDeCliqueDuNoeud[i] = -1;	
+  for ( i = 0 ; i < 2 * NombreDeVariables ; i++ ) Pne->Cliques->NumeroDeCliqueDuNoeud[i] = -1;	
 }
 
 K = (int *) malloc( NbNoeudsDuGraphe * sizeof( int ) );
@@ -412,19 +396,21 @@ PremiereArete = (int *) malloc( NbNoeudsDuGraphe * sizeof( int ) );
 NombreAretes = (int *) malloc( NbNoeudsDuGraphe * sizeof( int ) );
 NoeudAdjacent = (int *) malloc( ConflictGraph->NbEdges * sizeof( int ) );
 NoeudDejaExamine = (char *) malloc( NbNoeudsDuGraphe * sizeof( char ) );
+NoeudDansLaComposanteEtudiee = (char *) malloc( NbNoeudsDuGraphe * sizeof( char ) );
 
 if ( K == NULL || C == NULL || A == NULL || LeNoeudEstDansC == NULL ||
      Pile == NULL || NbEdgesParNoeud == NULL  || NoeudLocal == NULL ||
 		 PremiereArete == NULL || NombreAretes == NULL || NoeudAdjacent == NULL ||
-		 NoeudDejaExamine == NULL ) {
+		 NoeudDejaExamine == NULL || NoeudDansLaComposanteEtudiee == NULL ) {
   free( K ); free( C ); free( A ); free( LeNoeudEstDansC );
 	free( Pile );	free( NbEdgesParNoeud ); free( NoeudLocal );	free( PremiereArete );
-	free( NombreAretes );	free( NoeudAdjacent ); free( NoeudDejaExamine );
+	free( NombreAretes );	free( NoeudAdjacent ); free( NoeudDejaExamine ); free( NoeudDansLaComposanteEtudiee );
 	return;	
 }
 
 for ( N = 0 ; N < NbNoeudsDuGraphe ; N++ ) {
   NoeudDejaExamine[N] = NON_PNE;
+	NoeudDansLaComposanteEtudiee[N] = NON_PNE;
   NbAretes = 0;
   Edge = First[N];
   while ( Edge >= 0 ) {	
@@ -436,7 +422,7 @@ for ( N = 0 ; N < NbNoeudsDuGraphe ; N++ ) {
 
 for ( N = 0 ; N < NbNoeudsDuGraphe ; N++ ) {
   if ( NoeudDejaExamine[N] == OUI_PNE ) continue;
-	if ( First[N] < 0 ) continue;
+	if ( First[N] < 0 ) continue;	
 	NbN = 0;
 	Cpt = 0;
 	Node = N;
@@ -449,6 +435,8 @@ for ( N = 0 ; N < NbNoeudsDuGraphe ; N++ ) {
 	
   NbN++;
 	NoeudDejaExamine[Node] = OUI_PNE;
+  NoeudDansLaComposanteEtudiee[Node] = OUI_PNE;
+
  /* Construction de la liste des noeuds de la composante connexe */
   Edge = First[Node];
 	DepartEdge:
@@ -471,21 +459,30 @@ for ( N = 0 ; N < NbNoeudsDuGraphe ; N++ ) {
 	GrapheUtile:
 	
 	if ( NbN <= 4 ) continue;
+	
   /* Transfert du graphe utile */
 	NbAretes = 0;
 	for ( j = 0 ; j < NbN ; j++ ) {
-    Node = NoeudLocal[j];
+    Node = NoeudLocal[j];		
 		Nb = 0;
     Edge = First[Node];
 		PremiereArete[Node] = NbAretes;
-    while ( Edge >= 0 ) {
-      NoeudAdjacent[NbAretes] = Adjacent[Edge];
-			NbAretes++;
-			Nb++;
-	    Edge = Next[Edge];
+    while ( Edge >= 0 ) {      
+		  if ( NoeudDansLaComposanteEtudiee[Adjacent[Edge]] == OUI_PNE ) {
+			  /* L'arete doit relier un noeud de la composante connexe */
+        NoeudAdjacent[NbAretes] = Adjacent[Edge];			
+			  NbAretes++;
+			  Nb++;
+      }			
+	    Edge = Next[Edge];						
     }
-		NombreAretes[Node] = Nb;
+		NombreAretes[Node] = Nb;						
 	}
+
+	for ( j = 0 ; j < NbN ; j++ ) {
+	  /* Reinitialisation pour le coup suivant */
+    NoeudDansLaComposanteEtudiee[NoeudLocal[j]] = NON_PNE;
+  }
 	
 	if ( NbAretes <= 3 ) continue;
 	
@@ -527,7 +524,8 @@ free( PremiereArete );
 free( NombreAretes );
 free( NoeudAdjacent );
 free( NoeudDejaExamine );
-  
+free( NoeudDansLaComposanteEtudiee );
+
 if ( Pne->AffichageDesTraces == OUI_PNE ) {
   if ( Pne->Cliques != NULL ) {
     if ( Pne->Cliques->NombreDeCliques > 0 ) {
@@ -536,19 +534,16 @@ if ( Pne->AffichageDesTraces == OUI_PNE ) {
 	}
 }
 
-if ( Pne->Cliques != NULL && 0 ) {
+if ( Pne->Cliques != NULL ) {
   if ( Pne->Cliques->NombreDeCliques > 0 ) {
-	  /* Apres essais je n'ai jamais trouve de cas ou on pouvait transformer en egalites.
-		   Donc inutile d'y passer du temps. */
-    /*PNE_TransformerCliquesEnEgalites( Pne );*/
+	  /* On teste les infaisabilites dans le cas ou toutes les variables d'une clique sont a 0 */
+    PNE_TransformerCliquesEnEgalites( Pne );
 		/*
 		printf("Exit dans cliques determination\n");
 		exit(0);
 		*/
 	}
 }
-
-
 
 return;
 }

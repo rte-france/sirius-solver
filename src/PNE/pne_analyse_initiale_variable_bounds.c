@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Recherche des bornes variables.
@@ -93,7 +77,7 @@ CoeffCont = 0.0;
 
 /* Marquage des variables continues soumises a une borne sup ou inf variable */
 for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
-  if ( SensContrainte[Cnt] != '<' ) continue;
+  if ( SensContrainte[Cnt] != '<' ) continue; 
   if ( NbTerm[Cnt] != 2 ) continue;
 	/* Rq: il faudrait ne pas tester la nullite de BTrav car il y a eu translation
 	   des bornes mais ca marche pas dans les MIR de Marchand-Wolsey */		 
@@ -142,7 +126,7 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 		/* Pour avoir la borne on a besoin du second membre et du coeff. de la variable entiere.
 		   Pour cela on normalise par abs(CoeffCont). On range la variable entiere en premier
 			 pour y acceder plus vite */
-		X = fabs( CoeffCont );
+		X = fabs( CoeffCont );		
 		A[ilDeb]     = CoeffBin / X;
 		Nuvar[ilDeb] = VarBin;
 		A[ilDeb+1]     = CoeffCont / X;

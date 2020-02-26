@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 # ifdef __cplusplus
   extern "C"
 	{
@@ -52,8 +36,10 @@ char * TypeDeCoupe;
 typedef struct{
 char     Type;                /* 'G' gomory, 'L' lift and project, 'K' knapsack, 'M' Mir */
 int     IndexDansCliques;     /* -1 si ce n'est pas une clique */
-int     IndexDansCoupesDeProbing;     /* -1 si ce n'est pas une coupe de probing */
-int     IndexDansContraintesDeBorneVariable;     /* -1 si ce n'est pas une contrainte de borne variable qui vient du variable probing */
+int     IndexDansOddHole;     /* -1 si ce n'est pas un odd hole */
+int     IndexDansCoupesDeProbing; /* -1 si ce n'est pas une coupe de probing */
+int     IndexDansContraintesDeBorneVariable; /* -1 si ce n'est pas une contrainte de borne variable qui vient du variable probing */
+int     IndexDansCoupesContraintesDOrdre; /* -1 si ce n'est pas une contrainte de contrainte d ordre */
 int     IndexDansKNegligees;     /* -1 si ce n'est pas une knapsack negligee */
 int     IndexDansGNegligees;     /* -1 si ce n'est pas une coupe gomry negligee */
 int     NumeroDeLaContrainte; /* C'est le numero de la contrainte qui correspond a la coupe dans le probleme relaxe */
@@ -150,6 +136,48 @@ int IncrementDAllocation;
 } CONFLICT_GRAPH;
 
 typedef struct {
+int NbOddCyclesAllouees;
+int TailleOddCyclesAllouee;
+int NombreDeOddCycles;
+int * First;
+int * NbElements;
+int * Noeud;
+int * SecondMembre;
+/* */
+char * LeOddCycleEstDansLePool; /* OUI_PNE ou NON_PNE */
+/* */
+char Full; /* OUI_PNE ou NON_PNE */
+} ODD_CYCLES;
+
+typedef struct {
+int NbCoupesDeCoutsReduitsAllouees;
+int TailleCoupesDeCoutsReduitsAllouee;
+int NombreDeCoupes;
+int * First;
+int * NbElements;
+double * SecondMembre;
+double * Coefficient;
+int * IndiceDeLaVariable;
+/* */
+char * LaCoupeEstDansLePool; /* OUI_PNE ou NON_PNE */
+/* */
+char Full; /* OUI_PNE ou NON_PNE */
+} COUPES_DE_COUTS_REDUITS;
+
+typedef struct {
+int NbContraintesDOrdreAllouees;
+int TailleContraintesDOrdreAllouee;
+int NombreDeContraintes;
+int * First; /* Toujours 2 elements par contrainte et le second membre est toujours nul */
+double * Coefficient;
+int * IndiceDeLaVariable;
+/* */
+char * LaContrainteEstDansLePool; /* OUI_PNE ou NON_PNE */
+/* */
+char Full; /* OUI_PNE ou NON_PNE */
+} CONTRAINTES_DORDRE;
+
+typedef struct {
 int NbCliquesAllouees;
 int TailleCLiquesAllouee;
 int NombreDeCliques;
@@ -169,6 +197,7 @@ int IndexLibre;
 int NombreDeCoupesDeProbingAlloue;
 int NombreDeCoupesDeProbing;
 double * SecondMembre;
+int * NombreDeModificationsDeLaCoupeDeProbing;
 int * First;
 int * NbElements;
 int TailleCoupesDeProbingAllouee;
@@ -185,6 +214,7 @@ int IndexLibre;
 int NombreDeContraintesDeBorneAlloue;
 int NombreDeContraintesDeBorne;
 double * SecondMembre;
+char * AppliquerUneMargeEventuelle; /* OUI_PNE ou NON_PNE */ 
 int * First;
 int TailleContraintesDeBorneAllouee;
 int * Colonne;
@@ -259,6 +289,16 @@ typedef struct {
 	int RechercherLesCliques; /* OUI_PNE ou NON_PNE */
 } CONTROLS;
 
+/*--------------------------------------------*/
+/* Pour les groupes de variables equivalentes */
+typedef struct {
+  int NombreDeVariablesDuGroupe;
+	int NombreDeVariablesAllouees;
+	int * VariablesDuGroupe;
+} GROUPE;
+
+/*--------------------------------------------*/
+
 typedef struct {
 /* Pour les outils de gestion memoire */
 void * Tas;
@@ -328,6 +368,24 @@ double * UmaxTrav;
 double * UmaxTravSv;
 double * UminTrav;
 double * UminTravSv;
+
+# if BORNES_INF_AUXILIAIRES == OUI_PNE
+  double * XminAuxiliaire;
+# endif
+
+# if FAIRE_DES_COUPES_AVEC_LES_BORNES_INF_MODIFIEES == OUI_PNE
+  double * UminAmeliorePourCoupes;
+# endif
+
+# if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+  double * XminPourLeCalculDeBminBmax;
+  double * XmaxPourLeCalculDeBminBmax;
+# endif
+
+# if UTILISER_UMIN_AMELIORE == OUI_PNE 
+  double * UminAmeliore;
+# endif
+
 double * UmaxEntree;
 double * UminEntree;
 double * LTrav;
@@ -338,6 +396,8 @@ double   CritereAuNoeudRacine;
 double   MxCoutReduitAuNoeudRacineFoisDeltaBornes;
 double * CoutsReduitsAuNoeudRacine;
 int * PositionDeLaVariableAuNoeudRacine;
+double * UminALaResolutionDuNoeudRacine;
+double * UmaxALaResolutionDuNoeudRacine;
 
 /*
 int NombreDeVariablesHorsBase;
@@ -459,6 +519,23 @@ int   * IndiceDeLaVariable_CG;
 double * ValeurLocale; /* Dimension nombre de variable et dont la validite n'est garantie que localement */
 int    * IndiceLocal; /* Dimension nombre de variable et dont la validite n'est garantie que localement */
 
+double * FlottantBanaliseEnNombreDeVariables_1; 
+double * FlottantBanaliseEnNombreDeVariables_2; 
+double * FlottantBanaliseEnNombreDeVariables_3;
+int *    EntierBanaliseEnNombreDeVariables_1; 
+int *    EntierBanaliseEnNombreDeVariables_2; 
+int *    EntierBanaliseEnNombreDeVariables_3; 
+char *   CharBanaliseEnNombreDeVariables_1; 
+char *   CharBanaliseEnNombreDeVariables_2; 
+char *   CharBanaliseEnNombreDeVariables_3;
+int *    EntierBanaliseEnNombreDeContraintes_1;
+char *   CharBanaliseEnNombreDeContraintes_1; 
+
+/* Pour le controle de la colinearite des coupes */
+double * ValeurDeCoeffCoupe; 
+int    * IndiceDeCoeffCoupe; 
+/*                     */
+
 char * ContrainteKnapsack;
 
 int *  CntDeBorneSupVariable; /* Pour chaque variable, numero de la contrainte qui decrit la borne variable */
@@ -470,6 +547,7 @@ int    NbEvitementsDeCalculsMIRmarchandWolsey;
 int    NbEchecsConsecutifsDeCalculsMIRmarchandWolsey;
 int    ProfondeurMirMarchandWolseTrouvees;
 int *  FoisCntSuccesMirMarchandWolseyTrouvees; 
+int *  TesterMirMarchandWolseySurLaContrainte; 
 
 /*-----------------------------------*/
 
@@ -498,12 +576,21 @@ int PremierIndexLibre; /* Premier index que l'on peut utiliser dans la matrice
 PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve;
 CONFLICT_GRAPH * ConflictGraph;
 CLIQUES * Cliques;
+ODD_CYCLES * OddCycles;
 COUPES_DE_PROBING * CoupesDeProbing;
 CONTRAITES_DE_BORNE_VARIABLE * ContraintesDeBorneVariable;
 time_t HeureDeCalendrierDebutCliquesEtProbing;
 time_t HeureDeCalendrierCourantCliquesEtProbing;
 double TempsEcoule;
 char ArreterCliquesEtProbing;
+
+/*-------------------------------------------------------------------------*/
+
+COUPES_DE_COUTS_REDUITS * CoupesDeCoutsReduits;
+
+/*-------------------------------------------------------------------------*/
+
+CONTRAINTES_DORDRE * ContraintesDOrdre;
 
 /*-------------------------------------------------------------------------*/
 
@@ -591,6 +678,51 @@ jmp_buf Env;
 /*-------------------------------------------------------------------------*/
 
 double Critere;
+
+/*-------------------------------------------------------------------------*/
+
+# if PRISE_EN_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTS == OUI_PNE
+  /* Dans le cas de presences de variables entieres */
+	char LesGroupesDeVariablesEquivalentesSontValides; /* OUI_PNE ou NON_PNE */
+  int NombreDeGroupesDeVariablesEquivalentes;
+  int * NumeroDeGroupeDeVariablesEquivalentes;
+	int NombreDeGroupesAlloues;
+  GROUPE ** Groupe;
+# endif
+
+/*-------------------------------------------------------------------------*/
+
+# if RELATION_DORDRE_DANS_LE_PROBING == OUI_PNE
+  int NombreDeGroupesDeVariablesEquivalentes;
+  int * NumeroDeGroupeDeVariablesEquivalentes;
+	int NombreDeGroupesAlloues;
+  GROUPE ** Groupe;
+# endif
+
+/*-------------------------------------------------------------------------*/
+
+# if TENIR_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTES_POUR_LE_BRANCHING == OUI_PNE
+  int NombreDeGroupesDeVariablesEquivalentes;
+  int * NumeroDeGroupeDeVariablesEquivalentes;
+	int NombreDeGroupesAlloues;
+  GROUPE ** Groupe;
+# endif
+
+/*---------------- Contraintes pour faire de coupes de sac a dos -----------*/
+
+char CreerContraintesPourK;
+int NbContraintesAlloueesPourK;
+int TailleAlloueesPourK;
+int NbContraintesPourK;
+int * MdebPourK;
+int * NbTermPourK;
+double * BPourK;
+double * APourK;
+int * NuvarPourK;
+
+/*-------------------------------------------------------------------------*/
+double A1; /* Pour les tirages aleatoires */
+/*-------------------------------------------------------------------------*/
 
 } PROBLEME_PNE;
  

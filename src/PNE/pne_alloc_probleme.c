@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Allocations et liberation du probleme 
@@ -61,7 +45,7 @@ Pne->ProblemeSpxDuNoeudRacine = NULL;
 Pne->MatriceDesContraintesAuNoeudRacine = NULL;
 
 NbVarAlloc = NombreDeVariablesE   + INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_VARIABLES_PNE;
-NbCntAlloc = NombreDeContraintesE + INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_PNE;  
+NbCntAlloc = NombreDeContraintesE + INCREMENT_DALLOCATION_POUR_LE_NOMBRE_DE_CONTRAINTES_PNE;
 
 #if VERBOSE_PNE
   printf("Allocations memoire du PNE:\n");
@@ -204,7 +188,7 @@ if (
      Pne->UminTrav                           == NULL ||
      Pne->UminTravSv                         == NULL ||
      Pne->UmaxEntree                         == NULL ||
-     Pne->UminEntree                         == NULL ||		 		 
+     Pne->UminEntree                         == NULL ||
      Pne->LTrav                              == NULL ||
      Pne->CoutsReduits                       == NULL ||
      Pne->BTrav                              == NULL ||
@@ -234,6 +218,11 @@ if (
   longjmp( Pne->Env , Pne->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
 }
 
+# if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+  Pne->XminPourLeCalculDeBminBmax = NULL;
+  Pne->XmaxPourLeCalculDeBminBmax = NULL;
+# endif		 
+
 Pne->ContrainteActivable = NULL;
  
 Pne->NombreDeCoupesCalculees = 0;
@@ -241,11 +230,27 @@ Pne->Coefficient_CG         = NULL;
 Pne->IndiceDeLaVariable_CG  = NULL;
 Pne->ValeurLocale = NULL;
 Pne->IndiceLocal  = NULL;
+
+Pne->FlottantBanaliseEnNombreDeVariables_1 = NULL;
+Pne->FlottantBanaliseEnNombreDeVariables_2 = NULL;
+Pne->FlottantBanaliseEnNombreDeVariables_3 = NULL;
+Pne->EntierBanaliseEnNombreDeVariables_1 = NULL;
+Pne->EntierBanaliseEnNombreDeVariables_2 = NULL;
+Pne->EntierBanaliseEnNombreDeVariables_3 = NULL;
+Pne->CharBanaliseEnNombreDeVariables_1 = NULL;
+Pne->CharBanaliseEnNombreDeVariables_2 = NULL;
+Pne->CharBanaliseEnNombreDeVariables_3 = NULL;
+Pne->EntierBanaliseEnNombreDeContraintes_1 = NULL;
+Pne->CharBanaliseEnNombreDeContraintes_1 = NULL;
+
+Pne->ValeurDeCoeffCoupe = NULL;
+Pne->IndiceDeCoeffCoupe  = NULL;
 Pne->ContrainteKnapsack = NULL;
 Pne->CntDeBorneSupVariable = NULL;
 Pne->CntDeBorneInfVariable = NULL;
 Pne->ContrainteMixte = NULL;
 Pne->FoisCntSuccesMirMarchandWolseyTrouvees = NULL;
+Pne->TesterMirMarchandWolseySurLaContrainte = NULL;
 
 Pne->CoupesCalculees = NULL;
 Pne->Coupes.B = NULL;
@@ -260,6 +265,20 @@ Pne->Coupes.TypeDeCoupe = NULL;
 
 Pne->CoutsReduitsAuNoeudRacine = NULL;
 Pne->PositionDeLaVariableAuNoeudRacine = NULL;
+Pne->UminALaResolutionDuNoeudRacine = NULL;
+Pne->UmaxALaResolutionDuNoeudRacine = NULL;
+
+# if FAIRE_DES_COUPES_AVEC_LES_BORNES_INF_MODIFIEES == OUI_PNE
+  Pne->UminAmeliorePourCoupes = NULL;
+# endif
+
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  Pne->UminAmeliore = NULL;
+# endif
+
+# if BORNES_INF_AUXILIAIRES == OUI_PNE
+  Pne->XminAuxiliaire = NULL;
+# endif
 /*
 Pne->NumeroDeVariableCoutReduit = NULL;
 Pne->CoutsReduitsAuNoeudRacineFoisDeltaBornes = NULL;
@@ -268,10 +287,13 @@ Pne->CoutsReduitsAuNoeudRacineFoisDeltaBornes = NULL;
 Pne->ProbingOuNodePresolve = NULL;
 Pne->ConflictGraph = NULL;
 Pne->Cliques = NULL;
+Pne->OddCycles = NULL;
 Pne->CoupesDeProbing = NULL;
 Pne->ContraintesDeBorneVariable = NULL;
 Pne->CoupesKNegligees = NULL;
 Pne->CoupesGNegligees = NULL;
+Pne->CoupesDeCoutsReduits = NULL;
+Pne->ContraintesDOrdre = NULL;
 
 /* Infos qui seront utilisees par le postsolve */
 Pne->NombreDOperationsDePresolve = 0; 
@@ -313,7 +335,36 @@ Pne->ContrainteSupprimee = NULL;
 
 Pne->NombreDeContraintesInactives = 0;
 Pne->NumeroDesContraintesInactives = NULL;
-	 
+
+# if PRISE_EN_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTS == OUI_PNE
+	Pne->LesGroupesDeVariablesEquivalentesSontValides = NON_PNE;		
+  Pne->NombreDeGroupesDeVariablesEquivalentes = 0;
+  Pne->NumeroDeGroupeDeVariablesEquivalentes = NULL;
+  Pne->Groupe = NULL;
+# endif
+
+# if RELATION_DORDRE_DANS_LE_PROBING == OUI_PNE
+  Pne->NombreDeGroupesDeVariablesEquivalentes = 0;
+  Pne->NumeroDeGroupeDeVariablesEquivalentes = NULL;
+  Pne->Groupe = NULL;
+# endif
+
+# if TENIR_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTES_POUR_LE_BRANCHING == OUI_PNE
+  Pne->NombreDeGroupesDeVariablesEquivalentes = 0;
+  Pne->NumeroDeGroupeDeVariablesEquivalentes = NULL;
+  Pne->Groupe = NULL;
+# endif
+
+Pne->CreerContraintesPourK = OUI_PNE;
+Pne->MdebPourK = NULL;
+Pne->NbTermPourK = NULL;
+Pne->BPourK = NULL;
+Pne->APourK = NULL;
+Pne->NuvarPourK = NULL;
+Pne->NbContraintesAlloueesPourK = 0;
+Pne->TailleAlloueesPourK = 0;
+Pne->NbContraintesPourK = 0;
+
 return;
 }
 
@@ -641,9 +692,24 @@ free( Pne->S2Trav );
 free( Pne->UmaxTrav );
 free( Pne->UmaxTravSv );
 free( Pne->UminTrav );
+
+# if BORNES_INF_AUXILIAIRES == OUI_PNE
+  free( Pne->XminAuxiliaire );
+# endif
+
+# if FAIRE_DES_COUPES_AVEC_LES_BORNES_INF_MODIFIEES == OUI_PNE
+  free( Pne->UminAmeliorePourCoupes );
+# endif
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  free( Pne->UminAmeliore );
+# endif
 free( Pne->UminTravSv );
 free( Pne->UmaxEntree );
 free( Pne->UminEntree );
+# if BORNES_SPECIFIQUES_POUR_CALCUL_BMIN_BMAX == OUI_PNE
+  free( Pne->XminPourLeCalculDeBminBmax );
+  free( Pne->XmaxPourLeCalculDeBminBmax );
+# endif
 free( Pne->LTrav );
 free( Pne->CoutsReduits );
 free( Pne->BTrav );  
@@ -672,11 +738,27 @@ free( Pne->Coefficient_CG );
 free( Pne->IndiceDeLaVariable_CG );
 free( Pne->ValeurLocale );
 free( Pne->IndiceLocal );
+
+free( Pne->FlottantBanaliseEnNombreDeVariables_1 );
+free( Pne->FlottantBanaliseEnNombreDeVariables_2 );
+free( Pne->FlottantBanaliseEnNombreDeVariables_3 );
+free( Pne->EntierBanaliseEnNombreDeVariables_1 );
+free( Pne->EntierBanaliseEnNombreDeVariables_2 );
+free( Pne->EntierBanaliseEnNombreDeVariables_3 );
+free( Pne->CharBanaliseEnNombreDeVariables_1 );
+free( Pne->CharBanaliseEnNombreDeVariables_2 );
+free( Pne->CharBanaliseEnNombreDeVariables_3 );
+free( Pne->EntierBanaliseEnNombreDeContraintes_1 );
+free( Pne->CharBanaliseEnNombreDeContraintes_1 );
+
+free( Pne->ValeurDeCoeffCoupe );
+free( Pne->IndiceDeCoeffCoupe );
 free( Pne->ContrainteKnapsack );
 free( Pne->CntDeBorneSupVariable );
 free( Pne->CntDeBorneInfVariable );
 free( Pne->ContrainteMixte );
 free( Pne->FoisCntSuccesMirMarchandWolseyTrouvees );
+free( Pne->TesterMirMarchandWolseySurLaContrainte );
 
 free( Pne->UOpt );
 
@@ -702,8 +784,36 @@ if ( Pne->Cliques != NULL ) {
   free( Pne->Cliques );
 }
 
+if ( Pne->CoupesDeCoutsReduits != NULL ) {
+  free( Pne->CoupesDeCoutsReduits->First );
+  free( Pne->CoupesDeCoutsReduits->NbElements );
+  free( Pne->CoupesDeCoutsReduits->SecondMembre );
+  free( Pne->CoupesDeCoutsReduits->Coefficient );
+  free( Pne->CoupesDeCoutsReduits->IndiceDeLaVariable );
+  free( Pne->CoupesDeCoutsReduits->LaCoupeEstDansLePool );	
+  free( Pne->CoupesDeCoutsReduits );
+}
+
+if ( Pne->ContraintesDOrdre != NULL ) {
+  free( Pne->ContraintesDOrdre->First );
+  free( Pne->ContraintesDOrdre->Coefficient );
+  free( Pne->ContraintesDOrdre->IndiceDeLaVariable );
+  free( Pne->ContraintesDOrdre->LaContrainteEstDansLePool );	
+  free( Pne->ContraintesDOrdre );
+}
+
+if ( Pne->OddCycles != NULL ) {
+  free( Pne->OddCycles->First );
+  free( Pne->OddCycles->NbElements );
+  free( Pne->OddCycles->Noeud );
+  free( Pne->OddCycles->SecondMembre );
+  free( Pne->OddCycles->LeOddCycleEstDansLePool );
+  free( Pne->OddCycles );
+}
+
 if ( Pne->CoupesDeProbing != NULL ) {
   free( Pne->CoupesDeProbing->SecondMembre );
+  free( Pne->CoupesDeProbing->NombreDeModificationsDeLaCoupeDeProbing );
   free( Pne->CoupesDeProbing->First );
   free( Pne->CoupesDeProbing->NbElements );
   free( Pne->CoupesDeProbing->Colonne );
@@ -718,6 +828,7 @@ if ( Pne->ContraintesDeBorneVariable != NULL ) {
   free( Pne->ContraintesDeBorneVariable->Colonne );
   free( Pne->ContraintesDeBorneVariable->Coefficient );
   free( Pne->ContraintesDeBorneVariable->LaContrainteDeBorneVariableEstDansLePool );
+  free( Pne->ContraintesDeBorneVariable->AppliquerUneMargeEventuelle );
   free( Pne->ContraintesDeBorneVariable );
 }
 
@@ -767,6 +878,8 @@ if( Pne->NombreDeCoupesCalculees > 0 ) {
 
 free( Pne->CoutsReduitsAuNoeudRacine );
 free( Pne->PositionDeLaVariableAuNoeudRacine );
+free( Pne->UminALaResolutionDuNoeudRacine );
+free( Pne->UmaxALaResolutionDuNoeudRacine );
 /*
 free( Pne->NumeroDeVariableCoutReduit );
 free( Pne->CoutsReduitsAuNoeudRacineFoisDeltaBornes );
@@ -802,9 +915,26 @@ free( Pne->NumeroDeLaForcingConstraint );
 free( Pne->ContrainteConservee );
 free( Pne->ContrainteSupprimee );
 
-free( Pne->NumeroDesContraintesInactives );
+free( Pne->NumeroDesContraintesInactives );  
 
 free( Pne->Controls );
+
+# if PRISE_EN_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTS == OUI_PNE || RELATION_DORDRE_DANS_LE_PROBING == OUI_PNE || TENIR_COMPTE_DES_GROUPES_DE_VARIABLES_EQUIVALENTES_POUR_LE_BRANCHING == OUI_PNE 
+  free( Pne->NumeroDeGroupeDeVariablesEquivalentes );
+  if ( Pne->Groupe != NULL ) {
+    for ( i = 0 ; i < Pne->NombreDeGroupesDeVariablesEquivalentes ; i++ ) {
+	    free( Pne->Groupe[i]->VariablesDuGroupe );
+	    free( Pne->Groupe[i] );
+	  }
+    free( Pne->Groupe );		
+  }
+# endif
+
+free( Pne->MdebPourK );
+free( Pne->NbTermPourK );
+free( Pne->BPourK );
+free( Pne->APourK );
+free( Pne->NuvarPourK );
 
 free( Pne );
 

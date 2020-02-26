@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Heuristique, on fixe des variables peu fractionnaires et
@@ -57,8 +41,10 @@ BB * Bb; CONTROLS * ControlsDuProblemeEnCours; char ProblemeTropGros;
 *PasDeSolutionEntiereDansSousArbre = NON_PNE;
   
 return;
-  
+
 if ( Pne->PremFrac < 0 ) return;
+
+if ( Pne->UTrav[Pne->PremFrac] < 0.9 && Pne->UTrav[Pne->PremFrac] > 0.1 ) return;
 
 ControlsDuProblemeEnCours = Pne->Controls;
 if ( ControlsDuProblemeEnCours != NULL ) {
@@ -69,8 +55,8 @@ if ( ControlsDuProblemeEnCours != NULL ) {
 /* Test */
 if ( Pne->YaUneSolutionEntiere == OUI_PNE ) return;
 Bb = (BB *) Pne->ProblemeBbDuSolveur;
-if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > 0 ) return;
-if ( Pne->NombreDeVariablesAValeurFractionnaire > 50 ) {  
+if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > 0 && 0 ) return;
+if ( Pne->NombreDeVariablesAValeurFractionnaire > 50 && 0 ) {  
   if ( Pne->NombreDeVariablesAValeurFractionnaire > 0.1 * Pne->NombreDeVariablesEntieresNonFixes ) {
 	  return;
 	}
@@ -79,7 +65,7 @@ if ( Pne->NombreDeVariablesAValeurFractionnaire > 50 ) {
 
 /* Si le cout du noeud relaxe est trop grand on a toutes les chances de trouver une
    solution trop chere */
-if ( Pne->Critere > 0.9999 * Pne->CoutOpt && Pne->Critere > Pne->CoutOpt - 10 ) {
+if ( Pne->Critere > 0.9999 * Pne->CoutOpt && Pne->Critere > Pne->CoutOpt - 10 && 0 ) {
   printf(" critere pas assez en dessous de cout opt pour lancer une heuristique\n");
   return;
 }
@@ -100,7 +86,7 @@ if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > 2 && 0 ) return;
 
 /* Au dela d'une certaine profondeur on ne fait les heuristiques qu'a une frequence pas trop
    grande. La profondeur du noeud racine est 0 */
-if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > 1 ) {
+if ( Bb->NoeudEnExamen->ProfondeurDuNoeud > 1 && 0 ) {
   /* NombreDeProblemesResolus est egal au nombre de noeuds resolus */
   if ( Bb->NombreDeProblemesResolus % CYCLE_HEURISTIQUES != 0 ) return;
 }
@@ -136,7 +122,7 @@ if ( Pne->StopHeuristiqueFixation == NON_PNE && Pne->YaUneSolutionEntiere == NON
 	  }	
   }
   if ( Pne->FaireHeuristiqueFixation == OUI_PNE ) {	
-		/*printf("PNE_HeuristiqueVariablesEntieresFixees:\n");*/
+		printf("PNE_HeuristiqueVariablesEntieresFixees:\n");
     ProblemeTropGros = PNE_HeuristiqueVariablesEntieresFixees( Pne );
     /*if ( ProblemeTropGros == NON_PNE ) return;*/     		
 		if ( Pne->YaUneSolutionEntiere == OUI_PNE ) return;

@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: Appele par le branch and bound (ou branch and cut) pour
@@ -122,12 +106,30 @@ NumeroDeLaVariableModifiee = Noeud->NumeroDeLaVariableModifiee;
 TypeDeBorneModifiee  = Noeud->TypeDeBorneModifiee;
 NouvelleValeurDeBorne = Noeud->NouvelleValeurDeBorne;
 
+/* Ne concerne que les variables entieres */
 for( i = 0 ; i < Noeud->NombreDeBornesModifiees ; i++ ) {
-	if ( TypeDeBorneModifiee[i] == BORNE_INF ) {		
-	  UminTrav[NumeroDeLaVariableModifiee[i]] = NouvelleValeurDeBorne[i];
+	if ( TypeDeBorneModifiee[i] == BORNE_INF ) {
+	  /* On verifie d'abord les eventuelles incompatibilites */
+		if ( NouvelleValeurDeBorne[i] > UmaxTrav[NumeroDeLaVariableModifiee[i]] ) {
+		  /* Pas de solution */
+		  /*printf("Probleme relaxe: pas de solution des le depart\n");*/
+      *Faisabilite = NON_PNE ;
+      goto Fin;		  
+		}
+		if ( NouvelleValeurDeBorne[i] > UminTrav[NumeroDeLaVariableModifiee[i]] ) {
+	    UminTrav[NumeroDeLaVariableModifiee[i]] = NouvelleValeurDeBorne[i];
+		}
 	}
 	else if ( TypeDeBorneModifiee[i] == BORNE_SUP ) {
-	  UmaxTrav[NumeroDeLaVariableModifiee[i]] = NouvelleValeurDeBorne[i];
+	  if ( NouvelleValeurDeBorne[i] < UminTrav[NumeroDeLaVariableModifiee[i]] ) {
+		  /* Pas de solution */
+		  /*printf("Probleme relaxe: pas de solution des le depart\n");*/
+      *Faisabilite = NON_PNE ;
+      goto Fin;		 
+    }	
+	  if ( NouvelleValeurDeBorne[i] < UmaxTrav[NumeroDeLaVariableModifiee[i]] ) {
+	    UmaxTrav[NumeroDeLaVariableModifiee[i]] = NouvelleValeurDeBorne[i];
+		}
 	}
 	else {
 	  if ( Pne->AffichageDesTraces == OUI_PNE ) {
@@ -144,7 +146,8 @@ for ( i = 0 ; i < Pne->NombreDeVariablesTrav  ; i++ ) {
     }
   }
   else if (  Pne->TypeDeBorneTrav[i] == VARIABLE_NON_BORNEE ) {
-    if ( Pne->UmaxTrav[i] - Pne->UminTrav[i] < PLAGE_REDUCED_COST_FIXING ) { 
+    if ( Pne->UmaxTrav[i] - Pne->UminTrav[i] < PLAGE_REDUCED_COST_FIXING ) {
+		  /* En fait c'est inoperant puisqu'on ne remonte pas les bornes inf */
       Pne->TypeDeBorneTrav[i] = VARIABLE_BORNEE_DES_DEUX_COTES;
     }
     else if ( Pne->UminTrav[i] > -PLAGE_REDUCED_COST_FIXING ) {
@@ -262,13 +265,20 @@ else if ( Pne->SolveurPourLeProblemeRelaxe == SIMPLEXE ) {
 		/* On essaie de fixer des variables entieres */
     if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {
       PNE_FixationDesVariablesEntieresSurCritere( Pne );			
-		}		
+		}
+
+/*
+double Granularite;
+PNE_GranulariteDuCout( Pne , &Granularite );
+PNE_GranulariteDesContraintes( Pne );
+*/
+
     /* Resolution du probleme par le simplexe dual */			
 		PNE_SolvePbRlxSpxDual( Pne, PremiereResolutionAuNoeudRacine, *CoutDeLaMeilleureSolutionEntiere,
 		                       *UtiliserCoutDeLaMeilleureSolutionEntiere, *BaseFournie, PositionDeLaVariable,
 													 NbVarDeBaseComplementaires, ComplementDeLaBase, Faisabilite );																					
 													 
-		if ( *Faisabilite == OUI_PNE ) {					
+		if ( *Faisabilite == OUI_PNE ) {		
       PNE_CalculerLaValeurDuCritere( Pne );			
       *Critere = Pne->Critere;						
       if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {
@@ -277,11 +287,11 @@ else if ( Pne->SolveurPourLeProblemeRelaxe == SIMPLEXE ) {
 				}
 			}			
 	  }
-
+		
     if ( Pne->YaDesVariablesEntieres == OUI_PNE ) {
       if ( *Faisabilite == OUI_PNE ) {
         if ( Bb != NULL ) {
-				  if ( Bb->NoeudEnExamen == Bb->NoeudRacine ) {
+				  if ( Bb->NoeudEnExamen == Bb->NoeudRacine && ChoisirLaVariableAInstancier == OUI_PNE ) {
             PNE_ArchivagesPourReducedCostFixingAuNoeudRacine( Pne, PositionDeLaVariable, Pne->CoutsReduits, Pne->Critere );
 					}
 				}
@@ -289,8 +299,8 @@ else if ( Pne->SolveurPourLeProblemeRelaxe == SIMPLEXE ) {
 		}		
 		
     /* Reduced cost fixing */		
-    if ( *Faisabilite == OUI_PNE && Pne->YaUneSolutionEntiere == OUI_PNE ) {
-      RelancerUnSimplexe = PNE_ReducedCostFixing( Pne, PositionDeLaVariable );
+    if ( *Faisabilite == OUI_PNE && Pne->YaUneSolutionEntiere == OUI_PNE ) {		
+      RelancerUnSimplexe = PNE_ReducedCostFixing( Pne, PositionDeLaVariable );						
       if ( RelancerUnSimplexe == OUI_PNE ) {
         #if VERBOSE_PNE
           printf(" ReducedCostFixing : OnAFixeDesVariablesEntieres\n");
@@ -299,7 +309,7 @@ else if ( Pne->SolveurPourLeProblemeRelaxe == SIMPLEXE ) {
         *BaseFournie = OUI_SPX;	
 	      goto SimplexeDual;	
       }        
-    }      
+    }				
   }
 	
 }
@@ -314,6 +324,8 @@ if ( *Faisabilite == OUI_PNE ) {
 	Pne->FaireDuStrongBranching = OUI_PNE;
 	
   PNE_DeterminerLesVariablesFractionnaires( Pne, PositionDeLaVariable );
+	/* Certaines variables on pu etre ajustees dans PNE_DeterminerLesVariablesFractionnaires */
+  *Critere = Pne->Critere;
 	
   /* En test: clonage du simplexe au noeud racine pour le reactiver de temps en temps */
 	/* S'il s'agit d'un probleme a variables entieres */
@@ -368,7 +380,7 @@ if ( *Faisabilite == OUI_PNE ) {
 	        ChoisirLaVariableAInstancier        
                         );
     
-  if( Pne->CestTermine == OUI_PNE ) {
+  if( Pne->CestTermine == OUI_PNE ) {	
     #if VERBOSE_PNE
       printf(" Probleme relaxe: on a trouve une solution entiere \n");
     #endif

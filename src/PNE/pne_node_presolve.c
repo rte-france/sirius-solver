@@ -1,19 +1,3 @@
-/*
-** Copyright 2007-2018 RTE
-** Author: Robert Gonzalez
-**
-** This file is part of Sirius_Solver.
-** This program and the accompanying materials are made available under the
-** terms of the Eclipse Public License 2.0 which is available at
-** http://www.eclipse.org/legal/epl-2.0.
-**
-** This Source Code may also be made available under the following Secondary
-** Licenses when the conditions for such availability set forth in the Eclipse
-** Public License, v. 2.0 are satisfied: GNU General Public License, version 3
-** or later, which is available at <http://www.gnu.org/licenses/>.
-**
-** SPDX-License-Identifier: EPL-2.0 OR GPL-3.0
-*/
 /***********************************************************************
 
    FONCTION: On etudie les domaines de variation des variables entieres
@@ -38,17 +22,26 @@
 
 # define TRACES 0
 
+# define MARGE_POUR_RELAXATION 1.e-8 
+
 /*----------------------------------------------------------------------------*/
 
 void PNE_NodePresolve( PROBLEME_PNE * Pne, int * Faisabilite )   
 {
-int Var; double * Umin; double * Umax; int NombreDeVariables; double Ai;
-int il; double * U; int NombreDeContraintes; double * UminSv; double * UmaxSv;
-char * BorneInfConnue; double * ValeurDeBorneInf; double * Bmin; double * Bmax;
-int * NumeroDesVariablesFixees; int i; char CodeRet; BB * Bb; NOEUD * Noeud;
-char * T; int NombreDeBornesModifiees; int * NumeroDeLaVariableModifiee; char Mode;
-char * TypeDeBorneModifiee; double * NouvelleValeurDeBorne; CONFLICT_GRAPH * ConflictGraph;
-PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve; char * ContrainteActivable;
+int Var; double * Umin; double * Umax; int NombreDeVariables; double Ai; int * TypeDeBorne;
+int il; double * U; int NombreDeContraintes; double * UminSv; double * UmaxSv; int * TypeDeBorneSv;
+char * BorneInfConnue; double * ValeurDeBorneInf; double * Bmin; double * Bmax; int * NumeroDesVariablesFixees;
+int i; char CodeRet; BB * Bb; NOEUD * Noeud; char * T; int NombreDeBornesModifiees; char CntActiv;
+int * NumeroDeLaVariableModifiee; char Mode; char * TypeDeBorneModifiee; double * NouvelleValeurDeBorne;
+CONFLICT_GRAPH * ConflictGraph; PROBING_OU_NODE_PRESOLVE * ProbingOuNodePresolve; char * ContrainteActivable; 
+double * ValeurDeBorneSup; char * BorneSupConnue; int * TypeDeVariable; int * NumeroDesVariablesNonFixes;
+double * ValeurDeUminARestaurer; double Marge; char * BminValide; char * BmaxValide; char * SensContrainte; double * B; int Cnt;
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  double * UminAmeliore;
+# endif
+# if FAIRE_DES_COUPES_AVEC_LES_BORNES_INF_MODIFIEES == OUI_PNE
+  double * UminAmeliorePourCoupes;
+# endif
 
 Bb = Pne->ProblemeBbDuSolveur; 
 Noeud = Bb->NoeudEnExamen;
@@ -56,7 +49,7 @@ Noeud = Bb->NoeudEnExamen;
 if ( Noeud->ProfondeurDuNoeud < PROFONDEUR_MIN_POUR_NODE_PRESOLVE && Noeud->ProfondeurDuNoeud > 1 ) return;
 
 if ( Noeud->ProfondeurDuNoeud % CYCLE_NODE_PRESOLVE != 0 ) return;
-    
+      
 /*printf("PNE_NodePresolve \n");*/
 
 /* Dans la suite: node presolve simplifie */
@@ -68,6 +61,18 @@ NombreDeVariables = Pne->NombreDeVariablesTrav;
 Umin = Pne->UminTrav;
 Umax = Pne->UmaxTrav;
 U = Pne->UTrav;
+TypeDeVariable = Pne->TypeDeVariableTrav;
+TypeDeBorne = Pne->TypeDeBorneTrav;
+
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  UminAmeliore = Pne->UminAmeliore;
+# endif
+
+# if FAIRE_DES_COUPES_AVEC_LES_BORNES_INF_MODIFIEES == OUI_PNE
+  UminAmeliorePourCoupes = Pne->UminAmeliorePourCoupes;
+# endif
+
+NumeroDesVariablesNonFixes = Pne->NumeroDesVariablesNonFixes;
 
 Mode = PRESOLVE_SIMPLIFIE_POUR_NODE_PRESOLVE;
 
@@ -85,6 +90,8 @@ ProbingOuNodePresolve->NbContraintesModifiees = 0;
 
 BorneInfConnue = ProbingOuNodePresolve->BorneInfConnue;
 ValeurDeBorneInf = ProbingOuNodePresolve->ValeurDeBorneInf;
+BorneSupConnue = ProbingOuNodePresolve->BorneSupConnue;
+ValeurDeBorneSup = ProbingOuNodePresolve->ValeurDeBorneSup;
 
 Bmin = ProbingOuNodePresolve->Bmin;
 Bmax = ProbingOuNodePresolve->Bmax;
@@ -99,11 +106,24 @@ ContrainteActivable = (char *) malloc( NombreDeContraintes * sizeof( char ) );
 if ( ContrainteActivable == NULL ) return;
 memcpy( (char *) ContrainteActivable, (char *) Pne->ContrainteActivable, NombreDeContraintes * sizeof( char ) );
 
+ValeurDeUminARestaurer = (double *) malloc( NombreDeVariables * sizeof( double ) );
+if ( ValeurDeUminARestaurer == NULL ) {
+  free( ContrainteActivable );
+  return;
+}
+memcpy( (char *) ValeurDeUminARestaurer, (char *) Umin, NombreDeVariables * sizeof( double ) );
+
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  for ( Var = 0 ; Var < NombreDeVariables; Var++ ) {
+    if ( UminAmeliore[Var] != VALEUR_NON_INITIALISEE ) Umin[Var] = UminAmeliore[Var];
+  }
+# endif
+
 PNE_InitBorneInfBorneSupDesVariables( Pne );
 																	
 /* Calcul min et max des contraintes */
-/* Au noeud racine on part "from scratch" et on archive le resultat, il faut le faire a chaque passage car on a pu fixer des bornes */
 if ( Bb->NoeudEnExamen == Bb->NoeudRacine ) {
+  /* Au noeud racine on part "from scratch" et on archive le resultat */
   PNE_CalculMinEtMaxDesContraintes( Pne, Faisabilite );
   if ( *Faisabilite == NON_PNE ) {	
  	  # if TRACES == 1
@@ -117,7 +137,7 @@ if ( Bb->NoeudEnExamen == Bb->NoeudRacine ) {
 }
 else {
   /* Aux autres noeuds, on part des valeurs au noeud racine et on tient compte des instanciations
-     et des nouvelles bornes */
+     et des nouvelles bornes. Attention: peut modifier Umin et Umax de certaines variables entieres */
   PNE_NodePresolveInitBornesDesContraintes( Pne, Faisabilite );
   if ( *Faisabilite == NON_PNE ) {	
  	  # if TRACES == 1
@@ -137,9 +157,16 @@ if ( *Faisabilite == NON_PNE ) {
   # endif	
   goto FreeMemoire;
 }
-if ( ProbingOuNodePresolve->NombreDeVariablesFixees <= 0 ) goto FreeMemoire;
 
-if ( Bb->NoeudEnExamen == Bb->NoeudRacine ) goto ModifsBornesAuNoeudRacine;	
+if ( Bb->NoeudEnExamen == Bb->NoeudRacine ) goto ModifsBornesAuNoeudRacine;
+
+/* Il faut restaurer les valeurs de Umin des variables non entieres au cas ou elles auraient ete modifiees avec UminAmeliore */
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  memcpy( (char *) Umin, (char *) ValeurDeUminARestaurer, NombreDeVariables * sizeof( double ) );
+# endif
+/*free( ValeurDeUminARestaurer );*/ /* 11/10/2016: deplace a l'etiquette FreeMemoire car sinon c'est pas libere lorsque Faisabilite est egal a NON_PNE */
+
+if ( ProbingOuNodePresolve->NombreDeVariablesFixees <= 0 ) goto FreeMemoire;
 
 T = (char *) malloc( ( Bb->NombreDeVariablesDuProbleme ) * sizeof(char) );
 if ( T == NULL ) goto FreeMemoire;
@@ -185,6 +212,7 @@ NouvelleValeurDeBorne = Noeud->NouvelleValeurDeBorne;
    variables entieres */
 
 for ( i = 0 ; i < ProbingOuNodePresolve->NombreDeVariablesFixees ; i++ ) {
+  /* Ne contient que les variables entieres fixees */
   Var = NumeroDesVariablesFixees[i];	
 	Ai = ValeurDeBorneInf[Var];
 	U[Var] = Ai;
@@ -197,7 +225,7 @@ for ( i = 0 ; i < ProbingOuNodePresolve->NombreDeVariablesFixees ; i++ ) {
 	  NombreDeBornesModifiees++;
 		T[Var] = 2;
 	}
-	else if (  BorneInfConnue[Var] == FIXATION_SUR_BORNE_INF ) {	
+	else if ( BorneInfConnue[Var] == FIXATION_SUR_BORNE_INF ) {	
     NumeroDeLaVariableModifiee[NombreDeBornesModifiees] = Var;
     TypeDeBorneModifiee[NombreDeBornesModifiees] = BORNE_SUP;
 		NouvelleValeurDeBorne[NombreDeBornesModifiees] = Umax[Var];
@@ -205,7 +233,7 @@ for ( i = 0 ; i < ProbingOuNodePresolve->NombreDeVariablesFixees ; i++ ) {
 		T[Var] = 2;
 	}
 	else {
-	  printf("BUG dans le node presolve: code BorneInfConnue = %d incorrect\n",BorneInfConnue[Var]);
+	  printf("BUG dans le node presolve: code BorneInfConnue[%d] = %d incorrect\n",Var,BorneInfConnue[Var]);
 		exit(0);
 	}
 }
@@ -215,6 +243,7 @@ FreeMemoire:
 
 free( T );
 free( ContrainteActivable );
+free( ValeurDeUminARestaurer );
 
 return;
 
@@ -222,31 +251,157 @@ ModifsBornesAuNoeudRacine:
 
 UminSv = Pne->UminTravSv;
 UmaxSv = Pne->UmaxTravSv;
+TypeDeBorneSv = Pne->TypeDeBorneTravSv;
+
+Marge = MARGE_SUR_LA_MODIFICATION_DE_BORNE;
 
 for ( i = 0 ; i < ProbingOuNodePresolve->NombreDeVariablesFixees ; i++ ) {
+  /* Ne concerne que les variables entieres */
   Var = NumeroDesVariablesFixees[i];
 	Ai = ValeurDeBorneInf[Var];
 	U[Var] = Ai;
-  Umin[Var] = Ai;
-	Umax[Var] = Ai;
 	UminSv[Var] = Ai;
-	UmaxSv[Var] = Ai;
+	
+  # if BORNES_INF_AUXILIAIRES == OUI_PNE
+    Pne->XminAuxiliaire[Var] = Ai;
+    Pne->CreerContraintesPourK = OUI_PNE; /* Car il y a eu un changement */
+  # endif
+	
+	UmaxSv[Var] = Ai;	
+}
+
+# if FAIRE_DES_COUPES_AVEC_LES_BORNES_INF_MODIFIEES == OUI_PNE
+	if ( UminAmeliorePourCoupes != NULL ) {
+    for ( i = 0 ; i < Pne->NombreDeVariablesNonFixes ; i++ ) {
+      Var = NumeroDesVariablesNonFixes[i];
+	    if ( TypeDeVariable[Var] == ENTIER ) continue;
+		  if ( TypeDeBorneSv[Var] == VARIABLE_NON_BORNEE ) continue;
+		  if ( TypeDeBorneSv[Var] == VARIABLE_BORNEE_SUPERIEUREMENT ) continue;
+      if ( BorneInfConnue[Var] == FIXE_AU_DEPART ) continue;
+ 	    if ( BorneInfConnue[Var] == NON_PNE ) continue;						
+		  if ( UminAmeliorePourCoupes[Var] == VALEUR_NON_INITIALISEE ) {
+		    if ( ValeurDeBorneInf[Var] - Marge > UminSv[Var] ) UminAmeliorePourCoupes[Var] = ValeurDeBorneInf[Var];
+      }		
+		  else if ( ValeurDeBorneInf[Var] - Marge > UminAmeliorePourCoupes[Var] ) UminAmeliorePourCoupes[Var] = ValeurDeBorneInf[Var];
+		}		
+  }	
+# endif
+
+# if UTILISER_UMIN_AMELIORE == OUI_PNE
+  for ( i = 0 ; i < Pne->NombreDeVariablesNonFixes ; i++ ) {
+    Var = NumeroDesVariablesNonFixes[i];
+	  if ( TypeDeVariable[Var] == ENTIER ) continue;
+		if ( TypeDeBorneSv[Var] == VARIABLE_NON_BORNEE ) continue;
+		if ( TypeDeBorneSv[Var] == VARIABLE_BORNEE_SUPERIEUREMENT ) continue;
+    if ( BorneInfConnue[Var] == FIXE_AU_DEPART ) continue;
+ 	  if ( BorneInfConnue[Var] == NON_PNE ) continue;
+						
+		if ( ValeurDeBorneInf[Var] - Marge > Umin[Var] ) {		
+		  UminAmeliore[Var] = ValeurDeBorneInf[Var];
+		  Umin[Var] = UminAmeliore[Var] - Marge; /* Pour le calcul PNE_InitBorneInfBorneSupDesVariables qui suit juste apres */
+		  /*UminSv[Var] = Umin[Var];*/ /* Au noeud racine on peut recuperer Umin car il n'y a pas eu de simplexe */
+    }	
+  }
+# endif
+
+# if RECUPERER_XMAX_AU_NOEUD_RACINE_DANS_LE_NODE_PRESOLVE == OUI_PNE
+  /* On recupere Umax */
+  for ( i = 0 ; i < Pne->NombreDeVariablesNonFixes ; i++ ) {
+    Var = NumeroDesVariablesNonFixes[i];
+    if ( TypeDeVariable[Var] == ENTIER ) continue;
+    if ( BorneInfConnue[Var] == FIXE_AU_DEPART ) continue;
+		if ( TypeDeBorneSv[Var] == VARIABLE_NON_BORNEE ) continue;
+ 	  if ( BorneSupConnue[Var] == NON_PNE ) continue;
+		/*if ( TypeDeBorneSv[Var] == VARIABLE_BORNEE_INFERIEUREMENT ) continue;*/	
+
+    # if BORNES_INF_AUXILIAIRES == OUI_PNE
+			if ( BorneInfConnue[Var] != NON_PNE ) {						
+        if ( ValeurDeBorneInf[Var] > Pne->XminAuxiliaire[Var] + Marge ) {
+          Pne->XminAuxiliaire[Var] = ValeurDeBorneInf[Var] - (0.1*Marge);
+          Pne->CreerContraintesPourK = OUI_PNE; /* Car il y a eu un changement */		
+        }
+			}
+    # endif
+	
+ 	  if ( ValeurDeBorneSup[Var] + Marge < UmaxSv[Var] ) {
+			Pne->CreerContraintesPourK = OUI_PNE; /* Car il y a eu un changement */			
+ 	    UmaxSv[Var] = ValeurDeBorneSup[Var] + Marge;				
+			if ( UmaxSv[Var] < UminSv[Var] ) UmaxSv[Var] = UminSv[Var];
+      # if UTILISER_UMIN_AMELIORE == OUI_PNE
+				if ( UminAmeliore[Var] != VALEUR_NON_INITIALISEE ) {
+				  if ( UmaxSv[Var] < UminAmeliore[Var] ) UmaxSv[Var] = UminAmeliore[Var];
+				}
+			# endif					
+      /* Precaution */
+			if ( UmaxSv[Var] < UminSv[Var] ) {
+			  UmaxSv[Var] = UminSv[Var]; /* Si le pb est vraiment infaisable on s'en apercevra ensuite */
+			}
+      if ( TypeDeBorneSv[Var] == VARIABLE_BORNEE_INFERIEUREMENT ) {
+			  if ( UmaxSv[Var] - UminSv[Var] < 1.e+9 ) {
+          TypeDeBorneSv[Var] = VARIABLE_BORNEE_DES_DEUX_COTES;
+          TypeDeBorne[Var] = VARIABLE_BORNEE_DES_DEUX_COTES;
+				}
+			}			
+	  }
+  }
+# endif
+
+for ( i = 0 ; i < Pne->NombreDeVariablesNonFixes ; i++ ) {
+  Var = NumeroDesVariablesNonFixes[i];
+	Umin[Var] = UminSv[Var];
+	Umax[Var] = UmaxSv[Var];
 }
 
 /* Attention: il faut recalculer les Min et Max des contraintes si des bornes sont modifiees */
-if ( ProbingOuNodePresolve->NombreDeVariablesFixees > 0 ) {
-  PNE_InitBorneInfBorneSupDesVariables( Pne );
-  PNE_CalculMinEtMaxDesContraintes( Pne, Faisabilite );
-  if ( *Faisabilite == NON_PNE ) {	
- 	  # if TRACES == 1
-		  printf("Pas de solution apres le presolve du noeud racine\n");
-	  # endif 
-    goto Fin;
-  }	
-	/* Et on sauvegarde le resultat comme point de depart pour les noeuds suivants */
-  memcpy( (char *) ProbingOuNodePresolve->BminSv, (char *) ProbingOuNodePresolve->Bmin, NombreDeContraintes * sizeof( double ) );
-  memcpy( (char *) ProbingOuNodePresolve->BmaxSv, (char *) ProbingOuNodePresolve->Bmax, NombreDeContraintes * sizeof( double ) );	
+PNE_InitBorneInfBorneSupDesVariables( Pne );
+PNE_CalculMinEtMaxDesContraintes( Pne, Faisabilite );
+if ( *Faisabilite == NON_PNE ) {	
+ 	# if TRACES == 1
+		printf("Pas de solution apres le presolve du noeud racine\n");
+	# endif 
+  goto Fin;
+}	
+/* Et on sauvegarde le resultat comme point de depart pour les noeuds suivants */
+memcpy( (char *) ProbingOuNodePresolve->BminSv, (char *) ProbingOuNodePresolve->Bmin, NombreDeContraintes * sizeof( double ) );
+memcpy( (char *) ProbingOuNodePresolve->BmaxSv, (char *) ProbingOuNodePresolve->Bmax, NombreDeContraintes * sizeof( double ) );
+
+BminValide = ProbingOuNodePresolve->BminValide;
+BmaxValide = ProbingOuNodePresolve->BmaxValide;
+SensContrainte = Pne->SensContrainteTrav;
+B = Pne->BTrav;
+
+for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
+  CntActiv = ContrainteActivable[Cnt];
+  # if UTILISER_UMIN_AMELIORE == NON_PNE
+    ContrainteActivable[Cnt] = OUI_PNE; 
+	# endif	
+	if ( SensContrainte[Cnt] == '<' ) {
+		if ( BmaxValide[Cnt] == OUI_PNE ) {
+      if ( Bmax[Cnt] <= B[Cnt] + MARGE_POUR_RELAXATION ) {
+				if ( CntActiv == OUI_PNE ) {
+          Pne->CreerContraintesPourK = OUI_PNE; /* Car il y a eu un changement */							
+				}
+				ContrainteActivable[Cnt] = NON_PNE;
+			}			
+		}		
+	}
+	else {
+		if ( BminValide[Cnt] == OUI_PNE && BmaxValide[Cnt] == OUI_PNE ) {
+      if ( fabs( Bmax[Cnt] - Bmin[Cnt] ) < MARGE_POUR_RELAXATION ) {
+				if ( fabs( Bmax[Cnt] - B[Cnt] ) < MARGE_POUR_RELAXATION ) {
+				  if ( CntActiv == OUI_PNE ) {
+            Pne->CreerContraintesPourK = OUI_PNE; /* Car il y a eu un changement */							
+				  }				
+				  ContrainteActivable[Cnt] = NON_PNE;
+				}
+      }
+    }		
+	}
 }
+
+free( T );
+free( ContrainteActivable );
+free( ValeurDeUminARestaurer );
 
 return;
 }
