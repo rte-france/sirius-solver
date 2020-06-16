@@ -52,6 +52,7 @@ ELSE()
 	# TARGET_LINK_LIBRARIES(TEST_API sirius_solver_static)
 ENDIF(WIN32)
 
+target_compile_definitions(sirius_solver INTERFACE USE_SIRIUS)
 SET_TARGET_PROPERTIES(sirius_solver_static PROPERTIES PUBLIC_HEADER "${HEADERS}")
 SET_TARGET_PROPERTIES(sirius_solver PROPERTIES PUBLIC_HEADER "${HEADERS}")
 target_include_directories(sirius_solver PUBLIC 
