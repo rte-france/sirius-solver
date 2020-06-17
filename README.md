@@ -5,7 +5,7 @@ __*** A COMPLETER ***__
 ```
 *** COMPLETE ME PLEASE ***
 ```
-Ou Sirius compilé et installé par vous même (voir [__Compiler Sirius__](#-compiler-sirius)).
+Ou Sirius compilé et installé par vous même (voir [__Compiler Sirius__](#compiler-sirius)).
 
 Désippez l'archive / copiez le répertoire d'install de Sirius.
 Ce répertoire (qui contient les sous répertoires cmake, include et lib) sera à faire pointer par __sirius_solver_ROOT__
