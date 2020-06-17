@@ -1,13 +1,11 @@
-[[_TOC_]]
-
 # Utiliser Sirius
 
 Une fois l'archive de Sirius récupérée
-__*** A COMPLETER PAR MANUEL ***__
+__*** A COMPLETER ***__
 ```
 *** COMPLETE ME PLEASE ***
 ```
-Ou Sirius compilé et installé par vous même (voir [__Compiler Sirius__](#-compiler-sirius])).
+Ou Sirius compilé et installé par vous même (voir [__Compiler Sirius__](#-compiler-sirius)).
 
 Désippez l'archive / copiez le répertoire d'install de Sirius.
 Ce répertoire (qui contient les sous répertoires cmake, include et lib) sera à faire pointer par __sirius_solver_ROOT__
@@ -83,9 +81,8 @@ Le répertoire d'installation étant ici install (dans le répertoire Sirius)
 - Visual Studio 15 2017 Win64
 - cmake 3.12 ou +
 - git 2.8 (& git-bash) ou +
-- ...
 
-## Procédure de configuration et de build ( !!! __WORK IN PROGRESS__ !!!)
+## Procédure de configuration et de build
 ```bash
 ### Configuration et build + install de Sirius
 git clone https://github.com/rte-france/temp-pne.git -b unification_2020 Sirius
