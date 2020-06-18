@@ -4,6 +4,7 @@
 
 * [About Sirius](#about-sirius)
 * [Industrial use cases](#industrial-use-cases)
+* [How to build and use Sirius](INSTALL.md)
 
 ## About Sirius
 
