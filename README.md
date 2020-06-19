@@ -50,4 +50,4 @@ And when we use a hotstart between the optimisations for Sirius and Clp (COIN-OR
 
 ## How to build and use Sirius
 
-Please refer to the [Sirius solver API user guide](SiriusAPI.md).
+Please refer to the [Sirius solver INSTALL.md](INSTALL.md).
