@@ -47,3 +47,7 @@ Here are the performance measure on a laptop without using a hotstart mechanism 
 
 And when we use a hotstart between the optimisations for Sirius and Clp (COIN-OR) 
 ![Antares_Sirius_vs_Coin_hotstart](resources/Antares_Sirius_vs_Coin_hotstart.png)
+
+## How to build and use Sirius
+
+Please refer to the [Sirius solver API user guide](SiriusAPI.md).

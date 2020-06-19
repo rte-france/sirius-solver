@@ -1,89 +1,90 @@
-# How to build Sirius
+# How to build and use Sirius in a C++ cmake project
 
-## On Linux
+## Table of Contents
 
-### Prequisites for CentOS 7
+* [How to build Sirius](#how-to-build-sirius)
+* [How to link Sirius library in a C++ cmake project](#how-to-link-sirius-library-in-a-c++-cmake-project)
 
-#### gcc
+## How to build Sirius
+
+### Prequisites
+
+_Those are the minimal version that have been tested to work, but Sirius should also work with more recent versions of thoses tools._
+
+- gcc 6.3 or Visual Studio 15 2017
+- cMake 3.12
+- git 1.8
+
+### Clone, configure, build and install
+
+First, clone the project:
+
 ```bash
-### Avec les droits root
-yum install devtoolset-7-gcc*
-```
-
-#### cmake
-```bash
-### Avec les droits root
-yum install openssl-devel
-sudo yum remove cmake -y
-wget https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4.tar.gz
-tar xzf cmake-3.16.4.tar.gz
-cd cmake-3.16.4
-./bootstrap --prefix=/usr/local
-make -j 4
-make install
-```
-
-### Procédure de configuration et de build
-```bash
-### For centOS 7
-scl enable devtoolset-7 bash
-
-### Configure and build Sirius
 git clone https://github.com/rte-france/sirius-solver.git -b master Sirius
-cd Sirius
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="install" -B buildLinux -S src
-cmake --build buildLinux/ --config Release --target install -j4
 ```
-A directory named 'install' will be created, containing the Sirius solver library to be used with cmake projects.
 
-## Sur Windows ( !!! __WORK IN PROGRESS__ !!!)
+Then you can configure it with cmake:
 
-### Pré-requis
-- Visual Studio 15 2017 Win64
-- cmake 3.12 ou +
-- git 2.8 (& git-bash) ou +
-
-## Procédure de configuration et de build
 ```bash
-### Configuration et build + install de Sirius
-git clone https://github.com/rte-france/temp-pne.git -b unification_2020 Sirius
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="install" -B Sirius/buildWindows -S Sirius/src -G "Visual Studio 15 2017 Win64"
-cmake --build Sirius/buildWindows/ --config Release --target install -j4
+cd Sirius
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="SiriusInstall" -B build -S src
 ```
 
-Le répertoire d'installation étant ici install (dans le répertoire Sirius)
+And finally build and install:
 
-# How to use Sirius in a cmake project
-
-Une fois l'archive de Sirius récupérée
-__*** A COMPLETER ***__
+```bash
+cmake --build build/ --config Release --target install
 ```
-*** COMPLETE ME PLEASE ***
+
+A directory named __SiriusInstall__ will be created, containing the Sirius solver library to be used with cmake projects.
+
+## How to link Sirius library in a C++ cmake project
+
+### Locate your Sirius install directory
+
+First, locate your Sirius install directory (generated with the above process, or downloaded from your nexus). It must contains the cmake, lib and include directories.
+
+
+This directory will be refered to as __sirius_solver_ROOT__ from now on.
+
+### Make cmake aware of where the Sirius library is located
+
+There are two ways of doing so.
+
+You can define an environnement variable named __sirius_solver_ROOT__ pointing to your Sirius install directory.
+
+Or you can define a __sirius_solver_ROOT__ variable while calling cmake
+
+```bash
+cmake -Dsirius_solver_ROOT="/path/to/sirius_solver_ROOT" [the rest of your cmake configuration command] ...
 ```
-Ou Sirius compilé et installé par vous même (voir [__Compiler Sirius__](#compiler-sirius)).
 
-Désippez l'archive / copiez le répertoire d'install de Sirius.
-Ce répertoire (qui contient les sous répertoires cmake, include et lib) sera à faire pointer par __sirius_solver_ROOT__
+### Add Sirius to your cmake
 
-## cmake
-Dans votre cmake, ajoutez la politique de recherche des paquets suivante. Elle permettra à cmake de rechercher Sirius récursivement dans le répertoire pointé par __sirius_solver_ROOT__
+#### Import with find_package
+
+First, you need to activate the following cmake policy. It will allow cmake to find everything it needs to use the Sirius library from the __sirius_solver_ROOT__ path.
+
 ```cmake
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
 ```
-Ensuite importez le package Sirius.
+
+You can then just import the sirius_solver package.
+
 ```cmake
 find_package(sirius_solver CONFIG REQUIRED)
 ```
-Et enfin ajouter la dépendance de votre cible (exe/binaire/lib/...) vers Sirius.
+
+#### Link with target_link_libraries
+
+Then, you can link you target (binary, library, ...) with sirius_solver.
+
 ```cmake
 target_link_libraries(${EXECUTABLE_NAME} PUBLIC sirius_solver)
 ```
 
-Une fois le cmake mis à jour, 2 options s'offrent à vous :
-- Créer une variable d'environnement __sirius_solver_ROOT__ qui donne le chemin vers le répertoire d'install de Sirius
-  - SET __sirius_solver_ROOT__="/chemin/vers/install" _(pour Window, ou via les menus système)_
-  - export __sirius_solver_ROOT__="/chemin/vers/install" _(pour Linux)_
-- Définir cette variable uniquement pour cmake au moment de l'invocation
-  - cmake __-Dsirius_solver_ROOT__="/chemin/vers/install" _[le reste de votre commande cmake ...]_
+#### Use the Sirius solver API in your C++ code
+
+Please refer to the [Sirius solver API user guide](SiriusAPI.md).
