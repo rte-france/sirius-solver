@@ -9,7 +9,7 @@
 
 ### Prequisites
 
-_Those are the minimal version that have been tested to work, but Sirius should also work with more recent versions of thoses tools._
+_Those are the minimal version that have been tested to work, but Sirius should also work with more recent versions of those tools._
 
 - gcc 6.3 or Visual Studio 15 2017
 - cMake 3.12
