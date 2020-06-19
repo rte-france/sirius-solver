@@ -40,12 +40,13 @@ Sirius can also be used as a standalone solver for linear problems or even mixed
 ## Performances
 
 ### On Antares Simulator problems
+
 Antares Simulator among many other things solve a succession of 104 linear problems (2 per week) that are very close to each other. Since only some coefficients in the objective and the bounds of the constraints change between the problems, a hotstart mechanism can be used in some cases to improve the performance of the resolution of the 104 problems.
 
-Here are the performance measure on a laptop without using a hotstart mechanism for Sirius and Clp (COIN-OR) 
+Here are the performance measure on a laptop without using a hotstart mechanism for Sirius and Clp (COIN-OR)
 ![Antares_Sirius_vs_Coin_coldstart](resources/Antares_Sirius_vs_Coin_coldstart.png)
 
-And when we use a hotstart between the optimisations for Sirius and Clp (COIN-OR) 
+And when we use a hotstart between the optimisations for Sirius and Clp (COIN-OR)
 ![Antares_Sirius_vs_Coin_hotstart](resources/Antares_Sirius_vs_Coin_hotstart.png)
 
 ## How to build and use Sirius

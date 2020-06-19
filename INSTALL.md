@@ -11,9 +11,9 @@
 
 _Those are the minimal version that have been tested to work, but Sirius should also work with more recent versions of those tools._
 
-- gcc 6.3 or Visual Studio 15 2017
-- cmake 3.12
-- git 1.8
+* gcc 6.3 or Visual Studio 15 2017
+* cmake 3.12
+* git 1.8
 
 ### Clone, configure, build and install
 
@@ -51,9 +51,8 @@ This directory will be refered to as __sirius_solver_ROOT__ from now on.
 
 There are two ways of doing so.
 
-You can define an environnement variable named __sirius_solver_ROOT__ pointing to your Sirius install directory.
-
-Or you can define a __sirius_solver_ROOT__ variable while calling cmake
+* You can define an environnement variable named __sirius_solver_ROOT__ pointing to your Sirius install directory.
+* Or you can define a __sirius_solver_ROOT__ variable while calling cmake
 
 ```bash
 cmake -Dsirius_solver_ROOT="/path/to/sirius_solver_ROOT" [the rest of your cmake configuration command] ...
