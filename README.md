@@ -7,7 +7,7 @@
 * [Integration](#integration)
   * [OR-Tools](#or-tools)
   * [Standalone API](#standalone-api)
-* [Performances](#perfomances)
+* [Performances](#performances)
   * [On Antares Simulator problems](#on-antares-simulator-problems)
 * [How to build and use Sirius](INSTALL.md)
 

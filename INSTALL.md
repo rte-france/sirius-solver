@@ -3,7 +3,7 @@
 ## Table of Contents
 
 * [How to build Sirius](#how-to-build-sirius)
-* [How to link Sirius library in a C++ cmake project](#how-to-link-sirius-library-in-a-c++-cmake-project)
+* [How to link Sirius library in a C++ cmake project](#how-to-link-sirius-library-in-a-c-cmake-project)
 
 ## How to build Sirius
 
