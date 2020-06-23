@@ -3,8 +3,9 @@
 ## Table of Contents
 
 * [About Sirius](#about-sirius)
-* [Industrial use cases](#industrial-use-cases)
-* [Integration](#integration)
+* [RTE's Industrial use cases](#industrial-use-cases)
+* [How to build and use Sirius](#integration)
+  * [cmake configuration scripts](#cmake configuration scripts)
   * [OR-Tools](#or-tools)
   * [Standalone API](#standalone-api)
 * [Performances](#performances)
@@ -15,15 +16,13 @@
 
 Sirius has been developed by [RTE](https://www.rte-france.com/) and published as an open-source solver which license is Apache 2.0. The Sirius solver is a C implementation of the dual simplex algorithm (for continuous problems) and the branch-and-bound algorithm (problems with binary variables). The tool can be used as a standalone C library or through a fork of [OR-Tools](https://github.com/google/or-tools), Google's software suite for combinatorial optimization.  
 
-## Industrial use cases
+## RTE's Industrial use cases
 
-Sirius has been an integral part of the [Antares Simulator](https://antares-simulator.org/) software design and used by RTE the French electrical power transmission system operator.
+At the beginning, Sirius is an integral part of the [Antares Simulator](https://antares-simulator.org/) software, an adequacy tool, designed and used by RTE, the French transmission system operator. Antares is used to assess the security of energy supply by simulating the electrical mix decided during the optimization.
+
+
 
 Sirius is also used on several other project at RTE like[...].SiriusAPI.md)
-
-## Performances
-
-### On Antares Simulator problems
 
 Antares Simulator among many other things solve a succession of 104 linear problems (2 per week) that are very close to each other. Since only some coefficients in the objective and the bounds of the constraints change between the problems, a hotstart mechanism can be used in some cases to improve the performance of the resolution of the 104 problems.
 
