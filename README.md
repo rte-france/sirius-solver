@@ -17,7 +17,7 @@ Sirius has been developed by [RTE](https://www.rte-france.com/) and published as
 
 At the beginning, Sirius is an integral part of the [Antares Simulator](https://antares-simulator.org/) software, an adequacy tool, designed and used by RTE, the French transmission system operator. Antares is used to assess the security of energy supply by simulating the electrical mix decided during the optimization. The simulation of a year consists in solving 104 hourly discretized problems (2 per week). 
 
-In the following, computational results using Sirius and the Coin-OR CLP software are presented, they are based on problems coming from different RTE's studies, leading to smaller or bigger optimization problems. The optimization problem is a flow in a network describing the power systems for which the security of energy supply is to be assessed. For example, long-term European studies where each country is a node leads to 15K rows, 53K columns and 102K elements in the constraint matrix. Another example is medium-term French studies where each French region is a node leads to 56K rows, 134K oclumns and 291K elements in the constraint matrix.
+In the following, computational results using Sirius and the Coin-OR CLP software are presented, they are based on problems coming from different RTE's studies, leading to smaller or bigger optimization problems. The optimization problem is a flow in a network describing the power systems for which the security of energy supply is to be assessed. For example, long-term European studies where each country is a node leads to 15K rows, 53K columns and 102K elements in the constraint matrix. Another example is medium-term French studies where each French region is a node leads to 56K rows, 134K columns and 291K elements in the constraint matrix.
 ![Antares_Sirius_vs_Coin_coldstart](resources/Antares_Sirius_vs_Coin_coldstart.png)
 
 Since only some coefficients in the objective and the bounds of the constraints change between the problems, a hotstart mechanism can be used in some cases to improve the performance of the resolution of the 104 problems, it significantly improves the performance of the simplex algorithm as illustrated in the following results :
@@ -41,4 +41,4 @@ And then for instance in C++, you can specify that you want to use Sirius as a s
 
 ### Standalone C API
 
-Sirius can also be used as a standalone solver for linear problems with continuous variables or binary variables. The API is described here [Work in progress - SiriusAPI.md](
+Sirius can also be used as a standalone solver for linear problems with continuous variables or binary variables. The API is described here [Work in progress - SiriusAPI.md](SiriusAPI.md)
