@@ -29,8 +29,6 @@
 														
 /*--------------------------------------------------------------------------------------------------*/
 
-#include "mps_define.h"
-
 void PNE_SolveurProblemeReduit( PROBLEME_A_RESOUDRE * , CONTROLS * );
 
 void PNE_ControleMacAdresse( void );
@@ -160,8 +158,6 @@ void PNE_AugmenterLaTailleDeLaMatriceDesCoupes( PROBLEME_PNE * );
 void PNE_LibereProbleme( PROBLEME_PNE * );
 
 void PNE_LireJeuDeDonneesMPS( void );
-
-void PNE_LireJeuDeDonneesMPS_AvecNom(PROBLEME_MPS * problemMps, const char * );
 
 void PNE_PrendreEnCompteLesContraintesRangeMPS( void );
 

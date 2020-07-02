@@ -111,7 +111,7 @@ if ( Mip == NON_MPS ) {
   
 /*
 printf("**********  Attention on fait une maximisation i.e Cout = -Cout ******************\n");
-for ( j = 0 ; j < Mps.NbVar ; j++ ) Mps.CoefsObjectif[j] = -Mps.CoefsObjectif[j];
+for ( j = 0 ; j < Mps.NbVar ; j++ ) Mps.L[j] = -Mps.L[j];
 */
 
 /*
@@ -132,7 +132,7 @@ for ( j = 0 ; j < 1 ; j++ ) { /* Pour tester les fuites memoire on enchaine les 
 	probleme.StrategieAntiDegenerescence           = AGRESSIF; // Vaut AGRESSIF ou PEU_AGRESSIF
 	probleme.NombreMaxDIterations                  = -1; // si i < 0 , alors le simplexe prendre sa valeur par defaut
 	probleme.DureeMaxDuCalcul                      = -1; // si i < 0 , alors le simplexe prendre sa valeur par defaut
-	probleme.CoutLineaire                          = Mps.CoefsObjectif;
+	probleme.CoutLineaire                          = Mps.L;
 	probleme.X                                     = Mps.U;
 	probleme.Xmin                                  = Mps.Umin;
 	probleme.Xmax                                  = Mps.Umax;
@@ -144,7 +144,7 @@ for ( j = 0 ; j < 1 ; j++ ) { /* Pour tester les fuites memoire on enchaine les 
 	probleme.IndicesColonnes                       = Mps.Nuvar;
 	probleme.CoefficientsDeLaMatriceDesContraintes = Mps.A;
 	probleme.Sens                                  = Mps.SensDeLaContrainte;
-	probleme.SecondMembre                          = Mps.Rhs; 
+	probleme.SecondMembre                          = Mps.B; 
 	probleme.CoutsMarginauxDesContraintes          = Mps.VariablesDualesDesContraintes;
 	probleme.ChoixDeLAlgorithme                    = SPX_DUAL;
 
@@ -168,7 +168,7 @@ for ( j = 0 ; j < 1 ; j++ ) { /* Pour tester les fuites memoire on enchaine les 
 
 	/*
 	for ( j = 0 ; j < Mps.NbVar ; j++ ){
-	if ( Mps.TypeDeVariable[j] == ENTIER ) Mps.CoefsObjectif[j] = 0.0;
+	if ( Mps.TypeDeVariable[j] == ENTIER ) Mps.L[j] = 0.0;
 	}
 	*/
 
@@ -177,7 +177,7 @@ for ( j = 0 ; j < 1 ; j++ ) { /* Pour tester les fuites memoire on enchaine les 
 	printf("Dual variables count %d\n",Mps.NbCnt);
 	for ( Cnt = 0 ; Cnt < Mps.NbCnt ; Cnt++ ) {
 		goto ABS;
-		printf("Sense[%d] %c B = %e dual variable = %e\n",Cnt,Mps.SensDeLaContrainte[Cnt],Mps.Rhs[Cnt],
+		printf("Sense[%d] %c B = %e dual variable = %e\n",Cnt,Mps.SensDeLaContrainte[Cnt],Mps.B[Cnt],
 			Mps.VariablesDualesDesContraintes[Cnt]);
 ABS:
 		if ( fabs( Mps.VariablesDualesDesContraintes[Cnt] ) < 1.e-8 ) Nbn++;
@@ -193,7 +193,7 @@ ABS:
 
 		Critere = 0.;
 		for ( i = 0 ; i < Mps.NbVar ; i++ ) {
-			Critere+= Mps.CoefsObjectif[i] * Mps.U[i];
+			Critere+= Mps.L[i] * Mps.U[i];
 			fprintf( FlotDeSortie , "%s;%e\n" , Mps.LabelDeLaVariable[i], Mps.U[i] ); 
 			if ( AfficherLesValeursDesVariables == OUI_SPX ) {
 				printf("Variable number %d name %s value %lf ",i, Mps.LabelDeLaVariable[i], Mps.U[i]);
@@ -257,37 +257,37 @@ ABS:
 					il++;
 				}
 				if ( Mps.SensDeLaContrainte[Cnt] == '=' ) {
-					EcMoy+= fabs( S - Mps.Rhs[Cnt] );
-					if ( fabs( S - Mps.Rhs[Cnt] ) > EcX ) {
-						EcX   = fabs( S - Mps.Rhs[Cnt] );
+					EcMoy+= fabs( S - Mps.B[Cnt] );
+					if ( fabs( S - Mps.B[Cnt] ) > EcX ) {
+						EcX   = fabs( S - Mps.B[Cnt] );
 						Smx   = S;
 						CntMx = Cnt;
 					}
 				}
-				if ( Mps.SensDeLaContrainte[Cnt] == '>' && S < Mps.Rhs[Cnt] ) {
-					EcMoy+= fabs( S - Mps.Rhs[Cnt] );      
-					if ( fabs( S - Mps.Rhs[Cnt] ) > EcX ) {
-						EcX   = fabs( S - Mps.Rhs[Cnt] );
+				if ( Mps.SensDeLaContrainte[Cnt] == '>' && S < Mps.B[Cnt] ) {
+					EcMoy+= fabs( S - Mps.B[Cnt] );      
+					if ( fabs( S - Mps.B[Cnt] ) > EcX ) {
+						EcX   = fabs( S - Mps.B[Cnt] );
 						Smx   = S;
 						CntMx = Cnt;
 					}
 				}
-				if ( Mps.SensDeLaContrainte[Cnt] == '<' && S > Mps.Rhs[Cnt] ) {
-					EcMoy+= fabs( S - Mps.Rhs[Cnt] );      
-					if ( fabs( S - Mps.Rhs[Cnt] ) > EcX ) {
-						EcX   = fabs( S - Mps.Rhs[Cnt] );
+				if ( Mps.SensDeLaContrainte[Cnt] == '<' && S > Mps.B[Cnt] ) {
+					EcMoy+= fabs( S - Mps.B[Cnt] );      
+					if ( fabs( S - Mps.B[Cnt] ) > EcX ) {
+						EcX   = fabs( S - Mps.B[Cnt] );
 						Smx   = S;
 						CntMx = Cnt;
 					}
 				}
-				/*printf("cnt %ld S %e B %e\n",Cnt,S,Mps.Rhs[Cnt]);*/		
+				/*printf("cnt %ld S %e B %e\n",Cnt,S,Mps.B[Cnt]);*/		
 			}
 			if ( CntMx >= 0 ) {
 				printf("Higher violation:\n");
 				if ( Mps.SensDeLaContrainte[CntMx] == '=' ) printf("Cnt num %d - %s -- type = ",CntMx,Mps.LabelDeLaContrainte[CntMx]);
 				if ( Mps.SensDeLaContrainte[CntMx] == '<' ) printf("Cnt num %d - %s -- type < ",CntMx,Mps.LabelDeLaContrainte[CntMx]);
 				if ( Mps.SensDeLaContrainte[CntMx] == '>' ) printf("Cnt num %d - %s -- type > ",CntMx,Mps.LabelDeLaContrainte[CntMx]);
-				printf(" B %e computed %e violation %e\n",Mps.Rhs[CntMx],Smx,fabs(Smx-Mps.Rhs[CntMx]));
+				printf(" B %e computed %e violation %e\n",Mps.B[CntMx],Smx,fabs(Smx-Mps.B[CntMx]));
 			}
 			EcMoy/= Mps.NbCnt;
 			printf("Violations average value: %e\n",EcMoy);

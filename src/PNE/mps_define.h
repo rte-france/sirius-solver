@@ -1,4 +1,3 @@
-#pragma once
 /*
 ** Copyright 2007-2018 RTE
 ** Author: Robert Gonzalez
@@ -44,7 +43,7 @@ int   *  Nuvar;
 int   *  Msui;   
 int   *  Mder;
 int   *  NbTerm;
-double *  Rhs;
+double *  B;
 char   *  SensDeLaContrainte;
 double *  BRange; /* Pas nul si contrainte range */
 double *  VariablesDualesDesContraintes;
@@ -58,7 +57,7 @@ char   ** LabelDeLaVariable;
 int   *  TypeDeVariable;  
 int   *  TypeDeBorneDeLaVariable;  
 double *  U;	     
-double *  CoefsObjectif; 	      
+double *  L; 	      
 double *  Umin;	     
 double *  Umax;	
 
