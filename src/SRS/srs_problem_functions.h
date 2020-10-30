@@ -39,6 +39,8 @@ int SRSchgobj(SRS_PROBLEM * problem_srs, size_t nbColIndexes, const int * colInd
 int SRSchgrhs(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * rowIndexes, const double * newRhs);
 int SRSchgsens(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * rowIndexes, const char * newSense);
 int SRSchgrangeval(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * rowIndexes, const double * newRngVal);
+int SRScopyvarboundstype(SRS_PROBLEM * problem_srs, int * varBoundsTypeValues);
+int SRScopyxvalues(SRS_PROBLEM * problem_srs, double * xValues);
 
 // *** Access problem information ***
 const char * SRSversion();

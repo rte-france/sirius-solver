@@ -730,6 +730,24 @@ int SRSchgrangeval(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * r
 	return 0;
 }
 
+int SRScopyvarboundstype(SRS_PROBLEM * problem_srs, int * varBoundsTypeValues)
+{
+	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
+	int nbVar = problem_mps->NbVar;
+	for (int idxVar = 0; idxVar < nbVar; ++idxVar) {
+		problem_mps->TypeDeBorneDeLaVariable[idxVar] = varBoundsTypeValues[idxVar];
+	}
+}
+
+int SRScopyxvalues(SRS_PROBLEM * problem_srs, double * xValues)
+{
+	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
+	int nbVar = problem_mps->NbVar;
+	for (int idxVar = 0; idxVar < nbVar; ++idxVar) {
+		problem_mps->U[idxVar] = xValues[idxVar];
+	}
+}
+
 int SRSgetcolbasisstatus(SRS_PROBLEM * problem_srs, char ** colStatuses) {
 	if (problem_srs->problem_spx == NULL) {
 		return -1;
