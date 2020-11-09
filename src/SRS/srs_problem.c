@@ -534,7 +534,7 @@ int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simp
 	return 0;
 }
 
-SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * problem_simplexe)
+int SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * problem_simplexe)
 {
 	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
 	problem_mps->L = problem_simplexe->CoutLineaire;
