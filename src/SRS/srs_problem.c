@@ -739,13 +739,11 @@ int SRScopyvarboundstype(SRS_PROBLEM * problem_srs, int * varBoundsTypeValues)
 	}
 }
 
-int SRScopyxvalues(SRS_PROBLEM * problem_srs, double * xValues)
+int SRSsetxvalue(SRS_PROBLEM * problem_srs, int varIndex, double xValue)
 {
 	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
-	int nbVar = problem_mps->NbVar;
-	for (int idxVar = 0; idxVar < nbVar; ++idxVar) {
-		problem_mps->U[idxVar] = xValues[idxVar];
-	}
+	// set x value at the right index
+	problem_mps->U[varIndex] = xValue;
 }
 
 int SRSgetcolbasisstatus(SRS_PROBLEM * problem_srs, char ** colStatuses) {
