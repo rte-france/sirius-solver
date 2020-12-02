@@ -747,10 +747,14 @@ int SRSsetxvalue(SRS_PROBLEM * problem_srs, int varIndex, double xValue)
 }
 
 int SRSgetcolbasisstatus(SRS_PROBLEM * problem_srs, char ** colStatuses) {
-	if (problem_srs->problem_spx == NULL) {
+	if (problem_srs->problem_simplexe == NULL) {
 		return -1;
 	}
-	mallocAndCopyCharArray(problem_srs->problem_mps->NbVar, problem_srs->problem_spx->PositionDeLaVariable, colStatuses);
+
+	int nbVar = problem_srs->problem_mps->NbVar;
+	for (int idx = 0; idx < nbVar; ++idx) {
+		(*colStatuses)[idx] = problem_srs->problem_simplexe->PositionDeLaVariable[idx];
+	}
 
 	return 0;
 }
