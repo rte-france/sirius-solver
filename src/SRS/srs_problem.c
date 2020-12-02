@@ -760,7 +760,7 @@ int SRSgetcolbasisstatus(SRS_PROBLEM * problem_srs, char ** colStatuses) {
 }
 
 int SRSgetrowbasisstatus(SRS_PROBLEM * problem_srs, char ** rowStatuses) {
-	if (problem_srs->problem_spx == NULL) {
+	if (problem_srs->problem_simplexe == NULL) {
 		return -1;
 	}
 
