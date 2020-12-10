@@ -109,9 +109,9 @@ int mallocAndCopyStringArray(size_t arraySize, char const *const * sourceArray, 
 int computeColBoundType(double lb, double ub) {
 	if (lb > -SRS_infinite) {
 		if (ub < SRS_infinite) {
-			//if (lb == ub) {
-			//	return VARIABLE_FIXE;
-			//}
+			if (lb == ub) {
+				return VARIABLE_FIXE;
+			}
 			return VARIABLE_BORNEE_DES_DEUX_COTES;
 		}
 		return VARIABLE_BORNEE_INFERIEUREMENT;
@@ -241,7 +241,6 @@ int SRSreadmpsprob(SRS_PROBLEM * problem_srs, const char * fileName) {
 		initProblemMpsPointer(problem_srs);
 	}
 	
-	//FIXME
 	//PNE_LireJeuDeDonneesMPS_AvecNom(problem_srs->problem_mps, fileName);
 
 	for (int idxCol = 0; idxCol < problem_srs->problem_mps->NbVar; ++idxCol) {
@@ -535,7 +534,7 @@ int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simp
 	return 0;
 }
 
-SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * problem_simplexe)
+int SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * problem_simplexe)
 {
 	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
 	problem_mps->L = problem_simplexe->CoutLineaire;
@@ -731,17 +730,37 @@ int SRSchgrangeval(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * r
 	return 0;
 }
 
+int SRScopyvarboundstype(SRS_PROBLEM * problem_srs, int * varBoundsTypeValues)
+{
+	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
+	int nbVar = problem_mps->NbVar;
+	for (int idxVar = 0; idxVar < nbVar; ++idxVar) {
+		problem_mps->TypeDeBorneDeLaVariable[idxVar] = varBoundsTypeValues[idxVar];
+	}
+}
+
+int SRSsetxvalue(SRS_PROBLEM * problem_srs, int varIndex, double xValue)
+{
+	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;
+	// set x value at the right index
+	problem_mps->U[varIndex] = xValue;
+}
+
 int SRSgetcolbasisstatus(SRS_PROBLEM * problem_srs, char ** colStatuses) {
-	if (problem_srs->problem_spx == NULL) {
+	if (problem_srs->problem_simplexe == NULL) {
 		return -1;
 	}
-	mallocAndCopyCharArray(problem_srs->problem_mps->NbVar, problem_srs->problem_spx->PositionDeLaVariable, colStatuses);
+
+	int nbVar = problem_srs->problem_mps->NbVar;
+	for (int idx = 0; idx < nbVar; ++idx) {
+		(*colStatuses)[idx] = problem_srs->problem_simplexe->PositionDeLaVariable[idx];
+	}
 
 	return 0;
 }
 
 int SRSgetrowbasisstatus(SRS_PROBLEM * problem_srs, char ** rowStatuses) {
-	if (problem_srs->problem_spx == NULL) {
+	if (problem_srs->problem_simplexe == NULL) {
 		return -1;
 	}
 
