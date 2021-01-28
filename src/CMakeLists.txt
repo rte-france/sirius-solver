@@ -38,8 +38,15 @@ ELSE()
 	TARGET_LINK_LIBRARIES(TEST_API sirius_solver_static m)
 ENDIF(WIN32)
 
-target_compile_definitions(sirius_solver INTERFACE USE_SIRIUS)
+target_compile_definitions(sirius_solver_static INTERFACE USE_SIRIUS)
 SET_TARGET_PROPERTIES(sirius_solver_static PROPERTIES PUBLIC_HEADER "${HEADERS}")
+target_include_directories(sirius_solver_static PUBLIC 
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/SRS/>
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/LU/>
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/PNE/>
+	$<INSTALL_INTERFACE:include/>)
+
+target_compile_definitions(sirius_solver INTERFACE USE_SIRIUS)
 SET_TARGET_PROPERTIES(sirius_solver PROPERTIES PUBLIC_HEADER "${HEADERS}")
 target_include_directories(sirius_solver PUBLIC 
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/SRS/>
@@ -61,8 +68,21 @@ INSTALL(TARGETS sirius_solver
 	PUBLIC_HEADER DESTINATION include
 )
 
+INSTALL(TARGETS sirius_solver_static
+	EXPORT sirius_solver_static
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+	RUNTIME DESTINATION bin
+	PUBLIC_HEADER DESTINATION include
+)
+
 INSTALL(EXPORT sirius_solver
 	FILE sirius_solverConfig.cmake
+	DESTINATION cmake
+)
+
+INSTALL(EXPORT sirius_solver_static
+	FILE sirius_solver_staticConfig.cmake
 	DESTINATION cmake
 )
 
