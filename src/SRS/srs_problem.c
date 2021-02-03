@@ -765,15 +765,14 @@ int SRSgetrowbasisstatus(SRS_PROBLEM * problem_srs, char ** rowStatuses) {
 	}
 
 	int nbRow = problem_srs->problem_mps->NbCnt;
-	(*rowStatuses) = malloc(nbRow * sizeof(char));
 
 	for (int idx = 0; idx < nbRow; ++idx) {
-		(*rowStatuses)[idx] = EN_BASE_LIBRE;
+		(*rowStatuses)[idx] = EN_BASE;
 	}
 
 	for (int idx = 0; idx < problem_srs->problem_simplexe->NbVarDeBaseComplementaires; ++idx)
 	{
-		(*rowStatuses)[problem_srs->problem_simplexe->ComplementDeLaBase[idx]] = EN_BASE;
+		(*rowStatuses)[problem_srs->problem_simplexe->ComplementDeLaBase[idx]] = EN_BASE_LIBRE;
 	}
 
 	return 0;
