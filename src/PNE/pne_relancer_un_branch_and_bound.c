@@ -1,6 +1,7 @@
-// Copyright (C) 2019, RTE (http://www.rte-france.com)
+// Copyright (C) 2007-2018, RTE (http://www.rte-france.com)
 // See AUTHORS.txt
 // SPDX-License-Identifier: Apache-2.0
+
 # include "pne_fonctions.h"   
 # include "pne_define.h"
 

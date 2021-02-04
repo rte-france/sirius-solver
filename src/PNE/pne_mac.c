@@ -1,6 +1,7 @@
-// Copyright (C) 2019, RTE (http://www.rte-france.com)
+// Copyright (C) 2007-2018, RTE (http://www.rte-france.com)
 // See AUTHORS.txt
 // SPDX-License-Identifier: Apache-2.0
+
 #include <stdio.h>              /* Standard I/O */
 #include <stdlib.h>             /* Standard Library */
 #include <errno.h>              /* Error number and related */

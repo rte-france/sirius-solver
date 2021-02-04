@@ -1,6 +1,7 @@
-// Copyright (C) 2019, RTE (http://www.rte-france.com)
+// Copyright (C) 2007-2018, RTE (http://www.rte-france.com)
 // See AUTHORS.txt
 // SPDX-License-Identifier: Apache-2.0
+
 /***********************************************************************
    FONCTION: Modification du probleme dans un contexte de branch and 
              cut. On ajoute les coupes (ce sont des contraintes d'inegalite) 

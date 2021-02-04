@@ -1,6 +1,7 @@
-// Copyright (C) 2019, RTE (http://www.rte-france.com)
+// Copyright (C) 2007-2018, RTE (http://www.rte-france.com)
 // See AUTHORS.txt
 // SPDX-License-Identifier: Apache-2.0
+
 /***********************************************************************
    FONCTION: Chainage de la metrice des contrainte avec uniquement les
 	           variables hors base.
