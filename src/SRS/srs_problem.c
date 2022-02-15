@@ -229,7 +229,7 @@ int SRSwritempsprob(PROBLEME_MPS * problem_mps, const char * fileName) {
 	PROBLEME_A_RESOUDRE problem_a_resoudre;
 	PROBLEME_PNE problem_pne;
 	PNE_copy_problem(problem_mps, &problem_a_resoudre, 0, 0.0);
-	//FIXME PNE_EcrireJeuDeDonneesMPS_avecNom(&problem_pne, &problem_a_resoudre, fileName);
+	PNE_EcrireJeuDeDonneesMPS_avecNom(&problem_pne, &problem_a_resoudre, fileName);
 
 	return 0;
 }

@@ -32,7 +32,11 @@
 
 /*----------------------------------------------------------------------------*/
 
-void PNE_EcrireJeuDeDonneesMPS( PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme )       
+void PNE_EcrireJeuDeDonneesMPS(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme) {
+	PNE_EcrireJeuDeDonneesMPS_avecNom(Pne, Probleme, "Donnees_Probleme_Solveur.mps");
+}
+
+void PNE_EcrireJeuDeDonneesMPS_avecNom(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme, const char * const nomFichier)
 {
 FILE * Flot; 
 int Cnt; int Var; int il; int ilk; int ilMax; char * Nombre;
@@ -116,9 +120,9 @@ printf("*** Si un fichier de ce nom existait deja, il sera ecrase par avec les  
 printf("*** nouvelles donnees.                                                  ***\n");
 printf("***************************************************************************\n");
 
-Flot = fopen( "Donnees_Probleme_Solveur.mps", "w" ); 
+Flot = fopen( nomFichier, "w" );
 if( Flot == NULL ) {
-  printf("Erreur ouverture du fichier pour l'ecriture du jeu de donnees \n");
+  printf("Erreur ouverture du fichier pour l'ecriture du jeu de donnees %s\n", nomFichier);
   exit(0);
 }
 

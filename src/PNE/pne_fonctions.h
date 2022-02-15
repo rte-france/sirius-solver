@@ -161,6 +161,7 @@ void PNE_LireJeuDeDonneesMPS( void );
 
 void PNE_PrendreEnCompteLesContraintesRangeMPS( void );
 
+void PNE_EcrireJeuDeDonneesMPS_avecNom(PROBLEME_PNE *, PROBLEME_A_RESOUDRE *, const char * const);
 void PNE_EcrireJeuDeDonneesMPS( PROBLEME_PNE * , PROBLEME_A_RESOUDRE * );
 
 void PNE_EcrirePresolvedMPS( PROBLEME_PNE * );       
