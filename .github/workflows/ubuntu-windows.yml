@@ -55,7 +55,7 @@ jobs:
           ARCHIVE_PATH="${SIRIUS_BASE_PATH}/${ARCHIVE_NAME}"
           echo "::set-output name=install-dir::$SIRIUS_INSTALL_DIR"
           echo "::set-output name=install-path::$SIRIUS_INSTALL_PATH"
-          echo "::set-output name=sirius-archive-name::$ARCHIVE_NAME"
+          echo "::set-output name=archive-name::$ARCHIVE_NAME"
           echo "::set-output name=archive-path::$ARCHIVE_PATH"
 
       - name: Configure Sirius
