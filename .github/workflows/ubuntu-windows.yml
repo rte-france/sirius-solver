@@ -49,9 +49,9 @@ jobs:
         shell: bash
         run: |
           SIRIUS_BASE_PATH="${{ github.workspace }}"
-          SIRIUS_INSTALL_DIR=${{ matrix.os }}_SiriusInstall
+          SIRIUS_INSTALL_DIR=${{ matrix.os }}_sirius-solver-install
           SIRIUS_INSTALL_PATH="${SIRIUS_BASE_PATH}/${SIRIUS_INSTALL_DIR}"
-          ARCHIVE_NAME="sirius_install.zip"
+          ARCHIVE_NAME=${{ matrix.os }}_sirius-solver.zip"
           ARCHIVE_PATH="${SIRIUS_BASE_PATH}/${ARCHIVE_NAME}"
           echo "::set-output name=install-dir::$SIRIUS_INSTALL_DIR"
           echo "::set-output name=install-path::$SIRIUS_INSTALL_PATH"
@@ -81,7 +81,7 @@ jobs:
       - name: Upload sirius install
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.os }}_sirius
+          name: ${{ steps.sirius-variables.outputs.install-dir }}
           path: ${{ steps.sirius-variables.outputs.install-path }}
 
       - name: Publish sirius install
@@ -90,6 +90,6 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: ${{ steps.sirius-variables.outputs.archive-path }}
-          asset_name: ${{ matrix.os }}_${{ steps.sirius-variables.outputs.archive-name }}
+          asset_name: ${{ steps.sirius-variables.outputs.archive-name }}
           asset_content_type: application/zip
 
