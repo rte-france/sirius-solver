@@ -72,7 +72,6 @@ jobs:
           cmake --build build --config Release --target install -j14
 
       - name: Zip Install Sirius
-        if : ${{ inputs.zip-sirius == 'true' }}
         shell: bash
         run: |
           ARCHIVE_NAME="${{ steps.sirius-variables.outputs.archive-name }}"
@@ -85,7 +84,7 @@ jobs:
           path: ${{ steps.sirius-variables.outputs.install-path }}
 
       - name: Publish sirius install
-        if: ${{ env.RELEASE_CREATED == true }}
+        if: ${{ env.RELEASE_CREATED == "true" }}
         uses: actions/upload-release-asset@v1.0.2
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
