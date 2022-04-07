@@ -19,6 +19,7 @@ jobs:
     name: ${{ matrix.os }} build sirius
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-2019, ubuntu-20.04]
     steps:
@@ -47,13 +48,11 @@ jobs:
         id: sirius-variables
         shell: bash
         run: |
-          SIRIUS_WORKING_DIR=sirius-solver
-          SIRIUS_BASE_PATH="${{ github.workspace }}/${SIRIUS_WORKING_DIR}"
+          SIRIUS_BASE_PATH="${{ github.workspace }}"
           SIRIUS_INSTALL_DIR=${{ matrix.os }}_SiriusInstall
           SIRIUS_INSTALL_PATH="${SIRIUS_BASE_PATH}/${SIRIUS_INSTALL_DIR}"
           ARCHIVE_NAME="sirius_install.zip"
           ARCHIVE_PATH="${SIRIUS_BASE_PATH}/${ARCHIVE_NAME}"
-          echo "::set-output name=sirius-working-dir::$SIRIUS_WORKING_DIR"
           echo "::set-output name=sirius-base-path::$SIRIUS_BASE_PATH"
           echo "::set-output name=sirius-install-dir::$SIRIUS_INSTALL_DIR"
           echo "::set-output name=sirius-install-path::$SIRIUS_INSTALL_PATH"
