@@ -160,7 +160,7 @@ SRS_PROBLEM * SRScreateprob() {
 	problem_srs->read_an_mps = false;
 	problem_srs->is_mip = false;
 	problem_srs->maximize = false;
-
+    problem_srs->objective_offset = 0;
 	//params
 	problem_srs->verboseSpx = 0;
 	problem_srs->verbosePne = 0;
@@ -478,6 +478,8 @@ int SRSgetobjval(SRS_PROBLEM * problem_srs, double * objVal) {
 	if (problem_srs->maximize)
 		(*objVal) *= -1.;
 
+    *objVal += problem_srs->objective_offset;
+
 	return 0;
 }
 
@@ -728,6 +730,12 @@ int SRSchgrangeval(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * r
 	}
 
 	return 0;
+}
+
+int SRSsetobjoffset(SRS_PROBLEM* problem_srs, double value)
+{
+    problem_srs->objective_offset = value;
+    return 0;
 }
 
 int SRScopyvarboundstype(SRS_PROBLEM * problem_srs, int * varBoundsTypeValues)
