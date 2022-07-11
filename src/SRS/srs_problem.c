@@ -738,6 +738,11 @@ int SRSsetobjoffset(SRS_PROBLEM* problem_srs, double value)
     return 0;
 }
 
+double SRSgetobjoffset(const SRS_PROBLEM* problem_srs)
+{
+    return problem_srs->objective_offset;
+}
+
 int SRScopyvarboundstype(SRS_PROBLEM * problem_srs, int * varBoundsTypeValues)
 {
 	PROBLEME_MPS * problem_mps = problem_srs->problem_mps;

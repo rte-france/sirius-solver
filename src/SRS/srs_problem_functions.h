@@ -40,6 +40,7 @@ int SRSchgrhs(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * rowInd
 int SRSchgsens(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * rowIndexes, const char * newSense);
 int SRSchgrangeval(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * rowIndexes, const double * newRngVal);
 int SRSsetobjoffset(SRS_PROBLEM* problem_srs, double value);
+int SRSgetobjoffset(const SRS_PROBLEM* problem_srs);
 int SRScopyvarboundstype(SRS_PROBLEM * problem_srs, int * varBoundsTypeValues);
 int SRSsetxvalue(SRS_PROBLEM * problem_srs, int varIndex, double xValue);
 
