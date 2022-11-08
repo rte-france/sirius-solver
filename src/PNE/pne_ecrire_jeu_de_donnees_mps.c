@@ -108,18 +108,6 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 free( Cder );
 /* Fin chainage de la transposee */
 
-/* Fichier qui contiendra le jeu de donnees */ 
-printf("***************************************************************************\n");
-printf("*** Vous avez demande la creation d'un fichier contenant la description ***\n");
-printf("*** du probleme en cours de resolution. Le fichier de donnees se trouve ***\n");
-printf("*** dans le repertoire d'execution. Il s'appelle:                       ***\n");
-printf("***                                                                     ***\n");
-printf("***                 Donnees_Probleme_Solveur.mps                        ***\n");
-printf("***                                                                     ***\n");
-printf("*** Si un fichier de ce nom existait deja, il sera ecrase par avec les  ***\n");
-printf("*** nouvelles donnees.                                                  ***\n");
-printf("***************************************************************************\n");
-
 Flot = fopen( nomFichier, "w" );
 if( Flot == NULL ) {
   printf("Erreur ouverture du fichier pour l'ecriture du jeu de donnees %s\n", nomFichier);
