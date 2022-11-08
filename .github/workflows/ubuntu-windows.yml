@@ -1,0 +1,93 @@
+name: Windows-Ubuntu
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*
+      - antares_integration
+      - fix/*
+  release:
+    types: [ created ]
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+
+  build_sirius:
+    name: ${{ matrix.os }} build sirius
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-20.04]
+    steps:
+      - name: is release created
+        shell: bash
+        run: |
+          release_created=${{ github.event_name == 'release' && github.event.action == 'created' }}
+          echo "RELEASE_CREATED=$release_created" >> $GITHUB_ENV
+
+      - name: Get release
+        if: ${{ env.RELEASE_CREATED == 'true' }}
+        id: get_release
+        uses:
+          bruceadams/get-release@v1.2.3
+
+      - name: install zip for windows
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        shell: cmd
+        run: |
+          choco install zip --no-progress
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: set sirius output variables
+        id: sirius-variables
+        shell: bash
+        run: |
+          SIRIUS_BASE_PATH="${{ github.workspace }}"
+          SIRIUS_INSTALL_DIR="${{ matrix.os }}_sirius-solver-install"
+          SIRIUS_INSTALL_PATH="${SIRIUS_BASE_PATH}/${SIRIUS_INSTALL_DIR}"
+          ARCHIVE_NAME="${{ matrix.os }}_sirius-solver.zip"
+          ARCHIVE_PATH="${SIRIUS_BASE_PATH}/${ARCHIVE_NAME}"
+          echo "::set-output name=install-dir::$SIRIUS_INSTALL_DIR"
+          echo "::set-output name=install-path::$SIRIUS_INSTALL_PATH"
+          echo "::set-output name=archive-name::$ARCHIVE_NAME"
+          echo "::set-output name=archive-path::$ARCHIVE_PATH"
+
+      - name: Configure Sirius
+        shell: bash
+        run: |
+          cmake -S src \
+                -B build \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX="${{ steps.sirius-variables.outputs.install-dir }}"
+
+      - name: Build & Install Sirius
+        shell: bash
+        run: |
+          cmake --build build --config Release --target install -j14
+
+      - name: Zip Install Sirius
+        shell: bash
+        run: |
+          zip -r "${{ steps.sirius-variables.outputs.archive-name }}" "${{ steps.sirius-variables.outputs.install-dir }}"
+
+      - name: Upload sirius install
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.sirius-variables.outputs.install-dir }}
+          path: ${{ steps.sirius-variables.outputs.install-path }}
+
+      - name: Publish sirius install
+        if: ${{ env.RELEASE_CREATED == 'true' }}
+        uses: actions/upload-release-asset@v1.0.2
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ${{ steps.sirius-variables.outputs.archive-path }}
+          asset_name: ${{ steps.sirius-variables.outputs.archive-name }}
+          asset_content_type: application/zip
+
