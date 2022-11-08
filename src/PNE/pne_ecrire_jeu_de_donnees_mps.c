@@ -188,7 +188,7 @@ fprintf(Flot,"RHS\n");
 // see https://www.ibm.com/docs/en/icos/20.1.0?topic=standard-records-in-mps-format
 // NOTE: By convention, we write here the negative objective value
 if (objective_offset != 0.0) {
-   fprintf(Flot,"    RHSVAL    OBJ  %f\n",  -objective_offset);
+   fprintf(Flot,"    RHSVAL    OBJECTIF  %f\n",  -objective_offset);
 }
 for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   if ( SecondMembre[Cnt] != 0.0 ) {
