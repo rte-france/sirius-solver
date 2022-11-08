@@ -43,6 +43,7 @@ void PNE_copy_problem(PROBLEME_MPS * Mps, PROBLEME_A_RESOUDRE * Probleme, int To
 	Probleme->CoupesLiftAndProject = NON_PNE;
 	Probleme->AffichageDesTraces = OUI_PNE;
 	Probleme->FaireDuPresolve = OUI_PNE /* OUI_PNE */;
+    Probleme->objective_offset = Mps->objective_offset;
 	if (Probleme->FaireDuPresolve == NON_PNE) printf("!!!!!!!!!!!!!!  Attention pas de presolve   !!!!!!!!!\n");
 
 	Probleme->TempsDExecutionMaximum = 0;
@@ -124,30 +125,32 @@ int computeColBoundType(double lb, double ub) {
 // *** Enf of Utility functions ***
 
 int initProblemMpsPointer(SRS_PROBLEM * problem_srs) {
-	problem_srs->problem_mps = (PROBLEME_MPS *)malloc(sizeof(PROBLEME_MPS));
-	problem_srs->problem_mps->LabelDeLObjectif = NULL;
-	problem_srs->problem_mps->NbVar = 0;
-	problem_srs->problem_mps->NbCnt = 0;
-	problem_srs->problem_mps->Msui = NULL;
-	problem_srs->problem_mps->Mder = NULL;
-	problem_srs->problem_mps->Nuvar = NULL;
-	problem_srs->problem_mps->BRange = NULL;
-	problem_srs->problem_mps->LabelDeLaContrainte = NULL;
-	problem_srs->problem_mps->LabelDuSecondMembre = NULL;
-	problem_srs->problem_mps->A = NULL;
-	problem_srs->problem_mps->Mdeb = NULL;
-	problem_srs->problem_mps->NbTerm = NULL;
-	problem_srs->problem_mps->B = NULL;
-	problem_srs->problem_mps->SensDeLaContrainte = NULL;
-	problem_srs->problem_mps->VariablesDualesDesContraintes = NULL;
-	problem_srs->problem_mps->TypeDeVariable = NULL;
-	problem_srs->problem_mps->TypeDeBorneDeLaVariable = NULL;
-	problem_srs->problem_mps->U = NULL;
-	problem_srs->problem_mps->L = NULL;
-	problem_srs->problem_mps->Umin = NULL;
-	problem_srs->problem_mps->Umax = NULL;
-	problem_srs->problem_mps->LabelDeLaVariable = NULL;
+    PROBLEME_MPS* mps = (PROBLEME_MPS *)malloc(sizeof(PROBLEME_MPS));
+	mps->LabelDeLObjectif = NULL;
+	mps->NbVar = 0;
+	mps->NbCnt = 0;
+	mps->Msui = NULL;
+	mps->Mder = NULL;
+	mps->Nuvar = NULL;
+	mps->BRange = NULL;
+	mps->LabelDeLaContrainte = NULL;
+	mps->LabelDuSecondMembre = NULL;
+	mps->A = NULL;
+	mps->Mdeb = NULL;
+	mps->NbTerm = NULL;
+	mps->B = NULL;
+	mps->SensDeLaContrainte = NULL;
+	mps->VariablesDualesDesContraintes = NULL;
+	mps->TypeDeVariable = NULL;
+	mps->TypeDeBorneDeLaVariable = NULL;
+	mps->U = NULL;
+	mps->L = NULL;
+	mps->Umin = NULL;
+	mps->Umax = NULL;
+	mps->LabelDeLaVariable = NULL;
+    mps->objective_offset = 0;
 
+	problem_srs->problem_mps = mps;
 	return 0;
 }
 
@@ -160,7 +163,6 @@ SRS_PROBLEM * SRScreateprob() {
 	problem_srs->read_an_mps = false;
 	problem_srs->is_mip = false;
 	problem_srs->maximize = false;
-    problem_srs->objective_offset = 0;
 	//params
 	problem_srs->verboseSpx = 0;
 	problem_srs->verbosePne = 0;
@@ -478,7 +480,7 @@ int SRSgetobjval(SRS_PROBLEM * problem_srs, double * objVal) {
 	if (problem_srs->maximize)
 		(*objVal) *= -1.;
 
-    *objVal += problem_srs->objective_offset;
+    *objVal += problem_mps->objective_offset;
 
 	return 0;
 }
@@ -734,13 +736,13 @@ int SRSchgrangeval(SRS_PROBLEM * problem_srs, size_t nbRowIndexes, const int * r
 
 int SRSsetobjoffset(SRS_PROBLEM* problem_srs, double value)
 {
-    problem_srs->objective_offset = value;
+    problem_srs->problem_mps->objective_offset = value;
     return 0;
 }
 
 double SRSgetobjoffset(const SRS_PROBLEM* problem_srs)
 {
-    return problem_srs->objective_offset;
+    return problem_srs->problem_mps->objective_offset;
 }
 
 int SRScopyvarboundstype(SRS_PROBLEM * problem_srs, int * varBoundsTypeValues)

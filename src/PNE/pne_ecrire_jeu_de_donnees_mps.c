@@ -45,6 +45,7 @@ int * Cder; int * Cdeb; int * NumeroDeContrainte; int * Csui;
 /*                                                        */
 int NombreDeVariables; int * TypeDeVariable; int * TypeDeBorneDeLaVariable; 
 double * Xmax; double * Xmin; double * CoutLineaire; int NombreDeContraintes;   
+double objective_offset;
 double * SecondMembre; char * Sens; int * IndicesDebutDeLigne; 
 int * NombreDeTermesDesLignes;	double * CoefficientsDeLaMatriceDesContraintes; 
 int * IndicesColonnes;                 
@@ -63,6 +64,7 @@ IndicesDebutDeLigne                   = Probleme->IndicesDebutDeLigne;
 NombreDeTermesDesLignes               = Probleme->NombreDeTermesDesLignes;	
 CoefficientsDeLaMatriceDesContraintes = Probleme->CoefficientsDeLaMatriceDesContraintes; 
 IndicesColonnes                       = Probleme->IndicesColonnes;      
+objective_offset = Probleme->objective_offset;
 
 /* Chainage de la transposee */
 for ( ilMax = -1 , Cnt = 0 ; Cnt < NombreDeContraintes; Cnt++ ) {
@@ -182,6 +184,12 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
 
 /* RHS */
 fprintf(Flot,"RHS\n");
+// Objective offset
+// see https://www.ibm.com/docs/en/icos/20.1.0?topic=standard-records-in-mps-format
+// NOTE: By convention, we write here the negative objective value
+if (objective_offset != 0.0) {
+   fprintf(Flot,"    RHSVAL    OBJ  %f\n",  -objective_offset);
+}
 for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   if ( SecondMembre[Cnt] != 0.0 ) {
     sprintf(Nombre,"%-.9lf",SecondMembre[Cnt]);
