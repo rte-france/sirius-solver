@@ -150,7 +150,8 @@ int main(int argc, char ** argv) {
 	SRScreatecols(srsProb, nbCols, obj, colTypesMip, lbMip, ubMip, colNames);
 	SRScreaterows(srsProb, nbRows, rhsMip, range, sense, rowNames);
 	SRSsetcoefs(srsProb, rowDebInds, nbCoefPerRow, colInds, coefs);
-	//SRSwritempsprob(srsProb->problem_mps, "problemMip.mps");
+    SRSsetobjoffset(srsProb, 121.);
+	SRSwritempsprob(srsProb->problem_mps, "problemMip.mps");
 
 	SRSoptimize(srsProb);
 

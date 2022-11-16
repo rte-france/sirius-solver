@@ -67,4 +67,5 @@ int * NomCntSuivant;
 int * FirstNomVar;
 int * NomVarSuivant;
 
+double objective_offset;
 } PROBLEME_MPS;
