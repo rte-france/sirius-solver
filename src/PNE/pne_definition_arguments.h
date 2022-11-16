@@ -113,6 +113,7 @@ La matrice des contrainte est decrite par les 4 vecteurs qui suivent. Elle doit 
 				                                 couteux.
 				                               - Mettre OUI_PNE si le probleme est difficile a resoudre.
 				                           */																	 
+  double objective_offset;
 } PROBLEME_A_RESOUDRE;
 
 

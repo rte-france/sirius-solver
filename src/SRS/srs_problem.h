@@ -25,7 +25,6 @@ typedef struct SRS_PROBLEM {
 
 	bool read_an_mps;
 	bool is_mip;
-    double objective_offset;
 
 	// params
 	int verboseSpx;
