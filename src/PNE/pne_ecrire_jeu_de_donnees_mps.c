@@ -16,7 +16,11 @@
 
 /*----------------------------------------------------------------------------*/
 
-void PNE_EcrireJeuDeDonneesMPS( PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme )       
+void PNE_EcrireJeuDeDonneesMPS(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme) {
+	PNE_EcrireJeuDeDonneesMPS_avecNom(Pne, Probleme, "Donnees_Probleme_Solveur.mps");
+}
+
+void PNE_EcrireJeuDeDonneesMPS_avecNom(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme, const char * const nomFichier)
 {
 FILE * Flot; 
 int Cnt; int Var; int il; int ilk; int ilMax; char * Nombre;
@@ -25,6 +29,7 @@ int * Cder; int * Cdeb; int * NumeroDeContrainte; int * Csui;
 /*                                                        */
 int NombreDeVariables; int * TypeDeVariable; int * TypeDeBorneDeLaVariable; 
 double * Xmax; double * Xmin; double * CoutLineaire; int NombreDeContraintes;   
+double objective_offset;
 double * SecondMembre; char * Sens; int * IndicesDebutDeLigne; 
 int * NombreDeTermesDesLignes;	double * CoefficientsDeLaMatriceDesContraintes; 
 int * IndicesColonnes;                 
@@ -43,6 +48,7 @@ IndicesDebutDeLigne                   = Probleme->IndicesDebutDeLigne;
 NombreDeTermesDesLignes               = Probleme->NombreDeTermesDesLignes;	
 CoefficientsDeLaMatriceDesContraintes = Probleme->CoefficientsDeLaMatriceDesContraintes; 
 IndicesColonnes                       = Probleme->IndicesColonnes;      
+objective_offset = Probleme->objective_offset;
 
 /* Chainage de la transposee */
 for ( ilMax = -1 , Cnt = 0 ; Cnt < NombreDeContraintes; Cnt++ ) {
@@ -88,21 +94,9 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 free( Cder );
 /* Fin chainage de la transposee */
 
-/* Fichier qui contiendra le jeu de donnees */ 
-printf("***************************************************************************\n");
-printf("*** Vous avez demande la creation d'un fichier contenant la description ***\n");
-printf("*** du probleme en cours de resolution. Le fichier de donnees se trouve ***\n");
-printf("*** dans le repertoire d'execution. Il s'appelle:                       ***\n");
-printf("***                                                                     ***\n");
-printf("***                 Donnees_Probleme_Solveur.mps                        ***\n");
-printf("***                                                                     ***\n");
-printf("*** Si un fichier de ce nom existait deja, il sera ecrase par avec les  ***\n");
-printf("*** nouvelles donnees.                                                  ***\n");
-printf("***************************************************************************\n");
-
-Flot = fopen( "Donnees_Probleme_Solveur.mps", "w" ); 
+Flot = fopen( nomFichier, "w" );
 if( Flot == NULL ) {
-  printf("Erreur ouverture du fichier pour l'ecriture du jeu de donnees \n");
+  printf("Erreur ouverture du fichier pour l'ecriture du jeu de donnees %s\n", nomFichier);
   exit(0);
 }
 
@@ -174,6 +168,12 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
 
 /* RHS */
 fprintf(Flot,"RHS\n");
+// Objective offset
+// see https://www.ibm.com/docs/en/icos/20.1.0?topic=standard-records-in-mps-format
+// NOTE: By convention, we write here the negative objective value
+if (objective_offset != 0.0) {
+   fprintf(Flot,"    RHSVAL    OBJECTIF  %f\n",  -objective_offset);
+}
 for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   if ( SecondMembre[Cnt] != 0.0 ) {
     sprintf(Nombre,"%-.9lf",SecondMembre[Cnt]);
