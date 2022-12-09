@@ -110,9 +110,6 @@ int mallocAndCopyStringArray(size_t arraySize, char const *const * sourceArray, 
 int computeColBoundType(double lb, double ub) {
 	if (lb > -SRS_infinite) {
 		if (ub < SRS_infinite) {
-			if (lb == ub) {
-				return VARIABLE_FIXE;
-			}
 			return VARIABLE_BORNEE_DES_DEUX_COTES;
 		}
 		return VARIABLE_BORNEE_INFERIEUREMENT;
