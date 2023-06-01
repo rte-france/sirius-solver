@@ -31,13 +31,6 @@
 # endif
 
 /*----------------------------------------------------------------------------*/
-int EntityNameSizeFromEntityNumber(int var){
-  int NumOfDigitOfVarNumber = (var == 0) ? 1 : log10(var) + 1;
-    // 7 pour le format %07d et on ajoute +2 pour les caracteres 'C' et '\0'
-    int SizeVarName = 7 + 2;
-    SizeVarName += NumOfDigitOfVarNumber > 7 ? NumOfDigitOfVarNumber - 7 : 0;
-    return SizeVarName;
-}
 void PNE_EcrireJeuDeDonneesMPS(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme) {
 	PNE_EcrireJeuDeDonneesMPS_avecNom(Pne, Probleme, "Donnees_Probleme_Solveur.mps");
 }
@@ -160,25 +153,39 @@ fprintf(Flot," N  OBJECTIF\n");
 /* Ecriture de toutes les contraintes */
 for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
   int NomDeContrainteParDefaut = NomsDesContraintes == NULL || NomsDesContraintes[Cnt] == NULL;
-  char *NomCnt = NULL;
-  if (NomDeContrainteParDefaut)
+  
+  if (Sens[Cnt] == '=')
   {
-    int SizeCntName = EntityNameSizeFromEntityNumber(Cnt);
-    NomCnt = (char *)malloc(sizeof(char) * SizeCntName);
-    snprintf(NomCnt, SizeCntName, "R%07d", Cnt);
-  }
-  else
-  {
-    NomCnt = NomsDesContraintes[Cnt];
-  }
-  if ( Sens[Cnt] == '=' ) {
-    fprintf(Flot, " E  %s\n", NomCnt);
+    if (NomDeContrainteParDefaut)
+    {
+      fprintf(Flot, " E  R%07d\n", Cnt);
+    }
+    else
+    {
+      fprintf(Flot, " E  %s\n", NomsDesContraintes[Cnt]);
+    }
   }
   else if (  Sens[Cnt] == '<' ) {
-    fprintf(Flot, " L  %s\n", NomCnt);
+    if (NomDeContrainteParDefaut)
+    {
+      fprintf(Flot, " L  R%07d\n", Cnt);
+    }
+    else
+    {
+      fprintf(Flot, " L  %s\n", NomsDesContraintes[Cnt]);
+    }
   }
-  else if (  Sens[Cnt] == '>' ) {
-    fprintf(Flot, " G  %s\n", NomCnt);
+  else if (Sens[Cnt] == '>')
+  {
+    if (NomDeContrainteParDefaut)
+    {
+      fprintf(Flot, " G  R%07d\n", Cnt);
+    }
+    else
+    {
+
+      fprintf(Flot, " G  %s\n", NomsDesContraintes[Cnt]);
+    }
   }
   else {
     fprintf(Flot,"PNE_EcrireJeuDeDonneesMPS : le sens de la contrainte %c ne fait pas partie des sens reconnus\n",
@@ -186,60 +193,50 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
     exit(0);
   } 
   
-  if(NomDeContrainteParDefaut && NomCnt!=NULL){
-    free(NomCnt);
-  }
 }
 
 /* COLUMNS */
 fprintf(Flot,"COLUMNS\n");
 for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
   int NomDeVariableParDefaut = NomsDesVariables == NULL || NomsDesVariables[Var] == NULL;
-  char *NomVar = NULL;
-  if (NomDeVariableParDefaut)
-  {
-    int SizeVarName = EntityNameSizeFromEntityNumber(Var);
-    NomVar = (char *)malloc(sizeof(char) * SizeVarName);
-    snprintf(NomVar, SizeVarName, "C%07d", Var);
-  }
-  else
-  {
-    NomVar = NomsDesVariables[Var];
-  }
   if (CoutLineaire[Var] != 0.0)
   {
     sprintf(Nombre, "%-.10lf", CoutLineaire[Var]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-    fprintf(Flot, "    %s  OBJECTIF  %s\n", NomVar, Nombre);
+    if (NomDeVariableParDefaut)
+    {
+      fprintf(Flot, "    C%07d  OBJECTIF  %s\n", Var, Nombre);
+    }
+    else
+    {
+      fprintf(Flot, "    %s  OBJECTIF  %s\n", NomsDesVariables[Var], Nombre);
+    }
   }
   il = Cdeb[Var];
   while (il >= 0)
   {
     int NomDeContrainteParDefaut = NomsDesContraintes == NULL || NomsDesContraintes[Cnt] == NULL;
-    char *NomCnt = NULL;
-    if (NomDeContrainteParDefaut)
+    
+    sprintf(Nombre, "%-.10lf", CoefficientsDeLaMatriceDesContraintes[il]);
+    /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
+    if (NomDeVariableParDefaut && NomDeContrainteParDefaut)
     {
-      int SizeCntName = EntityNameSizeFromEntityNumber(Cnt);
-      NomCnt = (char *)malloc(sizeof(char) * SizeCntName);
-      snprintf(NomCnt, SizeCntName, "R%07d", NumeroDeContrainte[il]);
+      fprintf(Flot, "    C%07d  R%07d  %s\n", Var, NumeroDeContrainte[il], Nombre);
+    }
+    else if (NomDeVariableParDefaut && !NomDeContrainteParDefaut)
+    {
+      fprintf(Flot, "    C%07d  %s  %s\n", Var, NomsDesContraintes[NumeroDeContrainte[il]], Nombre);
+    }
+    else if (!NomDeVariableParDefaut && NomDeContrainteParDefaut)
+    {
+      fprintf(Flot, "    %s  R%07d  %s\n", NomsDesVariables[Var], NumeroDeContrainte[il], Nombre);
     }
     else
     {
-      NomCnt = NomsDesContraintes[NumeroDeContrainte[il]];
+      fprintf(Flot, "    %s  %s  %s\n", NomsDesVariables[Var], NomsDesContraintes[NumeroDeContrainte[il]], Nombre);
     }
-    sprintf(Nombre, "%-.10lf", CoefficientsDeLaMatriceDesContraintes[il]);
-    /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-    fprintf(Flot, "    %s  %s  %s\n", NomVar, NomCnt, Nombre);
 
     il = Csui[il];
-    if (NomDeContrainteParDefaut && NomCnt != NULL)
-    {
-      free(NomCnt);
-    }
-  }
-  if (NomDeVariableParDefaut && NomVar != NULL)
-  {
-  free(NomVar);
   }
 }
 
@@ -256,25 +253,18 @@ for (Cnt = 0; Cnt < NombreDeContraintes; Cnt++)
    if (SecondMembre[Cnt] != 0.0)
    {
 
-  int NomDeContrainteParDefaut = NomsDesContraintes == NULL || NomsDesContraintes[Cnt] == NULL;
-  char *NomCnt = NULL;
-  if (NomDeContrainteParDefaut)
-  {
-      int SizeCntName = EntityNameSizeFromEntityNumber(Cnt);
-      NomCnt = (char *)malloc(sizeof(char) * SizeCntName);
-      snprintf(NomCnt, SizeCntName, "R%07d", Cnt);
-  }
-  else
-  {
-      NomCnt = NomsDesContraintes[Cnt];
-  }
-  sprintf(Nombre, "%-.9lf", SecondMembre[Cnt]);
-  /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-  fprintf(Flot, "    RHSVAL    %s  %s\n", NomCnt, Nombre);
-  if (NomDeContrainteParDefaut && NomCnt != NULL)
-  {
-      free(NomCnt);
-  }
+    int NomDeContrainteParDefaut = NomsDesContraintes == NULL || NomsDesContraintes[Cnt] == NULL;
+
+    sprintf(Nombre, "%-.9lf", SecondMembre[Cnt]);
+    /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
+    if (NomDeContrainteParDefaut)
+    {
+      fprintf(Flot, "    RHSVAL    R%07d  %s\n", Cnt, Nombre);
+    }
+    else
+    {
+      fprintf(Flot, "    RHSVAL    %s  %s\n", NomsDesContraintes[Cnt], Nombre);
+    }
    }
 }
 
@@ -292,63 +282,111 @@ fprintf(Flot,"BOUNDS\n");
  MI lower bound - infini
  PL upper bound + infini 
 */
-for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
-  int NomDeVariableParDefaut = NomsDesVariables == NULL || NomsDesVariables[Var] == NULL;
-  char *NomVar = NULL;
-  if (NomDeVariableParDefaut)
-  {
-    int SizeVarName = EntityNameSizeFromEntityNumber(Var);
-    NomVar = (char *)malloc(sizeof(char) * SizeVarName);
-    snprintf(NomVar, SizeVarName, "C%07d", Var);
-  }
-  else
-  {
-    NomVar = NomsDesVariables[Var];
-  }
-  if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_FIXE ) {
-    sprintf(Nombre,"%-.9lf",Xmin[Var]);
+for (Var = 0; Var < NombreDeVariables; Var++)
+{
+   int NomDeVariableParDefaut = NomsDesVariables == NULL || NomsDesVariables[Var] == NULL;
+   if (TypeDeBorneDeLaVariable[Var] == VARIABLE_FIXE)
+   {
+    sprintf(Nombre, "%-.9lf", Xmin[Var]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-
-    fprintf(Flot, " FX BNDVALUE  %s  %s\n", NomVar, Nombre);
-
+    if (NomDeVariableParDefaut)
+    {
+      fprintf(Flot, " FX BNDVALUE  C%07d  %s\n", Var, Nombre);
+    }
+    else
+    {
+      fprintf(Flot, " FX BNDVALUE  %s  %s\n", NomsDesVariables[Var], Nombre);
+    }
     continue;
-  }
-  if ( TypeDeVariable[Var] == ENTIER ) {
-    fprintf(Flot, " BV BNDVALUE  %s\n", NomVar);
+   }
+   if (TypeDeVariable[Var] == ENTIER)
+   {
+    if (NomDeVariableParDefaut)
+    {
+      fprintf(Flot, " BV BNDVALUE  C%07d\n", Var);
+    }
+    else
+    {
+      fprintf(Flot, " BV BNDVALUE  %s\n", NomsDesVariables[Var]);
+    }
     continue;
-  }
+   }
   /* Variable reelle */
   /* Par defaut la variable est PL i.e;. comprise entre 0 et + l'infini */
   if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_DES_DEUX_COTES ) {
-    if ( Xmin[Var] != 0.0 ) {
-      sprintf(Nombre,"%-.9lf",Xmin[Var]);
+    if (Xmin[Var] != 0.0)
+    {
+      sprintf(Nombre, "%-.9lf", Xmin[Var]);
       /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-      fprintf(Flot," LO BNDVALUE  %s  %s\n",NomVar,Nombre);
+      if (NomDeVariableParDefaut)
+      {
+        fprintf(Flot, " LO BNDVALUE  C%07d  %s\n", Var, Nombre);
+      }
+      else
+      {
+        fprintf(Flot, " LO BNDVALUE  %s  %s\n", NomsDesVariables[Var], Nombre);
+      }
     }
-    sprintf(Nombre,"%-.9lf",Xmax[Var]);
+    sprintf(Nombre, "%-.9lf", Xmax[Var]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-    fprintf(Flot," UP BNDVALUE  %s  %s\n",NomVar,Nombre);
+    if (NomDeVariableParDefaut)
+    {
+      fprintf(Flot, " UP BNDVALUE  C%07d  %s\n", Var, Nombre);
+    }
+    else
+    {
+      fprintf(Flot, " UP BNDVALUE  %s  %s\n", NomsDesVariables[Var], Nombre);
+    }
   }
-  if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_INFERIEUREMENT ) {
-    if ( Xmin[Var] != 0.0 ) {
-      sprintf(Nombre,"%-.9lf",Xmin[Var]);
+  if (TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_INFERIEUREMENT)
+  {
+    if (Xmin[Var] != 0.0)
+    {
+      sprintf(Nombre, "%-.9lf", Xmin[Var]);
       /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-      fprintf(Flot," LO BNDVALUE  %s  %s\n",NomVar,Nombre);
+      if (NomDeVariableParDefaut)
+      {
+        fprintf(Flot, " LO BNDVALUE  C%07d  %s\n", Var, Nombre);
+      }
+      else
+      {
+        fprintf(Flot, " LO BNDVALUE  %s  %s\n", NomsDesVariables[Var], Nombre);
+      }
     }
   }
   if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
-    fprintf(Flot," MI BNDVALUE  %s\n",NomVar);
-    if ( Xmax[Var] != 0.0 ) {
-      sprintf(Nombre,"%-.9lf",Xmax[Var]);
+    if (NomDeVariableParDefaut)
+    {
+      fprintf(Flot, " MI BNDVALUE  C%07d\n", Var);
+    }
+    else
+    {
+      fprintf(Flot, " MI BNDVALUE  %s\n", NomsDesVariables[Var]);
+    }
+    if (Xmax[Var] != 0.0)
+    {
+      sprintf(Nombre, "%-.9lf", Xmax[Var]);
       /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-      fprintf(Flot," UP BNDVALUE  %s  %s\n",NomVar,Nombre);
+      if (NomDeVariableParDefaut)
+      {
+        fprintf(Flot, " UP BNDVALUE  C%07d  %s\n", Var, Nombre);
+      }
+      else
+      {
+        fprintf(Flot, " UP BNDVALUE  %s  %s\n", NomsDesVariables[Var], Nombre);
+      }
     }
   }
-  if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_NON_BORNEE ) {
-    fprintf(Flot," FR BNDVALUE  %s\n",NomVar);
-  }
-  if(NomDeVariableParDefaut && NomVar!=NULL){
-    free(NomVar);
+  if (TypeDeBorneDeLaVariable[Var] == VARIABLE_NON_BORNEE)
+  {
+    if (NomDeVariableParDefaut)
+    {
+      fprintf(Flot, " FR BNDVALUE  C%07d\n", Var);
+    }
+    else
+    {
+      fprintf(Flot, " FR BNDVALUE  %s\n", NomsDesVariables[Var]);
+    }
   }
 }
 
