@@ -52,11 +52,11 @@ int * Cder; int * Cdeb; int * NumeroDeContrainte; int * Csui;
 int NombreDeVariables; int * TypeDeVariable; int * TypeDeBorneDeLaVariable; 
 double * Xmax; double * Xmin; double * CoutLineaire; int NombreDeContraintes;   
 double objective_offset;
-double * SecondMembre; char * Sens; int * IndicesDebutDeLigne; 
-int * NombreDeTermesDesLignes;	double * CoefficientsDeLaMatriceDesContraintes; 
-int * IndicesColonnes;      
-char** NomsDesVariables;           
-char** NomsDesContraintes;           
+double * SecondMembre; char * Sens; int * IndicesDebutDeLigne;
+int * NombreDeTermesDesLignes;	double * CoefficientsDeLaMatriceDesContraintes;
+int * IndicesColonnes;
+char** NomsDesVariables;
+char** NomsDesContraintes;
 /*                                                        */
 
 NombreDeVariables       = Probleme->NombreDeVariables; 

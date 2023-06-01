@@ -49,7 +49,7 @@ typedef struct {
   int     NombreDeVariables;   /* Nombre de variables */
   int   * TypeDeVariable   ;   /* ENTIER ou REEL attention dans le cas des variables entieres, le seul cas traite 
                                    est celui des variables {0,1} */
-  char** NomsDesVariables;                                   
+  char** NomsDesVariables;
   int   * TypeDeBorneDeLaVariable; /* Indicateur du type de variable, il ne doit prendre que les suivantes 
                                      (voir le fichier pne_constantes_externes.h mais ne jamais utiliser les 
 				                             valeurs explicites des constantes): 
