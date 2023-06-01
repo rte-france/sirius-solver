@@ -24,6 +24,7 @@ extern "C"
 
 void PNE_copy_problem(PROBLEME_MPS * Mps, PROBLEME_A_RESOUDRE * Probleme, int ToleranceDOptimaliteExterne, double ToleranceExterne) {
 	Probleme->NombreDeVariables = Mps->NbVar;
+	Probleme->NomsDesVariables= Mps->LabelDeLaVariable;
 	Probleme->TypeDeVariable = Mps->TypeDeVariable;
 	Probleme->TypeDeBorneDeLaVariable = Mps->TypeDeBorneDeLaVariable;
 	Probleme->X = Mps->U;
@@ -31,6 +32,7 @@ void PNE_copy_problem(PROBLEME_MPS * Mps, PROBLEME_A_RESOUDRE * Probleme, int To
 	Probleme->Xmin = Mps->Umin;
 	Probleme->CoutLineaire = Mps->L;
 	Probleme->NombreDeContraintes = Mps->NbCnt;
+	Probleme->NomsDesContraintes= Mps->LabelDeLaContrainte;
 	Probleme->SecondMembre = Mps->B;
 	Probleme->Sens = Mps->SensDeLaContrainte;
 	Probleme->IndicesDebutDeLigne = Mps->Mdeb;

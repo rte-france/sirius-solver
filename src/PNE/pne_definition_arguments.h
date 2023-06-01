@@ -49,6 +49,7 @@ typedef struct {
   int     NombreDeVariables;   /* Nombre de variables */
   int   * TypeDeVariable   ;   /* ENTIER ou REEL attention dans le cas des variables entieres, le seul cas traite 
                                    est celui des variables {0,1} */
+  char** NomsDesVariables;                                   
   int   * TypeDeBorneDeLaVariable; /* Indicateur du type de variable, il ne doit prendre que les suivantes 
                                      (voir le fichier pne_constantes_externes.h mais ne jamais utiliser les 
 				                             valeurs explicites des constantes): 
@@ -64,6 +65,7 @@ typedef struct {
   double * CoutLineaire        ;   /* Vecteur des couts lineaires */
   /* Description des contraintes */
   int     NombreDeContraintes;    /* Nombre de contraintes */
+  char**  NomsDesContraintes;     /* Noms Des Contraintes */
   double * SecondMembre       ;   /* Vecteur des second membres */
   char   * Sens	              ;   /* Sens de chaque contrainte :
                                      pour une contraintes de type inferieur ou egal mettre le caractere '<' 
@@ -74,7 +76,7 @@ typedef struct {
 La matrice des contrainte est decrite par les 4 vecteurs qui suivent. Elle doit etre decrite par ligne.
      -> Les coefficients de la matrice des contraintes doivent etre donnes dans un vecteur double precision.
      -> En parallele du vecteur des coefficient, il faut donner l'indice colonne du coefficient. 
-     -> Pour chaque ligne (ou premier membre de la contrainte) il faut donner sont indice début dans le vecteur
+     -> Pour chaque ligne (ou premier membre de la contrainte) il faut donner sont indice dï¿½but dans le vecteur
         double precision qui contient les coefficients de la contraintes, et le nombre de coefficients non nuls. 	
 */
   int   * IndicesDebutDeLigne 	                 ; /* Pour chaque ligne, indice debut de la ligne dans le
@@ -100,7 +102,7 @@ La matrice des contrainte est decrite par les 4 vecteurs qui suivent. Elle doit 
 				    */
   /* Options */
   char     AlgorithmeDeResolution; /* Doit valoir SIMPLEXE ou POINT_INTERIEUR */
-                                   /* Attention, le choix POINT_INTERIEUR ne peut être utilise que dans le cas
+                                   /* Attention, le choix POINT_INTERIEUR ne peut ï¿½tre utilise que dans le cas
 				                              d'un probleme ne comportant pas de varaibles entieres */
   char     AffichageDesTraces; /* Peut valoir OUI_PNE ou NON_PNE */ 
   char     SortirLesDonneesDuProbleme; /* Peut valoir OUI_PNE ou NON_PNE. 
@@ -111,21 +113,21 @@ La matrice des contrainte est decrite par les 4 vecteurs qui suivent. Elle doit 
                                      solution optimale n'a pas ete trouvee. Attention, cette grandeur n'est prise en compte 
 				                             que si le probleme contient des variables entieres */
                                   /* Mettre 0 si le temps est illimite */
-  int     NombreMaxDeSolutionsEntieres; /* Lorsque le nombre de solutions entieres est egal à la valeur de ce
+  int     NombreMaxDeSolutionsEntieres; /* Lorsque le nombre de solutions entieres est egal ï¿½ la valeur de ce
                                            parametre, le solveur s'arrete et donne la meilleure solution rencontree.
 					                                 Remarque: mettre une valeur strictement negative pour que ce parametre n'ai pas
-					                                 de rôle.
+					                                 de rï¿½le.
 					                              */
-  double   ToleranceDOptimalite;  /* Si l'écart relatif entre le cout de la solution entiere trouvee et le plus petit minorant
-                                     est inférieur à ToleranceDOptimalite, le solveur s'arrete et considère que la solution
+  double   ToleranceDOptimalite;  /* Si l'ï¿½cart relatif entre le cout de la solution entiere trouvee et le plus petit minorant
+                                     est infï¿½rieur ï¿½ ToleranceDOptimalite, le solveur s'arrete et considï¿½re que la solution
 				                             entiere trouvee est la solution optimale.
-				                             Convention: ToleranceDOptimalite doit etre exprimé en %.
+				                             Convention: ToleranceDOptimalite doit etre exprimï¿½ en %.
 				                             Conseil   : mettre 0 %.
                                   */
   char     CoupesLiftAndProject;   /* Utile que s'il y a des variables entieres dans le probleme.
                                       Peut valoir OUI_PNE ou NON_PNE. Lorsque cette option vaut OUI_PNE
-				                              le calcul des coupes de type lift and project est activé.
-				                               - Choix conseillé: NON_PNE car le calcul de ce type de coupe peut être
+				                              le calcul des coupes de type lift and project est activï¿½.
+				                               - Choix conseillï¿½: NON_PNE car le calcul de ce type de coupe peut ï¿½tre
 				                                 couteux.
 				                               - Mettre OUI_PNE si le probleme est difficile a resoudre.
 				                           */																	 
