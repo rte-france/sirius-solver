@@ -25,7 +25,6 @@
 # include "pne_sys.h"
 # include "pne_define.h"
 # include "pne_fonctions.h"
-#include <math.h>
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "pne_memoire.h"
 # endif
@@ -155,7 +154,7 @@ fprintf(Flot,"ROWS\n");
 In this section all the row labels are defined, as well as the row type. The row 
 type is entered in field 1 (in column 2 or 3) and the row label is entered in 
 field 2 (columns 5-12). Row type:
-E : egalit�
+E : egalité
 L : inferieur ou egal
 G : superieur ou egal
 N : objectif			
