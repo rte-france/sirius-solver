@@ -259,22 +259,25 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
   if ( TypeDeVariable[Var] == ENTIER ) {
     fprintf(Flot, " BV BNDVALUE  %s\n", NomVariable);
     continue;
-  }
+   }
   /* Variable reelle */
   /* Par defaut la variable est PL i.e;. comprise entre 0 et + l'infini */
   if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_DES_DEUX_COTES ) {
-    if ( Xmin[Var] != 0.0 ) {
-      sprintf(Nombre,"%-.9lf",Xmin[Var]);
+    if (Xmin[Var] != 0.0)
+    {
+      sprintf(Nombre, "%-.9lf", Xmin[Var]);
       /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
       fprintf(Flot," LO BNDVALUE  %s  %s\n",NomVariable,Nombre);
     }
-    sprintf(Nombre,"%-.9lf",Xmax[Var]);
+    sprintf(Nombre, "%-.9lf", Xmax[Var]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
     fprintf(Flot," UP BNDVALUE  %s  %s\n",NomVariable,Nombre);
   }
-  if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_INFERIEUREMENT ) {
-    if ( Xmin[Var] != 0.0 ) {
-      sprintf(Nombre,"%-.9lf",Xmin[Var]);
+  if (TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_INFERIEUREMENT)
+  {
+    if (Xmin[Var] != 0.0)
+    {
+      sprintf(Nombre, "%-.9lf", Xmin[Var]);
       /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
       fprintf(Flot," LO BNDVALUE  %s  %s\n",NomVariable,Nombre);
     }
