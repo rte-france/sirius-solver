@@ -28,17 +28,17 @@
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "pne_memoire.h"
 # endif
-#define TAILLE 1024
+#define SRS_BUFFER_SIZE 1024
 /*----------------------------------------------------------------------------*/
 void MettreAjourNom(int NomParDEfaut, char* Nom,  const char* NouveauNom, int Numero, char Type){
-  memset(Nom, 0, TAILLE);
+  memset(Nom, 0, SRS_BUFFER_SIZE);
   if (NomParDEfaut)
   {  
-    snprintf(Nom, TAILLE, "%c%07d",Type, Numero);
+    snprintf(Nom, SRS_BUFFER_SIZE, "%c%07d",Type, Numero);
   }
   else
   {
-    strncpy(Nom, NouveauNom, TAILLE);
+    strncpy(Nom, NouveauNom, SRS_BUFFER_SIZE);
   }
 }
 void PNE_EcrireJeuDeDonneesMPS(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme) {
@@ -60,8 +60,8 @@ int * NombreDeTermesDesLignes;	double * CoefficientsDeLaMatriceDesContraintes;
 int * IndicesColonnes;
 char** NomsDesVariables;
 char** NomsDesContraintes;
-char NomVariable[1024];
-char NomContrainte[1024];
+char NomVariable[SRS_BUFFER_SIZE];
+char NomContrainte[SRS_BUFFER_SIZE];
 /*                                                        */
 
 NombreDeVariables       = Probleme->NombreDeVariables; 
