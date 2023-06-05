@@ -198,8 +198,9 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
   il = Cdeb[Var];
   while (il >= 0)
   {
+    Cnt = NumeroDeContrainte[il];
     int NomDeContrainteParDefaut = NomsDesContraintes == NULL || NomsDesContraintes[Cnt] == NULL;
-    MettreAjourNom(NomDeContrainteParDefaut, NomContrainte, NomsDesContraintes[NumeroDeContrainte[il]], NumeroDeContrainte[il], 'R');
+    MettreAjourNom(NomDeContrainteParDefaut, NomContrainte, NomsDesContraintes[Cnt], Cnt, 'R');
     
     sprintf(Nombre, "%-.10lf", CoefficientsDeLaMatriceDesContraintes[il]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
