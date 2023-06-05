@@ -38,7 +38,7 @@ void MettreAjourNom(int NomParDEfaut, char* Nom,  const char* NouveauNom, int Nu
   }
   else
   {
-    strcpy(Nom, NouveauNom);
+    strncpy(Nom, NouveauNom, TAILLE);
   }
 }
 void PNE_EcrireJeuDeDonneesMPS(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme) {
