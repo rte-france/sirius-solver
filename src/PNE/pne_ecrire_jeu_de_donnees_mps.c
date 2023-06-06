@@ -30,14 +30,14 @@
 # endif
 #define SRS_BUFFER_SIZE 1024
 /*----------------------------------------------------------------------------*/
-void MettreAjourNom(int NomParDEfaut, char* Nom,  const char* NouveauNom, int Numero, char Type){
-  if (NomParDEfaut)
+void MettreAjourNom(char* Nom,  const char** NouveauxNoms, int Numero, char Type){
+  if (NouveauxNoms == NULL || NouveauxNoms[Numero] == NULL)
   {  
     snprintf(Nom, SRS_BUFFER_SIZE, "%c%07d",Type, Numero);
   }
   else
   {
-    strncpy(Nom, NouveauNom, SRS_BUFFER_SIZE);
+    strncpy(Nom, NouveauxNoms[Numero], SRS_BUFFER_SIZE);
   }
 }
 void PNE_EcrireJeuDeDonneesMPS(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme) {
@@ -163,8 +163,7 @@ N : free ??
 fprintf(Flot," N  OBJECTIF\n");
 /* Ecriture de toutes les contraintes */
 for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
-  int NomDeContrainteParDefaut = NomsDesContraintes == NULL || NomsDesContraintes[Cnt] == NULL;
-  MettreAjourNom(NomDeContrainteParDefaut, NomContrainte,NomsDesContraintes[Cnt], Cnt, 'R' );
+  MettreAjourNom(NomContrainte, NomsDesContraintes, Cnt, 'R' );
   if ( Sens[Cnt] == '=' ) {
     fprintf(Flot, " E  %s\n", NomContrainte);
   }
@@ -185,9 +184,8 @@ for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
 /* COLUMNS */
 fprintf(Flot,"COLUMNS\n");
 for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
-  int NomDeVariableParDefaut = NomsDesVariables == NULL || NomsDesVariables[Var] == NULL;
   
-  MettreAjourNom(NomDeVariableParDefaut, NomVariable, NomsDesVariables[Var], Var, 'C');
+  MettreAjourNom(NomVariable, NomsDesVariables, Var, 'C');
   if (CoutLineaire[Var] != 0.0)
   {
     sprintf(Nombre, "%-.10lf", CoutLineaire[Var]);
@@ -198,8 +196,7 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
   while (il >= 0)
   {
     Cnt = NumeroDeContrainte[il];
-    int NomDeContrainteParDefaut = NomsDesContraintes == NULL || NomsDesContraintes[Cnt] == NULL;
-    MettreAjourNom(NomDeContrainteParDefaut, NomContrainte, NomsDesContraintes[Cnt], Cnt, 'R');
+    MettreAjourNom(NomContrainte, NomsDesContraintes, Cnt, 'R');
     
     sprintf(Nombre, "%-.10lf", CoefficientsDeLaMatriceDesContraintes[il]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
@@ -222,8 +219,7 @@ for (Cnt = 0; Cnt < NombreDeContraintes; Cnt++)
    if (SecondMembre[Cnt] != 0.0)
    {
 
-    int NomDeContrainteParDefaut = NomsDesContraintes == NULL || NomsDesContraintes[Cnt] == NULL;
-    MettreAjourNom(NomDeContrainteParDefaut, NomContrainte, NomsDesContraintes[Cnt], Cnt, 'R');
+    MettreAjourNom(NomContrainte, NomsDesContraintes, Cnt, 'R');
     sprintf(Nombre, "%-.9lf", SecondMembre[Cnt]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
     fprintf(Flot, "    RHSVAL    %s  %s\n", NomContrainte, Nombre);
@@ -245,8 +241,7 @@ fprintf(Flot,"BOUNDS\n");
  PL upper bound + infini 
 */
 for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
-  int NomDeVariableParDefaut = NomsDesVariables == NULL || NomsDesVariables[Var] == NULL;
-  MettreAjourNom(NomDeVariableParDefaut, NomVariable, NomsDesVariables[Var], Var, 'C');
+  MettreAjourNom(NomVariable, NomsDesVariables, Var, 'C');
   if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_FIXE ) {
     sprintf(Nombre,"%-.9lf",Xmin[Var]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
