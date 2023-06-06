@@ -31,7 +31,6 @@
 #define SRS_BUFFER_SIZE 1024
 /*----------------------------------------------------------------------------*/
 void MettreAjourNom(int NomParDEfaut, char* Nom,  const char* NouveauNom, int Numero, char Type){
-  memset(Nom, 0, SRS_BUFFER_SIZE);
   if (NomParDEfaut)
   {  
     snprintf(Nom, SRS_BUFFER_SIZE, "%c%07d",Type, Numero);
