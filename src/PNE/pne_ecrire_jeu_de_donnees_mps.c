@@ -153,7 +153,7 @@ fprintf(Flot,"ROWS\n");
 In this section all the row labels are defined, as well as the row type. The row 
 type is entered in field 1 (in column 2 or 3) and the row label is entered in 
 field 2 (columns 5-12). Row type:
-E : egalitÃ©
+E : egalité
 L : inferieur ou egal
 G : superieur ou egal
 N : objectif			
