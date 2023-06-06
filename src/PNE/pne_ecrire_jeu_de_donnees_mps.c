@@ -25,13 +25,21 @@
 # include "pne_sys.h"
 # include "pne_define.h"
 # include "pne_fonctions.h"
-
 # ifdef PNE_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "pne_memoire.h"
 # endif
-
+#define SRS_BUFFER_SIZE 1024
 /*----------------------------------------------------------------------------*/
-
+void MettreAjourNom(char* Nom,  const char** NouveauxNoms, int Numero, char Type){
+  if (NouveauxNoms == NULL || NouveauxNoms[Numero] == NULL)
+  {  
+    snprintf(Nom, SRS_BUFFER_SIZE, "%c%07d",Type, Numero);
+  }
+  else
+  {
+    strncpy(Nom, NouveauxNoms[Numero], SRS_BUFFER_SIZE);
+  }
+}
 void PNE_EcrireJeuDeDonneesMPS(PROBLEME_PNE * Pne, PROBLEME_A_RESOUDRE * Probleme) {
 	PNE_EcrireJeuDeDonneesMPS_avecNom(Pne, Probleme, "Donnees_Probleme_Solveur.mps");
 }
@@ -46,9 +54,13 @@ int * Cder; int * Cdeb; int * NumeroDeContrainte; int * Csui;
 int NombreDeVariables; int * TypeDeVariable; int * TypeDeBorneDeLaVariable; 
 double * Xmax; double * Xmin; double * CoutLineaire; int NombreDeContraintes;   
 double objective_offset;
-double * SecondMembre; char * Sens; int * IndicesDebutDeLigne; 
-int * NombreDeTermesDesLignes;	double * CoefficientsDeLaMatriceDesContraintes; 
-int * IndicesColonnes;                 
+double * SecondMembre; char * Sens; int * IndicesDebutDeLigne;
+int * NombreDeTermesDesLignes;	double * CoefficientsDeLaMatriceDesContraintes;
+int * IndicesColonnes;
+char** NomsDesVariables;
+char** NomsDesContraintes;
+char NomVariable[SRS_BUFFER_SIZE];
+char NomContrainte[SRS_BUFFER_SIZE];
 /*                                                        */
 
 NombreDeVariables       = Probleme->NombreDeVariables; 
@@ -65,6 +77,8 @@ NombreDeTermesDesLignes               = Probleme->NombreDeTermesDesLignes;
 CoefficientsDeLaMatriceDesContraintes = Probleme->CoefficientsDeLaMatriceDesContraintes; 
 IndicesColonnes                       = Probleme->IndicesColonnes;      
 objective_offset = Probleme->objective_offset;
+NomsDesVariables = Probleme->NomsDesVariables;
+NomsDesContraintes = Probleme->NomsDesContraintes;
 
 /* Chainage de la transposee */
 for ( ilMax = -1 , Cnt = 0 ; Cnt < NombreDeContraintes; Cnt++ ) {
@@ -139,7 +153,7 @@ fprintf(Flot,"ROWS\n");
 In this section all the row labels are defined, as well as the row type. The row 
 type is entered in field 1 (in column 2 or 3) and the row label is entered in 
 field 2 (columns 5-12). Row type:
-E : egalité
+E : egalitÃ©
 L : inferieur ou egal
 G : superieur ou egal
 N : objectif			
@@ -149,35 +163,45 @@ N : free ??
 fprintf(Flot," N  OBJECTIF\n");
 /* Ecriture de toutes les contraintes */
 for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
+  MettreAjourNom(NomContrainte, NomsDesContraintes, Cnt, 'R' );
   if ( Sens[Cnt] == '=' ) {
-    fprintf(Flot," E  R%07d\n",Cnt);
+    fprintf(Flot, " E  %s\n", NomContrainte);
   }
   else if (  Sens[Cnt] == '<' ) {
-    fprintf(Flot," L  R%07d\n",Cnt);
+    fprintf(Flot, " L  %s\n", NomContrainte);
   }
   else if (  Sens[Cnt] == '>' ) {
-    fprintf(Flot," G  R%07d\n",Cnt);
+    fprintf(Flot, " G  %s\n", NomContrainte);
   }
   else {
     fprintf(Flot,"PNE_EcrireJeuDeDonneesMPS : le sens de la contrainte %c ne fait pas partie des sens reconnus\n",
             Sens[Cnt]);
     exit(0);
   } 
+  
 }
 
 /* COLUMNS */
 fprintf(Flot,"COLUMNS\n");
 for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
-  if ( CoutLineaire[Var] != 0.0 ) {
-    sprintf(Nombre,"%-.10lf",CoutLineaire[Var]);
+  
+  MettreAjourNom(NomVariable, NomsDesVariables, Var, 'C');
+  if (CoutLineaire[Var] != 0.0)
+  {
+    sprintf(Nombre, "%-.10lf", CoutLineaire[Var]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-    fprintf(Flot,"    C%07d  OBJECTIF  %s\n",Var,Nombre);
+    fprintf(Flot, "    %s  OBJECTIF  %s\n", NomVariable, Nombre);
   }
   il = Cdeb[Var];
-  while ( il >= 0 ) {
-    sprintf(Nombre,"%-.10lf",CoefficientsDeLaMatriceDesContraintes[il]);
+  while (il >= 0)
+  {
+    Cnt = NumeroDeContrainte[il];
+    MettreAjourNom(NomContrainte, NomsDesContraintes, Cnt, 'R');
+    
+    sprintf(Nombre, "%-.10lf", CoefficientsDeLaMatriceDesContraintes[il]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-    fprintf(Flot,"    C%07d  R%07d  %s\n",Var,NumeroDeContrainte[il],Nombre);
+    fprintf(Flot, "    %s  %s  %s\n", NomVariable, NomContrainte, Nombre);
+
     il = Csui[il];
   }
 }
@@ -190,12 +214,16 @@ fprintf(Flot,"RHS\n");
 if (objective_offset != 0.0) {
    fprintf(Flot,"    RHSVAL    OBJECTIF  %f\n",  -objective_offset);
 }
-for ( Cnt = 0 ; Cnt < NombreDeContraintes ; Cnt++ ) {
-  if ( SecondMembre[Cnt] != 0.0 ) {
-    sprintf(Nombre,"%-.9lf",SecondMembre[Cnt]);
+for (Cnt = 0; Cnt < NombreDeContraintes; Cnt++)
+{
+   if (SecondMembre[Cnt] != 0.0)
+   {
+
+    MettreAjourNom(NomContrainte, NomsDesContraintes, Cnt, 'R');
+    sprintf(Nombre, "%-.9lf", SecondMembre[Cnt]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-    fprintf(Flot,"    RHSVAL    R%07d  %s\n",Cnt,Nombre);
-  }
+    fprintf(Flot, "    RHSVAL    %s  %s\n", NomContrainte, Nombre);
+   }
 }
 
 /* BOUNDS */
@@ -213,45 +241,51 @@ fprintf(Flot,"BOUNDS\n");
  PL upper bound + infini 
 */
 for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
+  MettreAjourNom(NomVariable, NomsDesVariables, Var, 'C');
   if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_FIXE ) {
     sprintf(Nombre,"%-.9lf",Xmin[Var]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-    fprintf(Flot," FX BNDVALUE  C%07d  %s\n",Var,Nombre);
+
+    fprintf(Flot, " FX BNDVALUE  %s  %s\n", NomVariable, Nombre);
+
     continue;
   }
   if ( TypeDeVariable[Var] == ENTIER ) {
-    fprintf(Flot," BV BNDVALUE  C%07d\n",Var);
+    fprintf(Flot, " BV BNDVALUE  %s\n", NomVariable);
     continue;
-  }
+   }
   /* Variable reelle */
   /* Par defaut la variable est PL i.e;. comprise entre 0 et + l'infini */
   if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_DES_DEUX_COTES ) {
-    if ( Xmin[Var] != 0.0 ) {
-      sprintf(Nombre,"%-.9lf",Xmin[Var]);
+    if (Xmin[Var] != 0.0)
+    {
+      sprintf(Nombre, "%-.9lf", Xmin[Var]);
       /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-      fprintf(Flot," LO BNDVALUE  C%07d  %s\n",Var,Nombre);
+      fprintf(Flot," LO BNDVALUE  %s  %s\n",NomVariable,Nombre);
     }
-    sprintf(Nombre,"%-.9lf",Xmax[Var]);
+    sprintf(Nombre, "%-.9lf", Xmax[Var]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-    fprintf(Flot," UP BNDVALUE  C%07d  %s\n",Var,Nombre);
+    fprintf(Flot," UP BNDVALUE  %s  %s\n", NomVariable, Nombre);
   }
-  if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_INFERIEUREMENT ) {
-    if ( Xmin[Var] != 0.0 ) {
-      sprintf(Nombre,"%-.9lf",Xmin[Var]);
+  if (TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_INFERIEUREMENT)
+  {
+    if (Xmin[Var] != 0.0)
+    {
+      sprintf(Nombre, "%-.9lf", Xmin[Var]);
       /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-      fprintf(Flot," LO BNDVALUE  C%07d  %s\n",Var,Nombre);
+      fprintf(Flot," LO BNDVALUE  %s  %s\n",NomVariable,Nombre);
     }
   }
   if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_SUPERIEUREMENT ) {
-    fprintf(Flot," MI BNDVALUE  C%07d\n",Var);
+    fprintf(Flot," MI BNDVALUE  %s\n",NomVariable);
     if ( Xmax[Var] != 0.0 ) {
       sprintf(Nombre,"%-.9lf",Xmax[Var]);
       /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-      fprintf(Flot," UP BNDVALUE  C%07d  %s\n",Var,Nombre);
+      fprintf(Flot," UP BNDVALUE  %s  %s\n", NomVariable, Nombre);
     }
   }
   if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_NON_BORNEE ) {
-    fprintf(Flot," FR BNDVALUE  C%07d\n",Var);
+    fprintf(Flot," FR BNDVALUE  %s\n", NomVariable);
   }
 }
 
