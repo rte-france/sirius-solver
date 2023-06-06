@@ -265,7 +265,7 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
     }
     sprintf(Nombre, "%-.9lf", Xmax[Var]);
     /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-    fprintf(Flot," UP BNDVALUE  %s  %s\n",NomVariable,Nombre);
+    fprintf(Flot," UP BNDVALUE  %s  %s\n", NomVariable, Nombre);
   }
   if (TypeDeBorneDeLaVariable[Var] == VARIABLE_BORNEE_INFERIEUREMENT)
   {
@@ -281,11 +281,11 @@ for ( Var = 0 ; Var < NombreDeVariables ; Var++ ) {
     if ( Xmax[Var] != 0.0 ) {
       sprintf(Nombre,"%-.9lf",Xmax[Var]);
       /*Nombre[12] = '\0';*/ /* <- On prefere ne pas ajouter de troncature */
-      fprintf(Flot," UP BNDVALUE  %s  %s\n",NomVariable,Nombre);
+      fprintf(Flot," UP BNDVALUE  %s  %s\n", NomVariable, Nombre);
     }
   }
   if ( TypeDeBorneDeLaVariable[Var] == VARIABLE_NON_BORNEE ) {
-    fprintf(Flot," FR BNDVALUE  %s\n",NomVariable);
+    fprintf(Flot," FR BNDVALUE  %s\n", NomVariable);
   }
 }
 
