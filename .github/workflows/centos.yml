@@ -41,7 +41,7 @@ jobs:
 
       - name: Checkout sirius
         run: |
-          git clone https://github.com/rte-france/sirius-solver -b ${{ env.Sirius_Ref }} .
+          git clone $GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git -b $GITHUB_REF_NAME .
 
       - name: set sirius output variables
         id: sirius-variables
