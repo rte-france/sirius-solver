@@ -70,7 +70,7 @@ jobs:
       - name: Build & Install Sirius
         run: |
           source /opt/rh/gcc-toolset-11/enable
-          cmake --build build --config Release --target install -j14
+          cmake --build build --config Release --target install -j2
 
       - name: Zip Install Sirius
         run: |
