@@ -19,8 +19,6 @@ jobs:
     name: build sirius
     runs-on: ubuntu-latest
     container: 'oraclelinux:8'
-    env:
-      Sirius_Ref: antares_integration
     steps:
       - name: is release created
         run: |

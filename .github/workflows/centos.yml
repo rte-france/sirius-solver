@@ -19,8 +19,6 @@ jobs:
     name: build sirius
     runs-on: ubuntu-latest
     container: 'centos:centos7'
-    env:
-      Sirius_Ref: antares_integration
     steps:
       - name: is release created
         run: |
