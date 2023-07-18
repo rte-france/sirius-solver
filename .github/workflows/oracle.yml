@@ -1,4 +1,4 @@
-name: CentOS
+name: OracleLinux
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
   build_sirius:
     name: build sirius
     runs-on: ubuntu-latest
-    container: 'centos:centos7'
+    container: 'oraclelinux:8'
     steps:
       - name: is release created
         run: |
@@ -31,11 +31,14 @@ jobs:
         uses:
           bruceadams/get-release@v1.2.3
 
-      - name: install requirements
+      - name: Install requirements (dnf)
         run: |
-          yum install -y epel-release
-          yum install -y git redhat-lsb-core centos-release-scl scl-utils
-          yum install -y cmake3 devtoolset-9
+          dnf -y update
+          dnf -y install git wget openssl-devel cmake
+          dnf -y groupinstall "Development Tools"
+          dnf -y install gcc-toolset-11
+          dnf clean all
+          rm -rf /var/cache/dnf
 
       - name: Checkout sirius
         run: |
@@ -45,9 +48,9 @@ jobs:
         id: sirius-variables
         run: |
           SIRIUS_BASE_PATH=$PWD
-          SIRIUS_INSTALL_DIR=centos-7_sirius-solver-install
+          SIRIUS_INSTALL_DIR=oraclelinux-8_sirius-solver-install
           SIRIUS_INSTALL_PATH="${SIRIUS_BASE_PATH}/${SIRIUS_INSTALL_DIR}"
-          ARCHIVE_NAME=centos-7_sirius-solver.zip
+          ARCHIVE_NAME=oraclelinux-8_sirius-solver.zip
           ARCHIVE_PATH="${SIRIUS_BASE_PATH}/${ARCHIVE_NAME}"
           echo "::set-output name=install-dir::$SIRIUS_INSTALL_DIR"
           echo "::set-output name=install-path::$SIRIUS_INSTALL_PATH"
@@ -56,16 +59,16 @@ jobs:
 
       - name: Configure Sirius
         run: |
-          source /opt/rh/devtoolset-9/enable
-          cmake3 -S src \
+          source /opt/rh/gcc-toolset-11/enable
+          cmake -S src \
                 -B build \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_INSTALL_PREFIX="${{ steps.sirius-variables.outputs.install-dir }}"
 
       - name: Build & Install Sirius
         run: |
-          source /opt/rh/devtoolset-9/enable
-          cmake3 --build build --config Release --target install -j14
+          source /opt/rh/gcc-toolset-11/enable
+          cmake --build build --config Release --target install -j2
 
       - name: Zip Install Sirius
         run: |
