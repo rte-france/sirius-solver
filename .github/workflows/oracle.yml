@@ -1,0 +1,93 @@
+name: OracleLinux
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*
+      - antares_integration
+      - fix/*
+  release:
+    types: [ created ]
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+
+  build_sirius:
+    name: build sirius
+    runs-on: ubuntu-latest
+    container: 'oraclelinux:8'
+    env:
+      Sirius_Ref: antares_integration
+    steps:
+      - name: is release created
+        run: |
+          release_created=${{ github.event_name == 'release' && github.event.action == 'created' }}
+          echo "RELEASE_CREATED=$release_created" >> $GITHUB_ENV
+
+      - name: Get release
+        if: ${{ env.RELEASE_CREATED == 'true' }}
+        id: get_release
+        uses:
+          bruceadams/get-release@v1.2.3
+
+      - name: Install requirements (dnf)
+        run: |
+          dnf -y update
+          dnf -y install git wget openssl-devel
+          dnf -y groupinstall "Development Tools"
+          dnf -y install gcc-toolset-11
+          dnf clean all
+          rm -rf /var/cache/dnf
+
+      - name: Checkout sirius
+        run: |
+          git clone https://github.com/rte-france/sirius-solver -b ${{ env.Sirius_Ref }} .
+
+      - name: set sirius output variables
+        id: sirius-variables
+        run: |
+          SIRIUS_BASE_PATH=$PWD
+          SIRIUS_INSTALL_DIR=oraclelinux-8_sirius-solver-install
+          SIRIUS_INSTALL_PATH="${SIRIUS_BASE_PATH}/${SIRIUS_INSTALL_DIR}"
+          ARCHIVE_NAME=oraclelinux-8_sirius-solver.zip
+          ARCHIVE_PATH="${SIRIUS_BASE_PATH}/${ARCHIVE_NAME}"
+          echo "::set-output name=install-dir::$SIRIUS_INSTALL_DIR"
+          echo "::set-output name=install-path::$SIRIUS_INSTALL_PATH"
+          echo "::set-output name=archive-name::$ARCHIVE_NAME"
+          echo "::set-output name=archive-path::$ARCHIVE_PATH"
+
+      - name: Configure Sirius
+        run: |
+          source /opt/rh/gcc-toolset-11/enable
+          cmake -S src \
+                -B build \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX="${{ steps.sirius-variables.outputs.install-dir }}"
+
+      - name: Build & Install Sirius
+        run: |
+          source /opt/rh/gcc-toolset-11/enable
+          cmake --build build --config Release --target install -j14
+
+      - name: Zip Install Sirius
+        run: |
+          ARCHIVE_NAME="${{ steps.sirius-variables.outputs.archive-name }}"
+          zip -r $ARCHIVE_NAME "${{ steps.sirius-variables.outputs.install-dir }}"
+
+      - name: Upload sirius install
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.sirius-variables.outputs.install-dir }}
+          path: ${{ steps.sirius-variables.outputs.install-path }}
+
+      - name: Publish sirius install
+        if: ${{ env.RELEASE_CREATED == 'true' }}
+        uses: actions/upload-release-asset@v1.0.2
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ${{ steps.sirius-variables.outputs.archive-path }}
+          asset_name: ${{ steps.sirius-variables.outputs.archive-name }}
+          asset_content_type: application/zip
