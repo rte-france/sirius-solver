@@ -6,7 +6,7 @@
 // This file is part of SIRIUS, a linear problem solver, used in the ANTARES Simulator : https://antares-simulator.org/.
 
 #pragma once
-#include "sirius_callback.h
+#include "sirius_callback.h"
 #include "srs_problem.h"
 #include "srs_problem_functions.h"
 #include <float.h>
