@@ -23,6 +23,7 @@
 
 # include "spx_definition_arguments.h"
 # include "spx_define.h"
+#include "sirius_callback.h"
 
 /* En cours pour tests heuristique 
 spx_dual_sortir_les_variables_binaires.c
@@ -372,6 +373,8 @@ void SPX_InitMatriceHorsBase( PROBLEME_SPX * );
 void SPX_MettreAJourLaMatriceHorsBase( PROBLEME_SPX * );
 
 /*-----------------------------------------------------------------------------------------*/
+
+int SPXsetcbmessage(PROBLEME_SPX *problem_spx, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level);
 
 # define FONCTIONS_SPX_DEJA_DEFINIES
 # endif
