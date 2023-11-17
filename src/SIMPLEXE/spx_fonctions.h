@@ -375,6 +375,7 @@ void SPX_MettreAJourLaMatriceHorsBase( PROBLEME_SPX * );
 /*-----------------------------------------------------------------------------------------*/
 
 int SPXsetcbmessage(PROBLEME_SPX *problem_spx, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level);
+int SPLXsetcbmessage(PROBLEME_SIMPLEXE *problem_simplex, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level);
 
 # define FONCTIONS_SPX_DEJA_DEFINIES
 # endif
