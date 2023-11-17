@@ -28,6 +28,7 @@
 
 # include "spx_fonctions.h"
 # include "spx_define.h"
+#include "sirius_callback.h"
 
 # ifdef SPX_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
   # include "spx_memoire.h"
@@ -47,10 +48,14 @@ return;
 
 PROBLEME_SPX * SPX_Simplexe( PROBLEME_SIMPLEXE * Probleme , PROBLEME_SPX * Spx )
 {
-void * Tas;
+  callback_function call_back = (callback_function)Probleme->callback;
+  const char *welcome = "Sirius Welcome you!\n";
+  call_back(Probleme->caller, welcome, 4, SIRIUS_INFO);
+  void *Tas;
 
-if ( Spx == NULL ) {
-  # ifdef SPX_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE	
+  if (Spx == NULL)
+  {
+#ifdef SPX_UTILISER_LES_OUTILS_DE_GESTION_MEMOIRE_PROPRIETAIRE
     Tas = MEM_Init(); 
     Spx = (PROBLEME_SPX *) MEM_Malloc( Tas, sizeof( PROBLEME_SPX ) );
     if ( Spx == NULL ) {
@@ -60,8 +65,8 @@ if ( Spx == NULL ) {
     }
 		memset( (char *) Spx, 0, sizeof( PROBLEME_SPX ) );
 	  Spx->Tas = Tas;
-  # else
-	  Tas = NULL;
+#else
+    Tas = NULL;
     Spx = (PROBLEME_SPX *) malloc( sizeof( PROBLEME_SPX ) );
     if ( Spx == NULL ) {
       printf("Saturation memoire, impossible d'allouer un objet PROBLEME_SPX\n");    
@@ -70,40 +75,44 @@ if ( Spx == NULL ) {
     }
 		memset( (char *) Spx, 0, sizeof( PROBLEME_SPX ) );
 	  Spx->Tas = Tas;
-	# endif
-}
-
-Spx->AnomalieDetectee = NON_SPX;
-
-setjmp( Spx->EnvSpx );
-
-/* Pour ne pas avoir de warning a la compilation */
-/* Attention, il ne faut pas faire appel à a une autre routine pour faire le setjmp
-   car lorsque le longjmp arrive, au return de la routine en question on se retrouve
-	 n'importe ou et ça plante */
-/*SPX_InitSetJmp( Spx->EnvSpx );*/
-
-if ( Spx->AnomalieDetectee != NON_SPX ) {
-  /* Liberation du probleme */ 
-   /* Meme si une anomalie a ete detectee il est preferable de ne pas liberer le probleme 
-      ici. Le probleme est de toute facon libere en fin de PNE . */ 
-   /* SPX_LibererProbleme( Spx ); */     
-  Probleme->ExistenceDUneSolution = SPX_ERREUR_INTERNE;
-  if ( Spx->AnomalieDetectee == SPX_MATRICE_DE_BASE_SINGULIERE ) {
-    Probleme->ExistenceDUneSolution = SPX_MATRICE_DE_BASE_SINGULIERE;
-    /*printf("Trace simplexe: Matrice de base singuliere\n");*/
+#endif
   }
-  return( Spx );     
-} 
-else {
-  /* Optimisation */
- SPX_SimplexeCalculs( Probleme , Spx );
- /* On ne renvoie pas de pointeur a la structure si sa desallocation 
-    a ete demandee par l'appelant */
- if ( Probleme->LibererMemoireALaFin == OUI_SPX ) Spx = NULL;
-}
- 
-return( Spx );
+
+  Spx->AnomalieDetectee = NON_SPX;
+
+  setjmp(Spx->EnvSpx);
+
+  /* Pour ne pas avoir de warning a la compilation */
+  /* Attention, il ne faut pas faire appel ï¿½ a une autre routine pour faire le setjmp
+     car lorsque le longjmp arrive, au return de la routine en question on se retrouve
+     n'importe ou et ï¿½a plante */
+  /*SPX_InitSetJmp( Spx->EnvSpx );*/
+
+  if (Spx->AnomalieDetectee != NON_SPX)
+  {
+    /* Liberation du probleme */
+    /* Meme si une anomalie a ete detectee il est preferable de ne pas liberer le probleme
+       ici. Le probleme est de toute facon libere en fin de PNE . */
+    /* SPX_LibererProbleme( Spx ); */
+    Probleme->ExistenceDUneSolution = SPX_ERREUR_INTERNE;
+    if (Spx->AnomalieDetectee == SPX_MATRICE_DE_BASE_SINGULIERE)
+    {
+      Probleme->ExistenceDUneSolution = SPX_MATRICE_DE_BASE_SINGULIERE;
+      /*printf("Trace simplexe: Matrice de base singuliere\n");*/
+    }
+    return (Spx);
+  }
+  else
+  {
+    /* Optimisation */
+    SPX_SimplexeCalculs(Probleme, Spx);
+    /* On ne renvoie pas de pointeur a la structure si sa desallocation
+       a ete demandee par l'appelant */
+    if (Probleme->LibererMemoireALaFin == OUI_SPX)
+      Spx = NULL;
+  }
+
+  return (Spx);
 }  
 
 

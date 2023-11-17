@@ -437,6 +437,7 @@ double A1;
 
 /*------------------------------------------*/
 void *callback;
+void *caller;
 
 } PROBLEME_SPX; 
   

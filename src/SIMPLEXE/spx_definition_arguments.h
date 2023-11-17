@@ -174,6 +174,7 @@ typedef struct {
   /* Traces */
   char     AffichageDesTraces; /* Vaut OUI_SPX ou NON_SPX */
   void *callback;
+  void *caller;
 
 } PROBLEME_SIMPLEXE;
 
