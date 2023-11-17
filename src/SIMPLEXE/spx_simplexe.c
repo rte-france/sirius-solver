@@ -48,9 +48,14 @@ return;
 
 PROBLEME_SPX * SPX_Simplexe( PROBLEME_SIMPLEXE * Probleme , PROBLEME_SPX * Spx )
 {
+
   callback_function call_back = (callback_function)Probleme->callback;
   const char *welcome = "Sirius Welcome you!\n";
-  call_back(Probleme->caller, welcome, 4, SIRIUS_INFO);
+  // TODO else default
+  if (call_back)
+  {
+    call_back(Probleme->caller, welcome, 4, SIRIUS_INFO);
+  }
   void *Tas;
 
   if (Spx == NULL)
