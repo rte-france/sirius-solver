@@ -13,7 +13,7 @@ extern "C"
         SIRIUS_FATAL
     } SIRIUS_LOGLEVEL;
     typedef int (*callback_function)(void *caller, const char *sMsg, int nLen, SIRIUS_LOGLEVEL log_level);
-  
+    int SiriusDefaultCallback(void *caller, const char *sMsg, int nLen, SIRIUS_LOGLEVEL log_level);
 #ifdef __cplusplus
 }
 #endif

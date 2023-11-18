@@ -154,21 +154,6 @@ int initProblemMpsPointer(SRS_PROBLEM * problem_srs) {
 	return 0;
 }
 
-int SRSdefault_callback(void *caller, const char *sMsg, int nLen, SIRIUS_LOGLEVEL log_level)
-{
-	if (nLen <= 0)
-	{
-		return 0;
-	}
-	if (log_level == SIRIUS_ERROR)
-	{
-		fprintf(stderr, sMsg);
-	}
-	else
-	{
-		printf("%s", sMsg);
-	}
-}
 
 SRS_PROBLEM * SRScreateprob() {
 	SRS_PROBLEM * problem_srs = (SRS_PROBLEM *)malloc(sizeof(SRS_PROBLEM));
@@ -189,7 +174,7 @@ SRS_PROBLEM * SRScreateprob() {
 	
 	//MPS
 	initProblemMpsPointer(problem_srs);
-	problem_srs->callback = SRSdefault_callback;
+	problem_srs->callback = SiriusDefaultCallback;
 
 	return problem_srs;
 }
@@ -827,7 +812,7 @@ int SRSgetbestbound(SRS_PROBLEM * problem_srs, double * bestBoundVal) {
 
 int SRSsetdefaultcbmessage(SRS_PROBLEM *problem_srs, callback_function the_callback_function, SIRIUS_LOGLEVEL log_level)
 {
-	problem_srs->callback = SRSdefault_callback;
+	problem_srs->callback = SiriusDefaultCallback;
 }
 int SRSsetcbmessage(SRS_PROBLEM *problem_srs, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level)
 {
