@@ -22,7 +22,6 @@
 /*-----------------------------------------------------------------------------------------*/
 		
 # include "bb_define.h"
-#include "sirius_callback.h"
 
 int    BB_BranchAndBound( void * , int , int , double , int , int , int , char , int * );
 
@@ -111,7 +110,6 @@ NOEUD * BB_EvaluationRapideDUnNoeud( BB * , PROBLEME_SPX * , PROBLEME_PNE * , in
 */
 NOEUD * BB_PreparerExplorationRapideEnProfondeur( BB * , NOEUD * );
 void BB_ExplorationRapideEnProfondeur( BB * );
-int SRSsetcbmessage(BB *Bb, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level);
 
 /*-----------------------------------------------------------------------------------------*/
 # define FONCTIONS_BB_DEJA_DEFINIES

@@ -19,7 +19,7 @@
    FONCTION: Pilotage du branch and bound  
  
    Appele comme un sous-programme du programme fortran maitre. Ce 
-   sous-programme orchestre le dï¿½roulement de la recherche arborescente. 
+   sous-programme orchestre le déroulement de la recherche arborescente. 
    Les etapes sont les suivantes:
    1- Creation du noeud racine.
    2- Recherche en profondeur a partie du noeud racine pour trouver une  
@@ -73,8 +73,7 @@ if ( Bb == NULL ) {
 	  Bb->Tas = Tas;
 	# endif
 }
-// 
-Bb->callback = SiriusDefaultCallback;
+
 Pne = (PROBLEME_PNE *) PneE;
 /* Initialisation de ProblemeBbDuSolveur pour la partie PNE */
 Pne->ProblemeBbDuSolveur = (void *) Bb;
