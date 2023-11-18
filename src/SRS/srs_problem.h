@@ -35,6 +35,7 @@ typedef struct SRS_PROBLEM {
 	int scaling;
 	double maxTime;
 	void *callback;
+	void *caller;
 } SRS_PROBLEM;
 
 # ifdef __cplusplus

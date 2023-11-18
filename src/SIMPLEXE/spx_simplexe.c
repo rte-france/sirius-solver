@@ -126,6 +126,7 @@ int SPXsetcbmessage(PROBLEME_SPX *problem_spx, callback_function the_callback_fu
   // TODO
   return 0;
 }
+
 int SPLXsetcbmessage(PROBLEME_SIMPLEXE *problem_simplex, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level)
 {
   problem_simplex->callback = the_callback_function;

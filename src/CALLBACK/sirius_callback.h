@@ -3,7 +3,6 @@ extern "C"
 {
 #endif
 #pragma once
-
     typedef enum SIRIUS_LOGLEVEL
     {
         SIRIUS_TRACE,
@@ -14,6 +13,8 @@ extern "C"
         SIRIUS_FATAL
     } SIRIUS_LOGLEVEL;
     typedef int (*callback_function)(void *caller, const char *sMsg, int nLen, SIRIUS_LOGLEVEL log_level);
+  
+int Siriussetcbmessage(void *problem, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level);
 #ifdef __cplusplus
 }
 #endif

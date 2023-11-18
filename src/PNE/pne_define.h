@@ -592,6 +592,10 @@ jmp_buf Env;
 
 double Critere;
 
+
+	void *callback;
+	void *caller;
+
 } PROBLEME_PNE;
  
 /*******************************************************************************************/
