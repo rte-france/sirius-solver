@@ -110,8 +110,8 @@ callback_function call_back = SPXgetcbmessage(Spx);
 char msg [SIRIUS_CALLBACK_BUFFER_SIZE];										 
 /* Eventuellement forme produit de l'inverse */
 if ( Spx->UtiliserLaLuUpdate == NON_SPX ) {
-  const char* fatal_msg = "CalculerBBarre AppliquerLesEtaVecteurs pas operationnel \n";
-  call_back(Spx->something_from_the_caller, fatal_msg, 0, SIRIUS_FATAL);
+  strcpy(msg, "CalculerBBarre AppliquerLesEtaVecteurs pas operationnel \n");
+  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
   exit(0);
   SPX_AppliquerLesEtaVecteurs( Spx, ABarreS, CntDeABarreSNonNuls, &NbTermesNonNuls, *CalculEnHyperCreux, *TypeDeSortie );
 }
@@ -121,7 +121,7 @@ Spx->NbABarreSNonNuls = NbTermesNonNuls;
 # if VERIFICATION_ABARRES == OUI_SPX
 
 snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "---------------- CalculerABarreS  Spx->NombreDeChangementsDeBase %d -------------\n",Spx->NombreDeChangementsDeBase);
-call_back(Spx->something_from_the_caller, fatal_msg, 0, SIRIUS_INFO);
+call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 if ( *TypeDEntree == VECTEUR_LU ) {
 	strcpy(msg, "apres resolution TypeDEntree = VECTEUR_LU\n");
     call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
