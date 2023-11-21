@@ -64,6 +64,9 @@ LigneDeLaBaseFactorisee = Spx->LigneDeLaBaseFactorisee;
 CntVarSor = ContrainteDeLaVariableEnBase[Spx->VariableSortante];
 ResoudreLeSystemeReduit = NON_SPX;
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];				
+
 /* Remarque: a ce stade toutes les AReduit composantes de sont nulles */
 
 if ( CalculEnHyperCreux != OUI_SPX ) {
@@ -78,7 +81,7 @@ if ( CalculEnHyperCreux != OUI_SPX ) {
   }
 	else {
 		/* Ca ne peut pas arriver */
-		printf("CalculerErBMoins1AvecBaseReduite bug: variable sortante hors base reduite impossible\n");
+        call_back(Spx->something_from_the_caller, "CalculerErBMoins1AvecBaseReduite bug: variable sortante hors base reduite impossible\n", 0, SIRIUS_FATAL);
 		exit(0);
   }
 }
@@ -97,7 +100,7 @@ else {
   }
 	else {
 		/* Ca ne peut pas arriver */
-		printf("CalculerErBMoins1AvecBaseReduite bug: variable sortante hors base reduite impossible\n");
+        call_back(Spx->something_from_the_caller, "CalculerErBMoins1AvecBaseReduite bug: variable sortante hors base reduite impossible\n", 0, SIRIUS_FATAL);
 		exit(0);			    			
 	}
 }   
@@ -144,7 +147,8 @@ if ( CalculEnHyperCreux == OUI_SPX ) {
 		*/
 		if ( Spx->NbEchecsErBMoins >= SEUIL_ECHEC_CREUX ) {
       # if VERBOSE_SPX
-		    printf("Arret de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n",Spx->Iteration);
+		    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Arret de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n",Spx->Iteration);
+            call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
       # endif			
 		  Spx->CalculErBMoinsUnEnHyperCreux = NON_SPX;
       Spx->CountEchecsErBMoins = 0;
