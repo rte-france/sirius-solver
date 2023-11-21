@@ -76,7 +76,7 @@ int SRSfreempsprob(PROBLEME_MPS * problem_mps);
 int SPXcopy_problem(PROBLEME_MPS * problem_mps, PROBLEME_SIMPLEXE * problem_simplexe);
 int SRScopy_from_problem_simplexe(SRS_PROBLEM * problem_srs, PROBLEME_SIMPLEXE * problem_simplexe);
 int SRSsetdefaultcbmessage(SRS_PROBLEM *problem_srs, callback_function the_callback_function, SIRIUS_LOGLEVEL log_level);
-int SRSsetcbmessage(SRS_PROBLEM *problem_srs, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level);
+int SRSsetcbmessage(SRS_PROBLEM *problem_srs, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level);
 # ifdef __cplusplus
 }
 # endif

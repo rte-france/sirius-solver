@@ -594,7 +594,7 @@ double Critere;
 
 
 	void *callback;
-	void *caller;
+	void *something_from_the_caller;
 
 } PROBLEME_PNE;
  

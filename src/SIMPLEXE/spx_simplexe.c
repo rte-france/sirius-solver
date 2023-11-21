@@ -54,7 +54,11 @@ PROBLEME_SPX * SPX_Simplexe( PROBLEME_SIMPLEXE * Probleme , PROBLEME_SPX * Spx )
   // TODO else default
   if (call_back)
   {
-    call_back(Probleme->caller, welcome, 4, SIRIUS_INFO);
+    call_back(Probleme->something_from_the_caller, welcome, 4, SIRIUS_INFO);
+  }
+  else
+  {
+    call_back = SiriusDefaultCallback;
   }
   void *Tas;
 
@@ -119,18 +123,18 @@ PROBLEME_SPX * SPX_Simplexe( PROBLEME_SIMPLEXE * Probleme , PROBLEME_SPX * Spx )
 
   return (Spx);
 }
-int SPXsetcbmessage(PROBLEME_SPX *problem_spx, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level)
+int SPXsetcbmessage(PROBLEME_SPX *problem_spx, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level)
 {
   problem_spx->callback = the_callback_function;
-  problem_spx->caller = caller;
+  problem_spx->something_from_the_caller = something_from_the_caller;
   // TODO
   return 0;
 }
 
-int SPLXsetcbmessage(PROBLEME_SIMPLEXE *problem_simplex, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level)
+int SPLXsetcbmessage(PROBLEME_SIMPLEXE *problem_simplex, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level)
 {
   problem_simplex->callback = the_callback_function;
-  problem_simplex->caller = caller;
+  problem_simplex->something_from_the_caller = something_from_the_caller;
   // TODO
   return 0;
 }

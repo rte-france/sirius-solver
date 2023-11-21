@@ -135,7 +135,7 @@ La matrice des contrainte est decrite par les 4 vecteurs qui suivent. Elle doit 
 				                           */																	 
   double objective_offset;
   void *callback;
-  void *caller;
+  void *something_from_the_caller;
 
 } PROBLEME_A_RESOUDRE;
 

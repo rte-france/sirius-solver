@@ -2,7 +2,7 @@
 #include "sirius_callback.h"
 #include <stdio.h>
 
-int SiriusDefaultCallback(void *caller, const char *sMsg, int nLen, SIRIUS_LOGLEVEL log_level)
+int SiriusDefaultCallback(void *something_from_the_caller, const char *sMsg, int nLen, SIRIUS_LOGLEVEL log_level)
 {
 	if (nLen <= 0)
 	{

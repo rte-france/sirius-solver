@@ -456,9 +456,9 @@ void PNE_MiseAJourDesSeuilDeSelectionDesCoupes( PROBLEME_PNE * );
 /* En test: pour detecter les contraintes d'egalite sur des entiere infaisables */
 void PNE_DetectionContraintesEntieresInfaisable( PROBLEME_PNE * );
 
-int PNEsetcbmessage(PROBLEME_PNE *problem_pne, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level);
-//int PROBLEME_MPSsetcbmessage(PROBLEME_MPS *problem_pne, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level);
-int PROBLEME_A_RESOUDREsetcbmessage(PROBLEME_A_RESOUDRE *problem_pne, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level);
+int PNEsetcbmessage(PROBLEME_PNE *problem_pne, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level);
+//int PROBLEME_MPSsetcbmessage(PROBLEME_MPS *problem_pne, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level);
+int PROBLEME_A_RESOUDREsetcbmessage(PROBLEME_A_RESOUDRE *problem_pne, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level);
 
 
 /*******************************************************************************************/

@@ -814,10 +814,10 @@ int SRSsetdefaultcbmessage(SRS_PROBLEM *problem_srs, callback_function the_callb
 {
 	problem_srs->callback = SiriusDefaultCallback;
 }
-int SRSsetcbmessage(SRS_PROBLEM *problem_srs, callback_function the_callback_function, void *caller, SIRIUS_LOGLEVEL log_level)
+int SRSsetcbmessage(SRS_PROBLEM *problem_srs, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level)
 {
 	problem_srs->callback = the_callback_function;
-	problem_srs->caller = caller;
+	problem_srs->something_from_the_caller = something_from_the_caller;
 }
 
 # ifdef __cplusplus
