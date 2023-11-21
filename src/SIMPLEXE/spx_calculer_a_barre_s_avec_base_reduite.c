@@ -110,8 +110,7 @@ callback_function call_back = SPXgetcbmessage(Spx);
 char msg [SIRIUS_CALLBACK_BUFFER_SIZE];										 
 /* Eventuellement forme produit de l'inverse */
 if ( Spx->UtiliserLaLuUpdate == NON_SPX ) {
-  strcpy(msg, "CalculerBBarre AppliquerLesEtaVecteurs pas operationnel \n");
-  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
+  call_back(Spx->something_from_the_caller, "CalculerBBarre AppliquerLesEtaVecteurs pas operationnel \n", 0, SIRIUS_FATAL);
   exit(0);
   SPX_AppliquerLesEtaVecteurs( Spx, ABarreS, CntDeABarreSNonNuls, &NbTermesNonNuls, *CalculEnHyperCreux, *TypeDeSortie );
 }
@@ -123,20 +122,16 @@ Spx->NbABarreSNonNuls = NbTermesNonNuls;
 snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "---------------- CalculerABarreS  Spx->NombreDeChangementsDeBase %d -------------\n",Spx->NombreDeChangementsDeBase);
 call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 if ( *TypeDEntree == VECTEUR_LU ) {
-	strcpy(msg, "apres resolution TypeDEntree = VECTEUR_LU\n");
-    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+    call_back(Spx->something_from_the_caller, "apres resolution TypeDEntree = VECTEUR_LU\n", 0, SIRIUS_INFO);
 }
 if ( *TypeDEntree == COMPACT_LU ){
-	strcpy(msg, "apres resolution TypeDEntree = COMPACT_LU\n");
-    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+    call_back(Spx->something_from_the_caller, "apres resolution TypeDEntree = COMPACT_LU\n", 0, SIRIUS_INFO);
 	}
 if ( *TypeDeSortie == VECTEUR_LU ) {
-	strcpy(msg, "apres resolution TypeDeSortie = VECTEUR_LU\n");
-    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+    call_back(Spx->something_from_the_caller, "apres resolution TypeDeSortie = VECTEUR_LU\n", 0, SIRIUS_INFO);
 }
 if ( *TypeDeSortie == COMPACT_LU ){
-	strcpy(msg, "apres resolution TypeDeSortie = COMPACT_LU\n");
-    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+    call_back(Spx->something_from_the_caller, "apres resolution TypeDeSortie = COMPACT_LU\n", 0, SIRIUS_INFO);
 }					
 {
 double * Buff; int i; int Var; int ic; int icMx; double * Sortie; char Arret;
@@ -188,23 +183,19 @@ for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) {
     
 	Var = Spx->VariableEnBaseDeLaContrainte[Spx->ColonneDeLaBaseFactorisee[r]];
 		if ( Spx->OrigineDeLaVariable[Var] != NATIVE ){ 
-			strcpy(msg, " variable non native\n");
-            call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+            call_back(Spx->something_from_the_caller, " variable non native\n", 0, SIRIUS_INFO);
 		}
 		else {
-			strcpy(msg, " variable native\n");
-            call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+            call_back(Spx->something_from_the_caller, " variable native\n", 0, SIRIUS_INFO);
 		}		
 		Arret = OUI_SPX;
 	}
 }
 if ( Arret == OUI_SPX ) {
- strcpy(msg, "Verif ABarreS  not OK\n");
- call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
+ call_back(Spx->something_from_the_caller, "Verif ABarreS  not OK\n", 0, SIRIUS_FATAL);
  exit(0);
 }
-strcpy(msg, "Fin verif ABarreS  OK\n");
-call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+call_back(Spx->something_from_the_caller, "Fin verif ABarreS  OK\n", 0, SIRIUS_INFO);
 free( Buff );
 free( Sortie );
 

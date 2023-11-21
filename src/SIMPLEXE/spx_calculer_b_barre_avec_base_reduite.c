@@ -126,15 +126,19 @@ SecondMembreCreux = NON_LU;
 SPX_ResolutionDeSysteme( Spx, TypeDEntree, BBarre, NULL, NULL, &TypeDeSortie,
                          CalculEnHyperCreux, Save, SecondMembreCreux );									 
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];			
+
 /* Eventuellement forme produit de l'inverse */
 if ( Spx->UtiliserLaLuUpdate == NON_SPX ) {
-  printf("CalculerBBarre AppliquerLesEtaVecteurs pas operationnel \n");
-	exit(0);
+  call_back(Spx->something_from_the_caller, "CalculerBBarre AppliquerLesEtaVecteurs pas operationnel \n", 0, SIRIUS_FATAL);
+  exit(0);
   SPX_AppliquerLesEtaVecteurs( Spx, BBarre, NULL, NULL, CalculEnHyperCreux, TypeDeSortie );
 }
 
 # if VERIFICATION_BBARRE == OUI_SPX
-printf("----------- CalculerBBarre Iteration %d ---------------- \n",Spx->Iteration);
+snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "----------- CalculerBBarre Iteration %d ---------------- \n",Spx->Iteration);
+call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 {
 double * Buff; int i; int Var; int ic; int icMx; double * Sortie; char Arret;
 Buff = (double *) malloc( Spx->NombreDeContraintes * sizeof( double ) );
@@ -200,18 +204,23 @@ for ( i = 0 ; i < Spx->NombreDeContraintes ; i++ ) {
 Arret = NON_SPX;
 for ( i = 0 ; i < Spx->NombreDeContraintes ; i++ ) {
 	if ( fabs( Buff[i] ) > 1.e-7 ) {
-	  printf("i = %d   ecart %e  VariableEnBaseDeLaContrainte %d\n",i,Buff[i],Spx->VariableEnBaseDeLaContrainte[i]);
+	  snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "i = %d   ecart %e  VariableEnBaseDeLaContrainte %d\n",i,Buff[i],Spx->VariableEnBaseDeLaContrainte[i]);
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 		Var = Spx->VariableEnBaseDeLaContrainte[i];
-		if ( Spx->OrigineDeLaVariable[Var] != NATIVE ) printf(" variable non native\n");
-		else printf(" variable native\n");
+		if ( Spx->OrigineDeLaVariable[Var] != NATIVE ) {
+      call_back(Spx->something_from_the_caller, " variable non native\n", 0, SIRIUS_INFO);
+    }
+		else {
+      call_back(Spx->something_from_the_caller, " variable native\n", 0, SIRIUS_INFO);
+      }
 		Arret = OUI_SPX;
 	}
 }
 if ( Arret == OUI_SPX ) {
- printf("Verif Bbarre  not OK\n");
+ call_back(Spx->something_from_the_caller, "Verif Bbarre  not OK\n", 0, SIRIUS_FATAL);
  exit(0);
 }
-printf("Fin verif Bbarre  OK\n");
+call_back(Spx->something_from_the_caller, "Fin verif Bbarre  OK\n", 0, SIRIUS_INFO);
 free( Buff );
 free( Sortie );
 
