@@ -55,15 +55,18 @@ EtaNbTerm = Spx->EtaNbTerm;
 EtaIndiceLigne  = Spx->EtaIndiceLigne;
 EtaColonne      = Spx->EtaColonne;
 EtaMoins1Valeur = Spx->EtaMoins1Valeur;   
+callback_function call_back = SPXgetcbmessage(Spx);
 
 if ( CalculEnHyperCreux == OUI_SPX ) {
   if ( TypeDeStockage == COMPACT_LU ) goto HyperCreux;
   if ( TypeDeStockage == ADRESSAGE_INDIRECT_LU ) {
-	  printf("Attention TypeDeStockage = ADRESSAGE_INDIRECT_LU pas teste dans SPX_AppliquerLesEtaVecteursTransposee\n");
-	  goto HyperCreux;
+	  const char* msg ="Attention TypeDeStockage = ADRESSAGE_INDIRECT_LU pas teste dans SPX_AppliquerLesEtaVecteursTransposee\n";
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_WARN);
+    goto HyperCreux;
 	}
 	else if ( TypeDeStockage != VECTEUR_LU ) {
-	  printf("AppliquerLesEtaVecteursTransposee: type de stockage non gere\n");
+	  const char* msg = "AppliquerLesEtaVecteursTransposee: type de stockage non gere\n";
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
 	  exit(0);
 	}
 }
@@ -88,11 +91,16 @@ HyperCreux:
 # if CONTROLE_RAZ_DES_VECTEURS == OUI_SPX
   for ( j = 0 ; j < Spx->NombreDeContraintes ; j++ ) {
     if ( Spx->AReduit[j] != 0 ) {
-	    printf("AppliquerLesEtaVecteursTransposee: Spx->AReduit[%d] = %e\n",j,Spx->AReduit[j]);
+      char msg [SIRIUS_CALLBACK_BUFFER_SIZE];
+	    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE,  "AppliquerLesEtaVecteursTransposee: Spx->AReduit[%d] = %e\n",j,Spx->AReduit[j]);
+      call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
 	    exit(0);
 	  }
     if ( Spx->Marqueur[j] != -1 ) {
-	    printf("AppliquerLesEtaVecteursTransposee: Spx->Marqueur[%d] = %d\n",j,Spx->Marqueur[j]);
+	    
+      char msg [SIRIUS_CALLBACK_BUFFER_SIZE];
+      snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "AppliquerLesEtaVecteursTransposee: Spx->Marqueur[%d] = %d\n",j,Spx->Marqueur[j]);
+      call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
 	    exit(0);
 	  }	
   }

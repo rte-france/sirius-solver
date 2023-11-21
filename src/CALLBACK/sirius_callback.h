@@ -3,6 +3,8 @@ extern "C"
 {
 #endif
 #pragma once
+
+#define SIRIUS_CALLBACK_BUFFER_SIZE 1024
     typedef enum SIRIUS_LOGLEVEL
     {
         SIRIUS_TRACE,
@@ -14,6 +16,7 @@ extern "C"
     } SIRIUS_LOGLEVEL;
     typedef int (*callback_function)(void *something_from_the_caller, const char *sMsg, int nLen, SIRIUS_LOGLEVEL log_level);
     int SiriusDefaultCallback(void *something_from_the_caller, const char *sMsg, int nLen, SIRIUS_LOGLEVEL log_level);
+
 #ifdef __cplusplus
 }
 #endif
