@@ -68,4 +68,7 @@ int * FirstNomVar;
 int * NomVarSuivant;
 
 double objective_offset;
+void *callback;
+void *something_from_the_caller;
+
 } PROBLEME_MPS;

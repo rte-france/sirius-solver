@@ -26,7 +26,9 @@
                             de l'inclure pne_constantes_externes.h dans l'appelant. cependant on
 														le recommande comme ca l'utilisateur sera tente d'aller voir ce qu'il
 														y a comme constantes externes ce qui n'est pas plus mal */
-														
+
+#include "sirius_callback.h"				
+//#include "mps_define.h"										
 /*--------------------------------------------------------------------------------------------------*/
 
 void PNE_SolveurProblemeReduit( PROBLEME_A_RESOUDRE * , CONTROLS * );
@@ -453,6 +455,11 @@ void PNE_MiseAJourDesSeuilDeSelectionDesCoupes( PROBLEME_PNE * );
 
 /* En test: pour detecter les contraintes d'egalite sur des entiere infaisables */
 void PNE_DetectionContraintesEntieresInfaisable( PROBLEME_PNE * );
+
+int PNEsetcbmessage(PROBLEME_PNE *problem_pne, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level);
+//int PROBLEME_MPSsetcbmessage(PROBLEME_MPS *problem_pne, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level);
+int PROBLEME_A_RESOUDREsetcbmessage(PROBLEME_A_RESOUDRE *problem_pne, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level);
+
 
 /*******************************************************************************************/
 # define FONCTIONS_PNE_DEJA_DEFINIES	

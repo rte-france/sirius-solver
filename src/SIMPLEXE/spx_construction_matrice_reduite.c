@@ -53,6 +53,8 @@ CNbTermProblemeReduit = Spx->CNbTermProblemeReduit;
 ValeurDesTermesDesColonnesDuProblemeReduit = Spx->ValeurDesTermesDesColonnesDuProblemeReduit;
 IndicesDeLigneDesTermesDuProblemeReduit = Spx->IndicesDeLigneDesTermesDuProblemeReduit;
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];
 /* Construction de la matrice du probleme reduit stockee par colonne */
 icNew = 0;
 NbTermesTotal = 0;
@@ -68,8 +70,8 @@ for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
     Spx->ValeurDesTermesDesColonnesDuProblemeReduit = (double *) realloc( Spx->ValeurDesTermesDesColonnesDuProblemeReduit, Spx->NbElementsAllouesPourLeProblemeReduit * sizeof( double ) );
     Spx->IndicesDeLigneDesTermesDuProblemeReduit = (int *) realloc( Spx->IndicesDeLigneDesTermesDuProblemeReduit, Spx->NbElementsAllouesPourLeProblemeReduit * sizeof( int ) );
     if ( Spx->ValeurDesTermesDesColonnesDuProblemeReduit == NULL || Spx->IndicesDeLigneDesTermesDuProblemeReduit == NULL ) {
-      printf("Simplexe, sous-programme SPX_FactoriserLaBase: \n");
-      printf("  -> memoire insuffisante pour l allocation de l espace de travail \n");
+      call_back(Spx->something_from_the_caller, "Simplexe, sous-programme SPX_FactoriserLaBase: \n", 0, SIRIUS_INFO);
+      call_back(Spx->something_from_the_caller, "  -> memoire insuffisante pour l allocation de l espace de travail \n", 0, SIRIUS_INFO);
       Spx->AnomalieDetectee = OUI_SPX;
       longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); 
     }
@@ -102,9 +104,11 @@ for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
 }
 
 # if TRACES == 1
-  printf("\n Nombre de variables hors du probleme reduit %d sur %d  restent %d / nombre de couts remis a zero: %d\n",
+  snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "\n Nombre de variables hors du probleme reduit %d sur %d  restent %d / nombre de couts remis a zero: %d\n",
              NbH,Spx->NombreDeVariables,Spx->NombreDeVariables-NbH,NbRaz);
-  printf("\n Nombre de termes de la matrice reduite des contraintes %d\n",NbTermesTotal);						 
+  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+  snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "\n Nombre de termes de la matrice reduite des contraintes %d\n",NbTermesTotal);						 
+  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 # endif
 
 return;
@@ -251,10 +255,13 @@ for ( Var = 0 ; Var < Spx->NombreDeVariables ; Var++ ) {
 free( XminSv );
 free( XmaxSv );
 
-printf("NbRlx %d NbForcing %d\n",NbRlx,NbForcing);
+snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "NbRlx %d NbForcing %d\n",NbRlx,NbForcing);
+call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 
-printf("NbFix %d  sur %d  restent %d\n",NbFix,Spx->NombreDeContraintes,Spx->NombreDeContraintes-NbFix);
-printf("Nombre de contraintes d'inegalite %d\n",NbIneg);
+snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "NbFix %d  sur %d  restent %d\n",NbFix,Spx->NombreDeContraintes,Spx->NombreDeContraintes-NbFix);
+call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Nombre de contraintes d'inegalite %d\n",NbIneg);
+call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 /* Fin test */
 
 # endif

@@ -299,7 +299,7 @@ double   Cout;              /* Valeur du cout de la solution */
 double   CoutMax;           /* Valeur du cout au dessus de laquelle on arrete les calculs (utilite: branch and bound) */
 int     UtiliserCoutMax;   /* Vaut OUI_SPX si on desire faire le test par rapport a CoutMax, et NON_SPX si on ne veut 
                                pas utiliser cette possibilite */
-double   PartieFixeDuCout;  /* Partie du cout qui est due aux variables dont la valeur est fixe. C'est calculé en 
+double   PartieFixeDuCout;  /* Partie du cout qui est due aux variables dont la valeur est fixe. C'est calculï¿½ en 
                                entree du solveur */
 
 char     LeSteepestEdgeEstInitilise;
@@ -436,6 +436,8 @@ char   ExplorationRapideEnCours; /* OUI_SPX ou NON_SPX */
 double A1;
 
 /*------------------------------------------*/
+void *callback;
+void *something_from_the_caller;
 
 } PROBLEME_SPX; 
   

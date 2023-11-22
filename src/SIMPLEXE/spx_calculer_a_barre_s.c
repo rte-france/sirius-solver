@@ -57,9 +57,14 @@ else {
 for ( i = 0 ; i < iMx ; i++ ) if ( ABarreS[i] != 0.0 ) Count++;
 
 if ( Count < 0.1 * iMx ) Spx->NbEchecsABarreS--;
+
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];				
+
 if ( Spx->NbEchecsABarreS <= 0 ) {
   # if VERBOSE_SPX
-    printf("Remise en service de l'hyper creux pour le calcul de ABarreS, iteration %d\n",Spx->Iteration);
+    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Remise en service de l'hyper creux pour le calcul de ABarreS, iteration %d\n",Spx->Iteration);
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 	# endif
   Spx->AvertissementsEchecsABarreS = 0;
   Spx->CountEchecsABarreS = 0;
@@ -70,7 +75,8 @@ else if ( Spx->CountEchecsABarreS <= 0 ) {
   if ( Spx->CalculABarreSEnHyperCreux == NON_SPX ) Spx->AvertissementsEchecsABarreS ++;
   if ( Spx->AvertissementsEchecsABarreS >= SEUIL_ABANDON_HYPER_CREUX ) {
     # if VERBOSE_SPX
-      printf("Arret prolonge de l'hyper creux pour le calcul de ABarreS, iteration %d\n",Spx->Iteration);
+      snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Arret prolonge de l'hyper creux pour le calcul de ABarreS, iteration %d\n",Spx->Iteration);
+      call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 	  # endif	
 	  Spx->CalculABarreSEnHyperCreuxPossible = NON_SPX;		
 	}
@@ -104,7 +110,7 @@ if ( CalculEnHyperCreux == OUI_SPX ) {
 		/*printf("Echec hyper creux ABarreS iteration %d\n",Spx->Iteration);*/
 		if ( Spx->NbEchecsABarreS >= SEUIL_ECHEC_CREUX ) {
       # if VERBOSE_SPX
-        printf("Arret de l'hyper creux pour le calcul de ABarreS, iteration %d\n",Spx->Iteration);
+        snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE , "Arret de l'hyper creux pour le calcul de ABarreS, iteration %d\n",Spx->Iteration);
 	    # endif			
 		  Spx->CalculABarreSEnHyperCreux = NON_SPX;
 			Spx->CountEchecsABarreS  = 0;

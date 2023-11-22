@@ -66,8 +66,12 @@ TypeDeSortie = VECTEUR_LU;
 CalculEnHyperCreux = NON_SPX;
 SecondMembreCreux = NON_SPX;
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];				
+
+
 /* Eventuellement les Eta vecteurs */
-/* Attention il faut âs faire comme ca mais resoudre tout le systeme avec les eta */
+/* Attention il faut ï¿½s faire comme ca mais resoudre tout le systeme avec les eta */
 /*
 if ( Spx->UtiliserLaLuUpdate == NON_SPX ) {
   SPX_AppliquerLesEtaVecteursTransposee( Spx, Pi, IndexDesTermesNonNuls, NombreDeTermesNonNuls,
@@ -84,7 +88,8 @@ for ( r = 0 ; r < RangDeLaMatriceFactorisee ; r++ ) {
 }
 
 # if VERIFICATION_PI == OUI_SPX
-printf("------------- CalculerPi  Spx->NombreDeChangementsDeBase %d -------------\n",Spx->NombreDeChangementsDeBase);
+snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "------------- CalculerPi  Spx->NombreDeChangementsDeBase %d -------------\n",Spx->NombreDeChangementsDeBase);
+call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 {
 double * Buff; int i; int Var; int ic; int icMx; double S; double * Sortie;
 Buff = (double *) malloc( Spx->NombreDeContraintes * sizeof( double ) );
@@ -101,11 +106,12 @@ for ( i = 0 ; i < Spx->NombreDeContraintes ; i++ ) {
 	  ic++;
 	}
 	if ( fabs( S - Buff[i] ) > 1.e-7 ) {
-	  printf("i = %d  S %e Buff %e  ecart %e\n",i,S,Buff[i],fabs( S - Buff[i] ));
+	  snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "i = %d  S %e Buff %e  ecart %e\n",i,S,Buff[i],fabs( S - Buff[i] ));
+	  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
 		exit(0);
 	}
 }
-printf("Fin verif  CalculerPi OK\n");
+call_back(Spx->something_from_the_caller, "Fin verif  CalculerPi OK\n", 0, SIRIUS_INFO);
 free( Buff );
 free( Sortie );
 

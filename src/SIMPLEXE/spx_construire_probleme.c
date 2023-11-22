@@ -160,6 +160,9 @@ for ( i = 0 ; i < NbVar_E ; i++ ) {
   Xmin           [NombreDeVariables] = Xmin_E[i];
   CorrectionDuale[NombreDeVariables] = NOMBRE_MAX_DE_PERTURBATIONS_DE_COUT; 
  
+  callback_function call_back = SPXgetcbmessage(Spx);		
+  char msg [SIRIUS_CALLBACK_BUFFER_SIZE];
+
   if ( TypeVar_E[i] == VARIABLE_BORNEE_DES_DEUX_COTES || 
        TypeVar_E[i] == VARIABLE_BORNEE_INFERIEUREMENT ) {               
     Spx->PartieFixeDuCout+= C_E[i] * Xmin_E[i];
@@ -184,8 +187,11 @@ for ( i = 0 ; i < NbVar_E ; i++ ) {
       /* X                   [NombreDeVariables] = 0.; */	     
     }
     else {
-      printf(" Bug dans la fourniture de la base de depart, la variable %d est mal positionnee\n",i);
-      printf(" son positionnement donne est %d \n",(int) PositionDeLaVariable_E[i]);
+      snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, " Bug dans la fourniture de la base de depart, la variable %d est mal positionnee\n",i);
+      call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_ERROR);
+
+      snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, " son positionnement donne est %d \n",(int) PositionDeLaVariable_E[i]);
+      call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
       exit(0);
     }
   }
@@ -214,13 +220,19 @@ for ( i = 0 ; i < NbVar_E ; i++ ) {
     Xmax          [NombreDeVariables] = LINFINI_POUR_X;
   }
   else {
-    printf("Erreur entree du solveur: le seul type de variables reconnues est: \n");
-    printf("    VARIABLE_FIXE                  -> valeur de constante: %d\n",(int) VARIABLE_FIXE);
-    printf("    VARIABLE_BORNEE_DES_DEUX_COTES -> valeur de constante: %d\n",(int) VARIABLE_BORNEE_DES_DEUX_COTES);
-    printf("    VARIABLE_BORNEE_INFERIEUREMENT -> valeur de constante: %d\n",(int) VARIABLE_BORNEE_INFERIEUREMENT);
-    printf("    VARIABLE_BORNEE_SUPERIEUREMENT -> valeur de constante: %d\n",(int) VARIABLE_BORNEE_SUPERIEUREMENT);
-    printf("    VARIABLE_NON_BORNEE            -> valeur de constante: %d\n",(int) VARIABLE_NON_BORNEE);
-    printf("Or la variable %d est du type %d => exit volontaire car pb de mise au point\n",i,(int) TypeVar_E[i]); 
+    call_back(Spx->something_from_the_caller,"Erreur entree du solveur: le seul type de variables reconnues est: \n", 0, SIRIUS_ERROR);
+    snprintf(msg,SIRIUS_CALLBACK_BUFFER_SIZE,"    VARIABLE_FIXE                  -> valeur de constante: %d\n",(int) VARIABLE_FIXE);
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
+    snprintf(msg,SIRIUS_CALLBACK_BUFFER_SIZE,"    VARIABLE_BORNEE_DES_DEUX_COTES -> valeur de constante: %d\n",(int) VARIABLE_BORNEE_DES_DEUX_COTES);
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
+    snprintf(msg,SIRIUS_CALLBACK_BUFFER_SIZE,"    VARIABLE_BORNEE_INFERIEUREMENT -> valeur de constante: %d\n",(int) VARIABLE_BORNEE_INFERIEUREMENT);
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
+    snprintf(msg,SIRIUS_CALLBACK_BUFFER_SIZE,"    VARIABLE_BORNEE_SUPERIEUREMENT -> valeur de constante: %d\n",(int) VARIABLE_BORNEE_SUPERIEUREMENT);
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
+    snprintf(msg,SIRIUS_CALLBACK_BUFFER_SIZE,"    VARIABLE_NON_BORNEE            -> valeur de constante: %d\n",(int) VARIABLE_NON_BORNEE);
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
+    snprintf(msg,SIRIUS_CALLBACK_BUFFER_SIZE,"Or la variable %d est du type %d => exit volontaire car pb de mise au point\n",i,(int) TypeVar_E[i]); 
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
     exit(0);
   }
 
@@ -307,13 +319,13 @@ for ( il = 0 , Cnt_E = 0 ; Cnt_E < NbContr_E ; Cnt_E++ ) {
   
   if ( TypeDeContrainte_E[Cnt_E] == '=' ) {	
     /* Dans le cas des contraintes d'egalite il ne peut y avoir au plus qu'une seule 
-       variable additionnelle laquelle sera affectée a la base initiale */
+       variable additionnelle laquelle sera affectï¿½e a la base initiale */
        il++; /* On laisse de la place pour l'eventuelle variable de base */
   }
   else {	
     /* Dans le cas des contraintes d'inegalite il ne peut y avoir au plus que 2  
        variables additionnelles une variable d'ecart et si necessaire une variable 
-       affectée a la base initiale */
+       affectï¿½e a la base initiale */
        il++; /* On laisse de la place pour la variable d'ecart */
        il++; /* On laisse de la place pour l'eventuelle variable de base */
   }
@@ -402,6 +414,9 @@ SPX_CalculerLeScaling( Spx );
 /* Application du scaling */
 SPX_Scaling( Spx );
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];
+
 for ( Cnt = 0 ; Cnt < Spx->NombreDeContraintes ; Cnt++ ) {
   BAvantTranslationEtApresScaling[Cnt] *= ScaleB[Cnt];
 }
@@ -410,7 +425,7 @@ for ( Cnt = 0 ; Cnt < Spx->NombreDeContraintes ; Cnt++ ) {
 for ( Cnt = 0 ; Cnt < Spx->NombreDeContraintes ; Cnt++ ) {
   Cnt_E = CorrespondanceCntSimplexeCntEntree[Cnt];
   if ( Cnt_E < 0 ) { 
-    printf(" Bug dans SPX_ConstruireLeProbleme \n");
+    call_back(Spx->something_from_the_caller, " Bug dans SPX_ConstruireLeProbleme \n", 0, SIRIUS_ERROR);
     Spx->AnomalieDetectee = OUI_SPX;
     longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
   }
@@ -449,7 +464,8 @@ for ( i = NombreDeVariablesNatives ; i < Spx->NombreDeVariables ; i++ ) {
 }
 
 #if VERBOSE_SPX
-  printf("Nombre de variables dans le simplexe %d\n", Spx->NombreDeVariables);
+  snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Nombre de variables dans le simplexe %d\n", Spx->NombreDeVariables);
+  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
   fflush( stdout );
 #endif
 
@@ -509,6 +525,9 @@ CorrespondanceVarSimplexeVarEntree = Spx->CorrespondanceVarSimplexeVarEntree;
 StatutBorneSupCourante   = Spx->StatutBorneSupCourante;
 StatutBorneSupAuxiliaire = Spx->StatutBorneSupAuxiliaire;
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];
+
 il    = Mdeb[Cnt];
 ilMax = il + NbTerm[Cnt];
 Smin  = 0.;
@@ -527,7 +546,8 @@ while ( il < ilMax) {
 
 if ( Smin > ( B[Cnt] + SEUIL_DADMISSIBILITE ) ) { 
   #if VERBOSE_SPX 
-    printf("Simplexe: impossible de satisfaire la contrainte d'inegalite %d car Smin = %lf B = %lf \n",Cnt,Smin,Spx->B[Cnt]);
+    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Simplexe: impossible de satisfaire la contrainte d'inegalite %d car Smin = %lf B = %lf \n",Cnt,Smin,Spx->B[Cnt]);
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
   #endif
   Spx->YaUneSolution = NON_SPX;
   return;

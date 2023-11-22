@@ -215,7 +215,7 @@ AlphaI0 = Spx->BBarre[Spx->ContrainteDeLaVariableEnBase[VariableFractionnaireSpx
 
 /* Calcul de la ligne de B^{-1} qui correspond a la variable de base fractionnaire. On utilise pour cela
    le module de l'algorithme dual */
-/* Il est preferable de ne pas faire le calcul des gomory en hyper creux. De toutes façons une gomory est
+/* Il est preferable de ne pas faire le calcul des gomory en hyper creux. De toutes faï¿½ons une gomory est
    rarement hyper creuse. */
 Spx->CalculErBMoinsUnEnHyperCreux       = NON_SPX;
 Spx->CalculErBMoinsEnHyperCreuxPossible = NON_SPX;
@@ -238,6 +238,9 @@ Cdeb               = Spx->Cdeb;
 CNbTerm            = Spx->CNbTerm;
 NumeroDeContrainte = Spx->NumeroDeContrainte;
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];		
+
 /* Si le stockage de ErBMoinsUn est COMPACT_SPX on en fait un VECTEUR_SPX */
 if ( Spx->TypeDeStockageDeErBMoinsUn == COMPACT_SPX ) {
   Bs = Spx->Bs;
@@ -248,7 +251,7 @@ if ( Spx->TypeDeStockageDeErBMoinsUn == COMPACT_SPX ) {
   Spx->TypeDeStockageDeErBMoinsUn = VECTEUR_SPX;	
 }
 else if ( Spx->TypeDeStockageDeErBMoinsUn != VECTEUR_SPX ) {
-  printf("Calcul des gomory, attention le mode de stockage de ErBMoinsUn est incorrect\n");
+  call_back(Spx->something_from_the_caller,"Calcul des gomory, attention le mode de stockage de ErBMoinsUn est incorrect\n", 0, SIRIUS_INFO);
 }
 
 goto AAA;
@@ -269,7 +272,8 @@ for ( Cnt = 0 ; Cnt < Spx->NombreDeContraintes ; Cnt++ ) {
 
 if ( NormeL1 > SEUIL_DE_VERIFICATION_DE_NBarreR_GOMORY ) {
   #if VERBOSE_SPX
-    printf("Erreur de resolution sur ErBMoinsUn: %e, Gomory refusee\n",fabs( NormeL1 )); 
+    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Erreur de resolution sur ErBMoinsUn: %e, Gomory refusee\n",fabs( NormeL1 )); 
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_ERROR);
   #endif	
   Spx->FactoriserLaBase = NON_SPX;	
   return;			      
@@ -290,7 +294,8 @@ while ( il < ilMax ) {
 NormeL1 += fabs( S );
 if ( NormeL1 > SEUIL_DE_VERIFICATION_DE_NBarreR_GOMORY ) {
   #if VERBOSE_SPX
-    printf("Erreur de resolution sur ErBMoinsUn: %e, Gomory refusee\n",fabs( NormeL1 )); 
+    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Erreur de resolution sur ErBMoinsUn: %e, Gomory refusee\n",fabs( NormeL1 )); 
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_ERROR);
   #endif	
   Spx->FactoriserLaBase = NON_SPX;	
   return;			      
@@ -323,7 +328,8 @@ break;
   NormeL1 += fabs( S );
   if ( NormeL1 > SEUIL_DE_VERIFICATION_DE_NBarreR_GOMORY ) {
     #if VERBOSE_SPX
-      printf("Erreur de resolution sur ErBMoinsUn: %e, Gomory refusee\n",fabs( NormeL1 )); 
+      snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Erreur de resolution sur ErBMoinsUn: %e, Gomory refusee\n",fabs( NormeL1 )); 
+      call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_ERROR);
     #endif	
     Spx->FactoriserLaBase = NON_SPX;	
     return;			      
@@ -354,12 +360,12 @@ if ( Spx->TypeDeStockageDeNBarreR == ADRESSAGE_INDIRECT_SPX ) {
   Spx->TypeDeStockageDeNBarreR = VECTEUR_SPX;
 }
 else if ( Spx->TypeDeStockageDeNBarreR != VECTEUR_SPX ) {
-  printf("Calcul des gomory, le mode de stockage de NBarreR est incorrect\n");
+  call_back(Spx->something_from_the_caller,"Calcul des gomory, le mode de stockage de NBarreR est incorrect\n", 0, SIRIUS_INFO);
 }
 
 /* Constitution du vecteur sur lequel on fera la MIR */
 /* Remarque: les variables non bornees x = x+ - x- avec x+ >= 0 et x- >= 0 sont hors base a 0 
-   c'est à dire x+ et x- sont nuls. Comme il y a une difference la variable n'intervient pas. */
+   c'est ï¿½ dire x+ et x- sont nuls. Comme il y a une difference la variable n'intervient pas. */
 for ( VarSpx = 0 ; VarSpx < Spx->NombreDeVariables ; VarSpx++ ) {
 
   T    [VarSpx] = 0;

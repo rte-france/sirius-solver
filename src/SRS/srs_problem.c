@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "sirius_callback.h"
 #include "srs_api.h"
 #include "pne_constantes_externes.h"
 #include "pne_fonctions.h"
@@ -153,6 +154,7 @@ int initProblemMpsPointer(SRS_PROBLEM * problem_srs) {
 	return 0;
 }
 
+
 SRS_PROBLEM * SRScreateprob() {
 	SRS_PROBLEM * problem_srs = (SRS_PROBLEM *)malloc(sizeof(SRS_PROBLEM));
 	
@@ -172,7 +174,8 @@ SRS_PROBLEM * SRScreateprob() {
 	
 	//MPS
 	initProblemMpsPointer(problem_srs);
-	
+	problem_srs->callback = SiriusDefaultCallback;
+
 	return problem_srs;
 }
 
@@ -807,6 +810,15 @@ int SRSgetbestbound(SRS_PROBLEM * problem_srs, double * bestBoundVal) {
 	return -1;
 }
 
+int SRSsetdefaultcbmessage(SRS_PROBLEM *problem_srs, callback_function the_callback_function, SIRIUS_LOGLEVEL log_level)
+{
+	problem_srs->callback = SiriusDefaultCallback;
+}
+int SRSsetcbmessage(SRS_PROBLEM *problem_srs, callback_function the_callback_function, void *something_from_the_caller, SIRIUS_LOGLEVEL log_level)
+{
+	problem_srs->callback = the_callback_function;
+	problem_srs->something_from_the_caller = something_from_the_caller;
+}
 
 # ifdef __cplusplus
 }
