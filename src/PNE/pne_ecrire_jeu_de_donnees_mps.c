@@ -30,7 +30,7 @@
 # endif
 #define SRS_BUFFER_SIZE 1024
 /*----------------------------------------------------------------------------*/
-void MettreAjourNom(char* Nom,  const char** NouveauxNoms, int Numero, char Type){
+static void MettreAjourNom(char* Nom,  char** NouveauxNoms, int Numero, char Type){
   if (NouveauxNoms == NULL || NouveauxNoms[Numero] == NULL)
   {  
     snprintf(Nom, SRS_BUFFER_SIZE, "%c%07d",Type, Numero);

@@ -31,6 +31,7 @@
 # include "bb_fonctions.h"
 
 # include "prs_define.h"
+# include "prs_fonctions.h"
 
 /*----------------------------------------------------------------------------*/
 
