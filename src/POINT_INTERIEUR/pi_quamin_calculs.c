@@ -94,6 +94,19 @@ Pi->YaUneSolution = OUI_PI;
 
 PI_AllocProbleme( Pi, NombreDeVariables_E, NombreDeContraintes_E, Nbter_E, Sens_E, VariableBinaire_E, TypeDeVariable_E );
 
+// Workaround (2024/12/06) : 
+//      Ce bloc if...else... est une copie provenant de la fonction PI_Qinit
+//      Si l'on ne fait pas cela, SeuilDAdmissibilite n'est pas initialisée dans PI_MdEqua(...).
+//      Consequence : 
+//      - En mode debug, SeuilDAdmissibilite peut avoir une valeur différente selon l'exécution (toute chose egale par ailleurs),
+//      Et donc entraine une instabilite de Sirius.
+if (ChoixToleranceAdmissibiliteParDefaut == OUI_PI) {
+    Pi->SeuilDAdmissibilite = TOLERANCE_ADMISSIBILITE_PAR_DEFAUT;
+}
+else {
+    Pi->SeuilDAdmissibilite = ToleranceAdmissibilite_E;
+}
+
 PI_MdEqua( Pi, NombreDeVariables_E, Q_E, L_E, Umin_E , Umax_E , TypeDeVariable_E, VariableBinaire_E, U_E,
            NombreDeContraintes_E, Mdeb_E, Nbter_E, Nuvar_E, A_E, B_E, Sens_E );
 
