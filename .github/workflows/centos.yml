@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Build sirius using docker image
         run: |
-          docker build -t centos7-sirius -f docker/Dockerfile
+          docker build -t centos7-sirius -f docker/Dockerfile .
 
       - name: create a container without starting it && retrieve the .tgz
         run: |
