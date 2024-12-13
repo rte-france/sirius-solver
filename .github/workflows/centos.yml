@@ -37,6 +37,8 @@ jobs:
       - name: Get release
         if: ${{ env.RELEASE_CREATED == 'true' }}
         id: get_release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         uses:
           bruceadams/get-release@v1.2.3
 
