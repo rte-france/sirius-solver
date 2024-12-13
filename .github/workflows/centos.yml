@@ -28,10 +28,23 @@ jobs:
              container_id=$(docker create centos7-sirius)
              docker cp $container_id:/centos-7_sirius-solver.zip /tmp
 
-      - name: Publish assets
-        if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          tag: ${{ github.event.inputs.release_tag }}
+      - name: is release created
+        shell: bash
         run: |
-          gh release upload "$tag" /tmp/centos-7_sirius-solver.zip
+          release_created=${{ github.event_name == 'release' && github.event.action == 'created' }}
+          echo "RELEASE_CREATED=$release_created" >> $GITHUB_ENV
+
+      - name: Get release
+        if: ${{ env.RELEASE_CREATED == 'true' }}
+        id: get_release
+        uses:
+          bruceadams/get-release@v1.2.3
+
+      - name: Publish sirius install
+        if: ${{ env.RELEASE_CREATED == 'true' }}
+        uses: actions/upload-release-asset@v1.0.2
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: /tmp/centos-7_sirius-solver.zip
+          asset_name: centos-7_sirius-solver.zip
+          asset_content_type: application/zip
