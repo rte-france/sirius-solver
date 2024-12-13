@@ -40,9 +40,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         uses:
-          bruceadams/get-release@v1.2.3
+          bruceadams/get-release@v1.3.2
 
       - name: Publish sirius install
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         if: ${{ env.RELEASE_CREATED == 'true' }}
         uses: actions/upload-release-asset@v1.0.2
         with:
