@@ -77,9 +77,9 @@ jobs:
           zip -r "${{ steps.sirius-variables.outputs.archive-name }}" "${{ steps.sirius-variables.outputs.install-dir }}"
 
       - name: Upload sirius install
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.sirius-variables.outputs.install-dir }}
+          name: ${{ steps.sirius-variables.outputs.install-dir }}-${{ matrix.os }}
           path: ${{ steps.sirius-variables.outputs.install-path }}
 
       - name: Publish sirius install
