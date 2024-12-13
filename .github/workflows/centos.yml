@@ -19,6 +19,9 @@ jobs:
     name: build sirius
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        actions/checkout@v4
+
       - name: Build sirius using docker image
         run: |
           docker build -t centos7-sirius -f docker/Dockerfile .
