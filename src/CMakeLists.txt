@@ -1,3 +1,6 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
+PROJECT(sirius_solver)
+
 if(MSVC)
 	add_compile_definitions("_CRT_SECURE_NO_WARNINGS")
 	SET(BUILD_SHARED_LIBS OFF)
