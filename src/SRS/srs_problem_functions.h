@@ -55,7 +55,7 @@ int SRSsetdoubleparams(SRS_PROBLEM * problem_srs, const char * paramId, double p
 
 // *** Optimization ***
 int SRSoptimize(SRS_PROBLEM * problem_srs);
-int SRSoptimizewithinitialbasis(SRS_PROBLEM * problem_srs, int * column_basis_status, int * row_basis_status);
+int SRSoptimizewithinitialbasis(SRS_PROBLEM * problem_srs, const int * column_basis_status, const int * row_basis_status);
 
 // *** Access solution information ***
 int SRSgetobjval(SRS_PROBLEM * problem_srs, double * objVal);
