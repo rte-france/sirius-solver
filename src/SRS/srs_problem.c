@@ -387,7 +387,7 @@ void setStartingBasis(PROBLEME_SIMPLEXE* problem_simplexe, const int* column_bas
 	}
 }
 
-int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, int * column_basis_status, int * row_basis_status) {
+int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, const int * column_basis_status, const int * row_basis_status) {
 	if (problem_srs->is_mip) {
 		problem_srs->problem_mip = malloc(sizeof(PROBLEME_A_RESOUDRE));
 		PNE_copy_problem(problem_srs->problem_mps, problem_srs->problem_mip, 0, 0.0);
