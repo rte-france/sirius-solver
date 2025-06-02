@@ -363,7 +363,31 @@ int SRSsetcoefs(SRS_PROBLEM * problem_srs,
 	return 0;
 }
 
-int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs) {
+void setStartingBasis(PROBLEME_SIMPLEXE* problem_simplexe, const int* column_basis_status, const int* row_basis_status)
+{
+	if (column_basis_status == NULL || row_basis_status == NULL)
+	{
+		return;
+	}
+	problem_simplexe->BaseDeDepartFournie = OUI_SPX;
+	// Column basis
+	for (int i = 0; i < problem_simplexe->NombreDeVariables; ++i)
+	{
+		problem_simplexe->PositionDeLaVariable[i] = column_basis_status[i];
+	}
+	// Slack variables basis
+	problem_simplexe->NbVarDeBaseComplementaires = 0;
+	for (int i = 0; i < problem_simplexe->NombreDeContraintes; ++i)
+	{
+		if (row_basis_status[i] == EN_BASE)
+		{
+			problem_simplexe->ComplementDeLaBase[problem_simplexe->NbVarDeBaseComplementaires] = i;
+			problem_simplexe->NbVarDeBaseComplementaires++;
+		}
+	}
+}
+
+int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs, const int * column_basis_status, const int * row_basis_status) {
 	if (problem_srs->is_mip) {
 		problem_srs->problem_mip = malloc(sizeof(PROBLEME_A_RESOUDRE));
 		PNE_copy_problem(problem_srs->problem_mps, problem_srs->problem_mip, 0, 0.0);
@@ -428,22 +452,28 @@ int allocateProblemsAndPropagateParams(SRS_PROBLEM * problem_srs) {
 
 		problem_simplexe->CoutMax = 0;
 		problem_simplexe->NbVarDeBaseComplementaires = 0;
+
+		setStartingBasis(problem_simplexe, column_basis_status, row_basis_status);
 	}
 
 	return 0;
 }
 
+int SRSoptimize(SRS_PROBLEM * problem_srs)
+{
+	return SRSoptimizewithinitialbasis(problem_srs, NULL, NULL);
+}
 
-int SRSoptimize(SRS_PROBLEM * problem_srs) {
-	
+int SRSoptimizewithinitialbasis(SRS_PROBLEM * problem_srs, const int * column_basis_status, const int * row_basis_status) {
+
 	int nbCols = problem_srs->problem_mps->NbVar;
 	if (problem_srs->maximize) {
 		for (int idxCol = 0; idxCol < nbCols; ++idxCol) {
 			problem_srs->problem_mps->L[idxCol] *= -1.0;
 		}
 	}
-	
-	allocateProblemsAndPropagateParams(problem_srs);
+
+	allocateProblemsAndPropagateParams(problem_srs, column_basis_status, row_basis_status);
 
 	struct timespec debut;
 	timespec_get(&debut, TIME_UTC);
@@ -702,7 +732,7 @@ int SRSsetintparams(SRS_PROBLEM * problem_srs, const char * paramId, int paramVa
 	return -1;
 }
 
-int SRSsetdoubleparams(SRS_PROBLEM * problem_srs, const char * paramId, double paramValue) { 
+int SRSsetdoubleparams(SRS_PROBLEM * problem_srs, const char * paramId, double paramValue) {
 	if (strcmp(SRS_PARAM_RELATIVE_GAP, paramId) == 0) {
 		problem_srs->relativeGap = paramValue;
 		return 0;
@@ -779,12 +809,9 @@ int SRSgetrowbasisstatus(SRS_PROBLEM * problem_srs, char ** rowStatuses) {
 	}
 
 	int nbRow = problem_srs->problem_mps->NbCnt;
-	(*rowStatuses) = malloc(nbRow * sizeof(char));
-
 	for (int idx = 0; idx < nbRow; ++idx) {
 		(*rowStatuses)[idx] = EN_BASE_LIBRE;
 	}
-
 	for (int idx = 0; idx < problem_srs->problem_simplexe->NbVarDeBaseComplementaires; ++idx)
 	{
 		(*rowStatuses)[problem_srs->problem_simplexe->ComplementDeLaBase[idx]] = EN_BASE;
