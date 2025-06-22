@@ -29,23 +29,23 @@
    il contient la definition de la structure C exploitee par la fonction.
    Apres avoir renseigne les champs, le module utilisateur appelle la fonction 
    SPX_Simplexe avec, pour argument d'appel:
-   - un pointeur à un objet de type PROBLEME_SIMPLEXE: il permet de renseigner les donnees
-     du probleme à résoudre
-   - un pointeur à un objet de type PROBLEME_SPX. Lorsque la valeur de ce pointeur vaut NULL,
+   - un pointeur ï¿½ un objet de type PROBLEME_SIMPLEXE: il permet de renseigner les donnees
+     du probleme ï¿½ rï¿½soudre
+   - un pointeur ï¿½ un objet de type PROBLEME_SPX. Lorsque la valeur de ce pointeur vaut NULL,
      SPX_Simplexe alloue un nouvel objet de type PROBLEME_SPX sur lequel il travaillera.
-     Dans le cas contraire SPX_Simplexe travaillera sur l'objet de type PROBLEME_SPX passé
+     Dans le cas contraire SPX_Simplexe travaillera sur l'objet de type PROBLEME_SPX passï¿½
      par l'appelant. 
      
-   SPX_Simplexe renvoie un pointeur à un objet de type PROBLEME_SPX, ce pointeur
-   correspond à l'objet sur lequel SPX_Simplexe vient de faire ses calculs.
+   SPX_Simplexe renvoie un pointeur ï¿½ un objet de type PROBLEME_SPX, ce pointeur
+   correspond ï¿½ l'objet sur lequel SPX_Simplexe vient de faire ses calculs.
 
-   L'appelant peut de cette façon travailler sur plusieurs instances de problemes qu'il
+   L'appelant peut de cette faï¿½on travailler sur plusieurs instances de problemes qu'il
    souhaite faire resoudre par le simplexe.
 
    Exemple d'utilisation :
 
    PROBLEME_SIMPLEXE Mon_Probleme; <- definition d'une structure "Mon_Probleme" de type PROBLEME_SIMPLEXE   
-   void * ProblemeSpx; <- Utiliser void * comme type de pointeur permet à l'appelant d'ignorer la
+   void * ProblemeSpx; <- Utiliser void * comme type de pointeur permet ï¿½ l'appelant d'ignorer la
                           composition de la structure PROBLEME_SPX, qu'il n'a d'ailleurs pas besoin
 			  de connaitre.
    .......
@@ -62,12 +62,12 @@
 
 typedef struct {
   int  Contexte; /* Contexte dans lequel le simplexe est utilise. Cet argument peut prendre 3 valeurs:
-                      BRANCH_AND_BOUND_OU_CUT: le simplexe est appelé dans un contexte de Branch And Bound 
+                      BRANCH_AND_BOUND_OU_CUT: le simplexe est appelï¿½ dans un contexte de Branch And Bound 
 		                               ou de Branch And Cut 
-                      BRANCH_AND_BOUND_OU_CUT_NOEUD: le simplexe est appelé dans un contexte de Branch And Bound 
+                      BRANCH_AND_BOUND_OU_CUT_NOEUD: le simplexe est appelï¿½ dans un contexte de Branch And Bound 
 		                                     ou de Branch And Cut mais on ne reinitialise pas le probleme 
-                      SIMPLEXE_SEUL: le simplexe est appelé hors d'un contexte de Branch and Bound ou de 
-		                     Branch And Cut (dans ce cas, certaines sauvegardes particulières ne sont
+                      SIMPLEXE_SEUL: le simplexe est appelï¿½ hors d'un contexte de Branch and Bound ou de 
+		                     Branch And Cut (dans ce cas, certaines sauvegardes particuliï¿½res ne sont
 				     pas faites) */
   int     NombreMaxDIterations; /* Si < 0 , le simplexe prendre sa valeur par defaut */
   double   DureeMaxDuCalcul;     /* Exprime en secondes (attention c'est du double).
@@ -102,23 +102,23 @@ typedef struct {
                               SPX_PRIMAL s'il veut utiliser l'algorithme primal
                               SPX_DUAL   s'il veut utiliser l'algorithme dual */
   /* Guidage de l'algorithme */
-  int TypeDePricing;  /* Le pricing est l'étape du calcul dans laquelle on choisit la variable sortante
+  int TypeDePricing;  /* Le pricing est l'ï¿½tape du calcul dans laquelle on choisit la variable sortante
 			  dans l'algorithme dual (ou la variale entrante dans l'algorithme primal).  
 			  Deux choix sont possibles:
-			  * PRICING_DANTZIG: c'est la méthode basique, elle est rapide mais dans certains
-			                     cas conduit à faire beaucoup d'itérations pour trouver l'optimum.
-			  * PRICING_STEEPEST_EDGE: méthode élaborée (Forrest-Goldfarb), elle demande plus de
-			    calculs mais permet de réduite significativement le nombre d'itérations. Il est
-			    recommander de l'utiliser pour les problèmes difficiles. */
+			  * PRICING_DANTZIG: c'est la mï¿½thode basique, elle est rapide mais dans certains
+			                     cas conduit ï¿½ faire beaucoup d'itï¿½rations pour trouver l'optimum.
+			  * PRICING_STEEPEST_EDGE: mï¿½thode ï¿½laborï¿½e (Forrest-Goldfarb), elle demande plus de
+			    calculs mais permet de rï¿½duite significativement le nombre d'itï¿½rations. Il est
+			    recommander de l'utiliser pour les problï¿½mes difficiles. */
   int FaireDuScaling; /* Vaut OUI_SPX ou NON_SPX. Si l'utilisateur positionne la valeur a OUI_SPX,
-		 	  le simplexe fait un scaling du probleme dès le début de la résolution.
-			  Le scaling a pour but d'améliorer le conditionnement du problème. Il est
-			  recommandé de l'utiliser lorsque les coefficients de la matrice des contraintes
-			  sont très différents les un des autres (rapport > 100) */
+		 	  le simplexe fait un scaling du probleme dï¿½s le dï¿½but de la rï¿½solution.
+			  Le scaling a pour but d'amï¿½liorer le conditionnement du problï¿½me. Il est
+			  recommandï¿½ de l'utiliser lorsque les coefficients de la matrice des contraintes
+			  sont trï¿½s diffï¿½rents les un des autres (rapport > 100) */
   int StrategieAntiDegenerescence; /* Vaut AGRESSIF ou PEU_AGRESSIF.
-                                       * AGRESSIF: le controle est fait à chaque iterations.
+                                       * AGRESSIF: le controle est fait ï¿½ chaque iterations.
 				       * PEU_AGRESSIF: le controle est fait moins souvent.
-				       -> Choix recommandé: AGRESSIF
+				       -> Choix recommandï¿½: AGRESSIF
 				    */				       
   /* En Entree ou en Sortie */
   int   BaseDeDepartFournie;   /* Vaut OUI_SPX ou NON_SPX */
@@ -144,15 +144,15 @@ typedef struct {
 				     a "SPX_LibererProbleme" */
   double CoutMax; /* En entree: cette information n'est utilisee que si l'algorithme choisi est l'algorithme dual. 
                      On sait qu'a chaque iteration de l'algorithme dual, le cout courant est un minorant du cout optimal. 
-		     Il est donc possible de comparer ce cout à un Cout Max, seuil au dessus duquel on convient d'arreter les 
+		     Il est donc possible de comparer ce cout ï¿½ un Cout Max, seuil au dessus duquel on convient d'arreter les 
 		     calculs (l'algorithme sort alors avec le verdict "pas de solution").
                      Quelle en est l'utilite (mais il peut y en avoir d'autres) ? 
                      Dans un contexte de branch and bound, des que l'on dispose d'une solution entiere, toutes les resolutions de 
-		     probleme relaxé menant a un cout superieur a ce cout sont a rejeter. Donc, si l'on se rend compte au cours de 
+		     probleme relaxï¿½ menant a un cout superieur a ce cout sont a rejeter. Donc, si l'on se rend compte au cours de 
 		     l'algorithme dual, que la resolution du probleme relaxe va mener a un cout trop grand il est inutile de 
                      poursuivre les calculs. Ceci permet de gagner du temps de calcul. 
 
-                     ATTENTION: comme l'algorithme dual peut etre utilisé en tant que solveur (c'est à dire 
+                     ATTENTION: comme l'algorithme dual peut etre utilisï¿½ en tant que solveur (c'est ï¿½ dire 
                      ---------  en dehors d'un contexte de branch and bound) ou bien pour resoudre un probleme dont on 
 		                de souhaite pas donner de Cout Max parce qu'on ne le connait pas, l'information "CoutMax"
 			        n'est utilisee par l'algorithme dual que si l'indicateur "UtiliserCoutMax" (argument suivant) 
@@ -172,8 +172,9 @@ typedef struct {
   double * CoutsReduits; /* Couts reduits des variables hors-base, longueur nombre de variables passees 
                             en entree du probleme. Contient la valeur 0 si la variable est basique */
   /* Traces */
-  char     AffichageDesTraces; /* Vaut OUI_SPX ou NON_SPX */ 
-				    
+  char     AffichageDesTraces; /* Vaut OUI_SPX ou NON_SPX */
+  void *callback;
+
 } PROBLEME_SIMPLEXE;
 
 /*******************************************************************************************/
