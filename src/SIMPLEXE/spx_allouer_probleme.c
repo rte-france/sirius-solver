@@ -172,6 +172,8 @@ Spx->AReduit = (double *) malloc( NbContr_E * sizeof( double ) );
 Spx->IndexAReduit = (int *) malloc( NbContr_E * sizeof( int ) );
 Spx->Marqueur = (int *) malloc( NbContr_E * sizeof( int ) );
 
+callback_function call_back = SPXgetcbmessage(Spx);
+void *something_from_the_caller = Spx->something_from_the_caller;
 /*------------------------------------------------------------------------*/
 
 if ( 
@@ -280,8 +282,8 @@ if (
 	
    ) { 
 
-  printf("Simplexe, sous-programme SPX_AllouerProbleme: \n");
-  printf("  -> memoire insuffisante pour l allocation de l espace de travail \n");
+  const char *msg = "Simplexe, sous-programme SPX_AllouerProbleme: \n  -> memoire insuffisante pour l allocation de l espace de travail \n";
+  call_back(something_from_the_caller, msg, 0, SIRIUS_ERROR);
   Spx->AnomalieDetectee = OUI_SPX;
   longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
 }
@@ -318,8 +320,8 @@ if (
 	
    ) {
 
-  printf("Simplexe, sous-programme SPX_AllouerProbleme: \n");
-  printf("  -> memoire insuffisante pour l allocation de l espace de travail \n");
+  const char *msg = "Simplexe, sous-programme SPX_AllouerProbleme: \n  -> memoire insuffisante pour l allocation de l espace de travail \n";
+  call_back(something_from_the_caller, msg, 0, SIRIUS_ERROR);
   Spx->AnomalieDetectee = OUI_SPX;
   longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); 
 }
@@ -339,8 +341,8 @@ if (
   Spx->ValeurDesTermesDesColonnesDuProblemeReduit == NULL || Spx->IndicesDeLigneDesTermesDuProblemeReduit == NULL   	
    ) {
 
-  printf("Simplexe, sous-programme SPX_AllouerProbleme: \n");
-  printf("  -> memoire insuffisante pour l allocation de l espace de travail \n");
+  const char* msg = "Simplexe, sous-programme SPX_AllouerProbleme: \n  -> memoire insuffisante pour l allocation de l espace de travail \n";
+  call_back(something_from_the_caller, msg, 0, SIRIUS_ERROR);
   Spx->AnomalieDetectee = OUI_SPX;
   longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); 
 }
@@ -428,6 +430,8 @@ Spx->PositionHorsBaseReduiteAutorisee = (char *) realloc( Spx->PositionHorsBaseR
 Spx->CdebProblemeReduit = (int *) realloc( Spx->CdebProblemeReduit, NbVarMx * sizeof( int ) );        
 /*------------------------------------------------------------------------*/
 Spx->CNbTermProblemeReduit = (int *) realloc( Spx->CNbTermProblemeReduit, NbVarMx * sizeof( int ) );        
+callback_function call_back = SPXgetcbmessage(Spx);
+void *something_from_the_caller = Spx->something_from_the_caller;
 
 if ( 
   Spx->C                                  == NULL ||      
@@ -486,8 +490,8 @@ if (
 	
    ) {
 
-  printf("Simplexe, sous-programme SPX_AugmenterLeNombreDeVariables: \n");
-  printf("  -> memoire insuffisante pour l allocation de l espace de travail \n");
+  const char* msg= "Simplexe, sous-programme SPX_AugmenterLeNombreDeVariables: \n  -> memoire insuffisante pour l allocation de l espace de travail \n";
+  call_back(something_from_the_caller, msg, 0, SIRIUS_ERROR);
   Spx->AnomalieDetectee = OUI_SPX;
   longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
 }
@@ -509,8 +513,8 @@ if (
   Spx->ContrainteDeLaVariableEnBaseSV == NULL         
    ) {
 
-  printf("Simplexe, sous-programme SPX_AugmenterLeNombreDeVariables: \n");
-  printf("  -> memoire insuffisante pour l allocation de l espace de travail \n");
+  const char* msg= "Simplexe, sous-programme SPX_AugmenterLeNombreDeVariables: \n  -> memoire insuffisante pour l allocation de l espace de travail \n";
+  call_back(something_from_the_caller, msg, 0, SIRIUS_ERROR);
   Spx->AnomalieDetectee = OUI_SPX;
   longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); 
 }
@@ -586,6 +590,7 @@ Spx->LigneDeLaBaseFactorisee = (int *) realloc( Spx->LigneDeLaBaseFactorisee, Nb
 Spx->AReduit = (double *) realloc( Spx->AReduit, NbContr_E * sizeof( double ) );        
 Spx->IndexAReduit = (int *) realloc( Spx->IndexAReduit, NbContr_E * sizeof( int ) );
 Spx->Marqueur = (int *) realloc( Spx->Marqueur, NbContr_E * sizeof( int ) );
+callback_function call_back = SPXgetcbmessage(Spx);
 
 if ( 
   Spx->B                               == NULL ||
@@ -638,8 +643,10 @@ if (
 	
    ) {
 	 
-  printf("Simplexe, sous-programme SPX_AugmenterLeNombreDeContraintes: \n");
-  printf("  -> memoire insuffisante pour l allocation de l espace de travail \n");
+
+  const char* msg ="Simplexe, sous-programme SPX_AugmenterLeNombreDeContraintes: \n  -> memoire insuffisante pour l allocation de l espace de travail \n";  
+  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_ERROR);
+  //TODO 
   fflush(stdout);
   Spx->AnomalieDetectee = OUI_SPX;
   longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
@@ -665,8 +672,9 @@ if (
   Spx->NbTermesDesColonnesDeLaBaseSV  == NULL   
    ) {
 
-  printf("Simplexe, sous-programme SPX_AugmenterLeNombreDeContraintes: \n");
-  printf("  -> memoire insuffisante pour l allocation de l espace de travail \n");
+  const char*msg = "Simplexe, sous-programme SPX_AugmenterLeNombreDeContraintes: \n  -> memoire insuffisante pour l allocation de l espace de travail \n";
+  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_ERROR);
+  //TODO
   fflush(stdout);
   Spx->AnomalieDetectee = OUI_SPX;
   longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); 
@@ -696,6 +704,7 @@ Spx->ACol               = (double *) realloc( Spx->ACol, NbTrm * sizeof( double 
 Spx->NumeroDeContrainte = (int *) realloc( Spx->NumeroDeContrainte, NbTrm * sizeof( int   ) );
 /*------------------------------------------------------------------------*/
 
+callback_function call_back = SPXgetcbmessage(Spx);
 if ( 
   Spx->A      == NULL ||                
   Spx->Indcol == NULL ||                  
@@ -705,8 +714,8 @@ if (
   Spx->NumeroDeContrainte == NULL    
    ) {
 
-  printf("Simplexe, sous-programme SPX_AugmenterLaTailleDeLaMatriceDesContraintes: \n");
-  printf("  -> memoire insuffisante pour l allocation de l espace de travail \n");
+  const char* msg = "Simplexe, sous-programme SPX_AugmenterLaTailleDeLaMatriceDesContraintes: \n  -> memoire insuffisante pour l allocation de l espace de travail \n";
+  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_ERROR);
   Spx->AnomalieDetectee = OUI_SPX;
   longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
 }

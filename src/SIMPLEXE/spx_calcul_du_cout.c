@@ -18,9 +18,9 @@
 
    FONCTION: Utilisable surtout dans un contexte de Branch and Bound.
              On calcule le cout de la solution primale et on le compare 
-             au seuil fourni en entrée (qui dans un contexte de 
+             au seuil fourni en entrï¿½e (qui dans un contexte de 
              Branch and Bound est le cout de la meilleure solution 
-             entiere deja trouvee). Si le cout calculé est superieur
+             entiere deja trouvee). Si le cout calculï¿½ est superieur
              au seuil fourni en entree, on arrete les calculs et on 
              sort avec le verdict: pas de solution. En effet le cout
              courant est un minorant du cout optimal.
@@ -48,6 +48,8 @@ int i; double Cout; double * C; double * X; PROBLEME_PNE * Pne;
 # endif
 
 SPX_FixerXEnFonctionDeSaPosition( Spx );
+char msg[SIRIUS_CALLBACK_BUFFER_SIZE];
+
 C = Spx->C;
 
 # if TRACES == 1 
@@ -71,11 +73,14 @@ for ( i = 0 ; i < Spx->NombreDeVariables ; i++ ) {
 Cout /= Spx->ScaleLigneDesCouts;
 Cout += Spx->PartieFixeDuCout;
 
+callback_function call_back = SPXgetcbmessage(Spx);
+
 # if TRACES == 1 	
   VraiCout /= Spx->ScaleLigneDesCouts;
   VraiCout += Spx->PartieFixeDuCout;
 	Erreur = fabs( VraiCout - Cout );
-	printf("Erreur due au bruitage des couts %e  Cout sans bruitage %e\n",Erreur,VraiCout);
+	snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Erreur due au bruitage des couts %e  Cout sans bruitage %e\n",Erreur,VraiCout);
+  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_ERROR);
 # endif	
 
 Spx->Cout = Cout;
@@ -88,12 +93,14 @@ if ( Pne != NULL ) {
 #if VERBOSE_SPX
   if ( Spx->StrongBranchingEnCours != OUI_SPX ) {  
     if ( Spx->UtiliserCoutMax == OUI_SPX ) { 
-      printf("Iteration %5d Cout %20.6lf Infaisabilites primales %20.6lf PartieFixeDuCout %20.6lf CoutMax %20.6lf\n",
+      snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Iteration %5d Cout %20.6lf Infaisabilites primales %20.6lf PartieFixeDuCout %20.6lf CoutMax %20.6lf\n",
               Spx->Iteration,Spx->Cout,Spx->SommeDesInfaisabilitesPrimales,Spx->PartieFixeDuCout,Spx->CoutMax);
+      call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
     }
     else {
-      printf("Iteration %5d Cout %20.6lf Infaisabilites primales %20.6lf PartieFixeDuCout %20.6lf\n",
+      snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Iteration %5d Cout %20.6lf Infaisabilites primales %20.6lf PartieFixeDuCout %20.6lf\n",
               Spx->Iteration,Spx->Cout,Spx->SommeDesInfaisabilitesPrimales,Spx->PartieFixeDuCout);
+      call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
     }
   }
 #else
@@ -102,21 +109,12 @@ if ( Pne != NULL ) {
     if ( Spx->EcrireLegendePhase2 == OUI_SPX ) {
       Spx->EcrireLegendePhase1 = OUI_SPX;   
       Spx->EcrireLegendePhase2 = NON_SPX;   
-      printf(" ");
-      printf(" | Phase |");
-      printf(" Iteration |");
-      printf("         Objective        |");
-      printf("          Primal infeas.       |");
-      printf("     Primal infeas. count   |");			
-      printf("\n");               
+      const char* info_msg = "  | Phase | Iteration |         Objective        |          Primal infeas.       |     Primal infeas. count   |\n";               
+      call_back(Spx->something_from_the_caller, info_msg, 0, SIRIUS_INFO);
+
     }          
-    printf(" ");
-    printf(" |   II  |");
-    printf("   %6d  |",Spx->Iteration);
-    printf("      %16.9e    |",Spx->Cout);
-    printf("        %15.8e        |",Spx->SommeDesInfaisabilitesPrimales);    
-    printf("         %10d         |",Spx->NombreDeContraintesASurveiller);    
-    printf("\n");            
+    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "  |   II  |   %6d  |      %16.9e    |        %15.8e        |         %10d         |\n",
+     Spx->Iteration, Spx->Cout, Spx->SommeDesInfaisabilitesPrimales, Spx->NombreDeContraintesASurveiller);
   }
 #endif
 

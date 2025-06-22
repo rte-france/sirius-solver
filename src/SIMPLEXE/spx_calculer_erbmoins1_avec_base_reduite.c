@@ -64,6 +64,9 @@ LigneDeLaBaseFactorisee = Spx->LigneDeLaBaseFactorisee;
 CntVarSor = ContrainteDeLaVariableEnBase[Spx->VariableSortante];
 ResoudreLeSystemeReduit = NON_SPX;
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];				
+
 /* Remarque: a ce stade toutes les AReduit composantes de sont nulles */
 
 if ( CalculEnHyperCreux != OUI_SPX ) {
@@ -78,7 +81,7 @@ if ( CalculEnHyperCreux != OUI_SPX ) {
   }
 	else {
 		/* Ca ne peut pas arriver */
-		printf("CalculerErBMoins1AvecBaseReduite bug: variable sortante hors base reduite impossible\n");
+        call_back(Spx->something_from_the_caller, "CalculerErBMoins1AvecBaseReduite bug: variable sortante hors base reduite impossible\n", 0, SIRIUS_FATAL);
 		exit(0);
   }
 }
@@ -97,7 +100,7 @@ else {
   }
 	else {
 		/* Ca ne peut pas arriver */
-		printf("CalculerErBMoins1AvecBaseReduite bug: variable sortante hors base reduite impossible\n");
+        call_back(Spx->something_from_the_caller, "CalculerErBMoins1AvecBaseReduite bug: variable sortante hors base reduite impossible\n", 0, SIRIUS_FATAL);
 		exit(0);			    			
 	}
 }   
@@ -144,7 +147,8 @@ if ( CalculEnHyperCreux == OUI_SPX ) {
 		*/
 		if ( Spx->NbEchecsErBMoins >= SEUIL_ECHEC_CREUX ) {
       # if VERBOSE_SPX
-		    printf("Arret de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n",Spx->Iteration);
+		    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Arret de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n",Spx->Iteration);
+            call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
       # endif			
 		  Spx->CalculErBMoinsUnEnHyperCreux = NON_SPX;
       Spx->CountEchecsErBMoins = 0;
@@ -154,11 +158,12 @@ if ( CalculEnHyperCreux == OUI_SPX ) {
 }
 
 # if VERIFICATION_ERBMOINS1 == OUI_SPX
-printf("------------- CalculerErBMoins1 Spx->NombreDeChangementsDeBase %d  Iteration %d ---\n",Spx->NombreDeChangementsDeBase,Spx->Iteration);
-if ( TypeDEntree == VECTEUR_LU ) printf("TypeDEntree = VECTEUR_LU\n");
-if ( TypeDEntree == COMPACT_LU ) printf("TypeDEntree = COMPACT_LU\n");
-if ( TypeDeSortie == VECTEUR_LU ) printf("TypeDeSortie = VECTEUR_LU\n");
-if ( TypeDeSortie == COMPACT_LU ) printf("TypeDeSortie = COMPACT_LU\n");
+snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "------------- CalculerErBMoins1 Spx->NombreDeChangementsDeBase %d  Iteration %d ---\n",Spx->NombreDeChangementsDeBase,Spx->Iteration);
+call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+if ( TypeDEntree == VECTEUR_LU ) call_back(Spx->something_from_the_caller, "TypeDEntree = VECTEUR_LU\n", 0, SIRIUS_INFO);
+if ( TypeDEntree == COMPACT_LU ) call_back(Spx->something_from_the_caller,"TypeDEntree = COMPACT_LU\n", 0, SIRIUS_INFO);
+if ( TypeDeSortie == VECTEUR_LU ) call_back(Spx->something_from_the_caller,"TypeDeSortie = VECTEUR_LU\n", 0, SIRIUS_INFO);
+if ( TypeDeSortie == COMPACT_LU ) call_back(Spx->something_from_the_caller,"TypeDeSortie = COMPACT_LU\n", 0, SIRIUS_INFO);
 {
 double * Buff; int i; int Var; int ic; int icMx; double S; double * Sortie; char Arret;
 Buff = (double *) malloc( Spx->NombreDeContraintes * sizeof( double ) );
@@ -183,22 +188,26 @@ for ( i = 0 ; i < Spx->NombreDeContraintes ; i++ ) {
 	  ic++;
 	}
 	if ( fabs( S - Buff[i] ) > 1.e-7 ) {
-	  printf("i = %d  S %e Buff %e  ecart %e\n",i,S,Buff[i],fabs( S - Buff[i] ));
-		printf("Var = %d\n",Var);
+	  snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE,"i = %d  S %e Buff %e  ecart %e\n",i,S,Buff[i],fabs( S - Buff[i] ));
+      call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+		snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE,"Var = %d\n",Var);
+        call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
 	  ic = Spx->Cdeb[Var];
 	  icMx = ic + Spx->CNbTerm[Var];
 	  while ( ic < icMx ) {
-	    printf("NumeroDeContrainte[%d] = %d  Sortie = %e  ACol = %e\n",ic,Spx->NumeroDeContrainte[ic],Sortie[Spx->NumeroDeContrainte[ic]],Spx->ACol[ic]);
-	    ic++;
+	    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "NumeroDeContrainte[%d] = %d  Sortie = %e  ACol = %e\n",ic,Spx->NumeroDeContrainte[ic],Sortie[Spx->NumeroDeContrainte[ic]],Spx->ACol[ic]);
+	    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
+		ic++;
 	  }		
     Arret = OUI_SPX;
 	}
 }
 if ( Arret == OUI_SPX ) {
-  printf("RangDeLaMatriceFactorisee %d   NombreDeContraintes %d\n",Spx->RangDeLaMatriceFactorisee,Spx->NombreDeContraintes);
+  snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "RangDeLaMatriceFactorisee %d   NombreDeContraintes %d\n",Spx->RangDeLaMatriceFactorisee,Spx->NombreDeContraintes);
+  call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_FATAL);
   exit(0);
 }
-printf("Fin verif erbmoins1  OK\n");
+call_back(Spx->something_from_the_caller,"Fin verif erbmoins1  OK\n", 0, SIRIUS_INFO);
 free( Buff );
 free( Sortie );
 

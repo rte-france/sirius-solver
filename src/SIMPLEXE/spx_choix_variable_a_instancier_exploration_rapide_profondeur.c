@@ -67,9 +67,12 @@ Bb  = (BB *) BbProb;
 
 if ( Spx->YaUneSolution == NON_SPX ) return;
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];		
+
 SPX_CalculDuCout( Spx ); 
 if ( Spx->Cout > Spx->CoutMax ) {
-  printf("Fin par coutmax dans choix var a instancier\n");
+  call_back(Spx->something_from_the_caller, "Fin par coutmax dans choix var a instancier\n", 0, SIRIUS_INFO);
   Spx->YaUneSolution = NON_SPX;
   return; 
 }

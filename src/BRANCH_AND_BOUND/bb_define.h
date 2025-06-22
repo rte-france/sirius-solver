@@ -336,6 +336,8 @@ int    AverageK;
 /*   */
 void * ProblemePneDuBb;
 
+void *callback;
+void *something_from_the_caller;
 } BB;
 
 /*******************************************************************************************/

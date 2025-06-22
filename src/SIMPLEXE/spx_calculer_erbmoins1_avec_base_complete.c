@@ -36,6 +36,9 @@ void SPX_CalculerErBMoins1AvecBaseComplete( PROBLEME_SPX * Spx, char CalculEnHyp
 {
 char TypeDEntree; char TypeDeSortie; int i; double * ErBMoinsUn;
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];				
+
 if ( CalculEnHyperCreux != OUI_SPX ) {
   TypeDEntree = VECTEUR_LU;	
   TypeDeSortie = VECTEUR_LU;
@@ -66,7 +69,8 @@ if ( CalculEnHyperCreux == OUI_SPX ) {
 		*/
 		if ( Spx->NbEchecsErBMoins >= SEUIL_ECHEC_CREUX ) {
       # if VERBOSE_SPX
-		    printf("Arret de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n",Spx->Iteration);
+		    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Arret de l'hyper creux pour le calcul de la ligne pivot, iteration %d\n",Spx->Iteration);
+        call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_INFO);
       # endif			
 		  Spx->CalculErBMoinsUnEnHyperCreux = NON_SPX;
       Spx->CountEchecsErBMoins = 0;

@@ -36,7 +36,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-/* On connait le noeud courant, c'est celui qui vient d'être examiné */
+/* On connait le noeud courant, c'est celui qui vient d'ï¿½tre examinï¿½ */
 void Spx_CreationNoeudsFils( PROBLEME_SPX * Spx, void * PneProb, void * BbProb,
                              int VariablesPneAInstancier )
 { 
@@ -100,6 +100,8 @@ for ( VarPne = 0 ; VarPne < NombreDeVariablesPNE ; VarPne++ ) {
   } 
 }
 
+callback_function call_back = SPXgetcbmessage(Spx);		
+char msg [SIRIUS_CALLBACK_BUFFER_SIZE];
 NbVarDeBaseComplementaires = 0;
 for ( Var = 0 ; Var < Spx->NombreDeVariablesDuProblemeSansCoupes ; Var++ ) {
 
@@ -119,7 +121,8 @@ for ( Var = 0 ; Var < Spx->NombreDeVariablesDuProblemeSansCoupes ; Var++ ) {
     il++;
   }
   if ( NbT != 1 ) {
-    printf("Bug dans SPX_RecupererLaSolution nombre de termes dans la colonne de la variable %d incorrect, %d\n",Var,NbT); 
+    snprintf(msg, SIRIUS_CALLBACK_BUFFER_SIZE, "Bug dans SPX_RecupererLaSolution nombre de termes dans la colonne de la variable %d incorrect, %d\n",Var,NbT); 
+    call_back(Spx->something_from_the_caller, msg, 0, SIRIUS_ERROR);
     Spx->AnomalieDetectee = OUI_SPX;
     longjmp( Spx->EnvSpx , Spx->AnomalieDetectee ); /* rq: le 2eme argument ne sera pas utilise */
   }
@@ -135,7 +138,7 @@ NoeudEnExamen->NbVarDeBaseComplementaires = NbVarDeBaseComplementaires;
 
 NumCoupe = 0;
 if ( Spx->NombreDeContraintes - Spx->NombreDeContraintesDuProblemeSansCoupes != Bb->NombreDeCoupesAjoutees ) {
-  printf("pb Bb->NombreDeCoupesAjoutees dans SPX\n");
+  call_back(Spx->something_from_the_caller, "pb Bb->NombreDeCoupesAjoutees dans SPX\n", 0, SIRIUS_INFO);
 }
 for ( Cnt = Spx->NombreDeContraintesDuProblemeSansCoupes ; Cnt < Spx->NombreDeContraintes ; Cnt++ ) {
   /* On cherche la variable Cnt_E correspondante */

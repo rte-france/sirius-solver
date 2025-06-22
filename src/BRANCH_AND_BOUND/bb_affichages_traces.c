@@ -41,6 +41,14 @@ int AverageG; int AverageI; int AverageK; char Tracer;
 int cpt; int i; int * pt1 ; char * pt2;
 # endif
 
+callback_function call_back = (callback_function)Bb->callback;
+// TODO else default
+if (!call_back)
+{
+  call_back = SiriusDefaultCallback;
+}
+void *something_from_the_caller = Bb->something_from_the_caller;
+
 if ( NoeudCourant == Bb->NoeudRacine ) {
   Bb->TempsDuDernierAffichage = 0;
   Bb->NombreDeProblemesDepuisLeDernierAffichage = 0;
@@ -59,7 +67,9 @@ if ( Bb->NombreDeProblemesResolus > 0 ) {
   if ( Bb->TempsDexecutionMaximum > 0 ) {
     if ( TempsEcoule >= Bb->TempsDexecutionMaximum ) {					
       Bb->ArreterLesCalculs = OUI;
-			if ( Bb->AffichageDesTraces == OUI ) printf("Stopping calculation because time limit reached.\n");
+      if (Bb->AffichageDesTraces == OUI)
+        // is this a WARNING?
+        call_back(something_from_the_caller, "Stopping calculation because time limit reached.\n", 0, SIRIUS_WARN);
     }
   }
 
@@ -74,17 +84,8 @@ if ( Bb->NombreDeProblemesResolus > 0 ) {
     
     if ( Bb->NombreDAffichages == 0 || Bb->NombreDAffichages >= CYCLE_DAFFICHAGE_LEGENDE ) {    
       Bb->NombreDAffichages = 0;
-      printf(" "); 
-      printf("|  Nodes  |");      
-      printf(" Depth  (max)  |");      
-      printf(" Active nodes |");
-      printf(" Sol |");      
-      printf("     Best Sol.   |");     
-      printf("    Best bound   |");
-      printf("    Gap %%   |");       
-      printf("  Seconds |");
-      printf(" Cuts: average in use (over) |");			
-      printf("\n");
+      const char *msg = " |  Nodes  | Depth  (max)  | Active nodes | Sol |     Best Sol.   |    Best bound   |    Gap %%   |  Seconds | Cuts: average in use (over) |\n";
+      call_back(something_from_the_caller, msg, 0, SIRIUS_INFO);
     } 
     Bb->NombreDAffichages++;
 

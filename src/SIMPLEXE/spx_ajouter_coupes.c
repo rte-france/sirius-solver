@@ -109,7 +109,9 @@ CntVarEcartOuArtif  = Spx->CntVarEcartOuArtif;
 NombreDeContraintes = Spx->NombreDeContraintes;  
 NombreDeVariables   = Spx->NombreDeVariables;
 
-/* Seules nous interessent les variables natives car pour les autres on sait que ça vaut 1 */
+callback_function call_back = SPXgetcbmessage(Spx);
+void *something_from_the_caller = Spx->something_from_the_caller;
+/* Seules nous interessent les variables natives car pour les autres on sait que ï¿½a vaut 1 */
 CNbTermesDeCoupes = Spx->CNbTermesDeCoupes;
 memset ( (char *) CNbTermesDeCoupes, 0 , Spx->NombreDeVariables * sizeof( int ) );  
 
@@ -212,8 +214,10 @@ for ( Cnt_E = 0 ; Cnt_E < NbContr_E ; Cnt_E++ ) {
   else if ( PositionDeLaVariableDEcart[Cnt_E] == HORS_BASE_SUR_BORNE_INF ) {
     PositionDeLaVariable[NombreDeVariables] = HORS_BASE_SUR_BORNE_INF;
   }
-  else {  
-    printf("Bug dans le sous programme SPX_AjouterLesCoupes. Arret d'urgence\n");
+  else
+  {
+    const char *msg = "Bug dans le sous programme SPX_AjouterLesCoupes. Arret d'urgence\n";
+    call_back(something_from_the_caller, msg, 0, SIRIUS_FATAL);
     exit(0);
   }
   /* On la met dans l'equation de la contrainte */
