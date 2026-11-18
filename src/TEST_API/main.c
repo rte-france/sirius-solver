@@ -68,12 +68,12 @@ int main(int argc, char ** argv) {
 		int colTypes[nbCols] = { SRS_CONTINUOUS_VAR, SRS_CONTINUOUS_VAR };
 		double lb[nbCols] = { -1.0, -2.0 };
 		double ub[nbCols] = { 1.0, 2.0 };
-		char * colNames[nbCols] = { "X1", "x2" };
+		const char * colNames[nbCols] = { "X1", "x2" };
 
 		double rhs[nbRows] = { 0.5, 0.5 };
 		double range[nbRows] = { 0.0, 0.0 };
 		char sense[nbRows] = { SRS_GREATER_THAN, SRS_LESSER_THAN };
-		char * rowNames[nbRows] = { "c1", "C2" };
+		const char * rowNames[nbRows] = { "c1", "C2" };
 
 		int rowDebInds[2] = { 0, 2 };
 		int nbCoefPerRow[2] = { 2, 2 };
@@ -105,12 +105,12 @@ int main(int argc, char ** argv) {
 		int colTypes[nbCols] = { SRS_CONTINUOUS_VAR, SRS_CONTINUOUS_VAR };
 		double lb[nbCols] = { -1.5, -2.5 };
 		double ub[nbCols] = { 1.0, 2.0 };
-		char * colNames[nbCols] = { "x", "y" };
+		const char * colNames[nbCols] = { "x", "y" };
 
 		double rhs[1] = { SRS_infinite };
 		double range[1] = { 0.0};
 		char sense[nbRows] = { SRS_LESSER_THAN };
-		char * rowNames[nbRows] = { "c1"};
+		const char * rowNames[nbRows] = { "c1"};
 
 		int rowDebInds[1] = { 0 };
 		int nbCoefPerRow[1] = { 1 };
@@ -135,12 +135,12 @@ int main(int argc, char ** argv) {
 	int colTypesMip[nbCols] = { SRS_INTEGER_VAR, SRS_INTEGER_VAR };
 	double lbMip[nbCols] = { 0. , 0. };
 	double ubMip[nbCols] = { 1. , 1. };
-	char * colNames[nbCols] = { "X1", "x2" };
+	const char * colNames[nbCols] = { "X1", "x2" };
 
 	double rhsMip[nbRows] = { 1., 0.5 };
 	double range[nbRows] = { 0.0, 0.0 };
 	char sense[nbRows] = { SRS_GREATER_THAN, SRS_LESSER_THAN };
-	char * rowNames[nbRows] = { "c1", "C2" };
+	const char * rowNames[nbRows] = { "c1", "C2" };
 
 	int rowDebInds[2] = { 0, 2 };
 	int nbCoefPerRow[2] = { 2, 2 };
